@@ -1,9 +1,12 @@
 # fasces
 ## Generation and visualization of FASS curves
 
-FASS curves are space-**f**illing, self-**a**voiding, **s**imple and self-**s**imilar curves.
+FASS curves are space-**F**illing, self-**A**voiding, **S**imple and self-**S**imilar curves.
 Such curves were described by Peano and Hilbert. 
 They may be two-, three- or multidimensional.
+
+The initial motivation for this project was [OEIS sequence A220952](https://oeis.org/search?q=A220952) which was defined by Donald Knuth with the following comment:
+> *As soon as a solution is published, I'll provide lots more info; the sequence is so fascinating, it has caused me to take three days off from writing The Art of Computer Programming, but I plan to use it in Chapter 8 some day.*
 
 Further information on this project can be found under
 http://www.teherba.org/index.php/OEIS/FASS_curves. 
