@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>Meander Fs</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			body {
+				background-color: #000000;
+				margin: 0px;
+				overflow: hidden;
+			}
+			a {	color:#0078ff;
+			}
+			#info {
+				position: absolute;
+				top: 10px; width: 100%;
+				color: #ffffff;
+				padding: 5px;
+				font-family: Monospace;
+				font-size: 13px;
+				text-align: center;
+				z-index:100;
+			}
+			a {	color: orange;
+				text-decoration: none;
+			}
+			a:hover {
+				color: #0080ff;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="info">
+			<a href="http://threejs.org" target="_blank" rel="noopener">three.js</a> - Meander Fs
+			by Georg Fischer
+		</div>
+		<script src="three.min.js"></script>
+		<script src="js/renderers/Projector.js"></script>
+		<script src="js/renderers/CanvasRenderer.js"></script>
+		<script src="js/Detector.js"></script>
+		<script src="js/libs/stats.min.js"></script>
+		<script>
+			/**
+			 * Knuth meander: Generates 3D-Coordinates
+			 * @author Georg Fischer
+			 *
+			 * Based on work by:
+			 * @author Thomas Diewald
+			 * @link http://www.openprocessing.org/visuals/?visualID=15599
+			 * Based on `examples/canvas_lines_colors.html`:
+			 * @author OpenShift guest
+			 * @link https://github.com/mrdoob/three.js/blob/8413a860aa95ed29c79cbb7f857c97d7880d260f/examples/canvas_lines_colors.html
+			 * @see  Line 149 - 186
+			 *
+			 * @param size       width of cube.
+			 */
+			function meander( size ) {
+				// Default Vars
+				var center     = new THREE.Vector3( 0, 0, 0 );
+				var size       = undefined !== size ? size : 200;
+				var size5      = parseInt(size / 5);
+				var vec_Kn = [0,1,2,3,4,14,24,34,33,32,31,21,22,23,13,12,11,10,20,30,40,41,42,43,44
+				,144,244,344,343,342,341,241,242,243,143,142,141,140,240,340,330,320,310,210,220
+				,230,130,120,110,111,112,113,123,122,121,131,132,133,233,232,231,221,222,223,213
+				,212,211,311,312,313,323,322,321,331,332,333,334,324,314,214,224,234,134,124,114
+				,104,204,304,303,302,301,201,202,203,103,102,101,100,200,300,400,401,402,403,404
+				,414,424,434,433,432,431,421,422,423,413,412,411,410,420,430,440,441,442,443,444];	
+				var vec_Fs = [0,1,2,3,4,14,24,34,33,23,13,12,22,32,31,21,11,10,20,30,40,41,42,43,44,
+				144,244,344,343,243,143,142,242,342,341,241,141,140,240,340,330,230,130,120,220,320,
+				310,210,110,111,211,311,321,221,121,131,231,331,332,232,132,122,222,322,312,212,112,
+				113,213,313,323,223,123,133,233,333,334,234,134,124,224,324,314,214,114,104,204,304,
+				303,203,103,102,202,302,301,201,101,100,200,300,400,401,402,403,404,414,424,434,433,
+				423,413,412,422,432,431,421,411,410,420,430,440,441,442,443,444];	
+				var vec = vec_Fs;
+				var vec_s = [];	
+				for ( i = 0; i < vec.length; i ++ ) {
+					var digx5 = parseInt(vec[i] /  10) % 10 ;
+					var digy5 =          vec[i]        % 10;
+					var digz5 = parseInt(vec[i] / 100) % 10;
+					vec_s.push(new THREE.Vector3
+					( center.x + (digx5 - 2) * size5
+					, center.y + (digy5 - 2) * size5
+					, center.z + (digz5 - 2) * size5
+					)); // x,y,z
+				}
+		
+				// Return complete curve.
+				return vec_s;
+			}
+			//--------
+			if ( ! Detector.webgl ) {
+				Detector.addGetWebGLMessage();
+			}
+			var mouseX = 0, mouseY = 0,
+			windowHalfX = window.innerWidth / 2,
+			windowHalfY = window.innerHeight / 2,
+			camera, scene, renderer, material;
+		if (false) {
+			var loader = new THREE.FontLoader();
+			loader.load( 'fonts/helvetiker_regular.typeface.json', function ( font ) {
+				init( font );
+				animate();
+			} );
+		}
+			init();
+			animate();
+			function init() {
+				var i, container;
+				container = document.createElement( 'div' );
+				document.body.appendChild( container );
+				camera = new THREE.PerspectiveCamera( 33, window.innerWidth / window.innerHeight, 1, 10000 );
+				camera.position.z = 700;
+				scene = new THREE.Scene();
+				renderer = new THREE.CanvasRenderer();
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				container.appendChild( renderer.domElement );
+				var geometry3 = new THREE.Geometry();
+
+				var points = meander( 400 );
+
+				var	colors3 = [];
+				for ( i = 0; i < points.length; i ++ ) {
+					geometry3.vertices.push( points[i] );
+					colors3[i] = new THREE.Color( 0xffffff );
+					colors3[i].setHSL( i / points.length, 1.0, 0.5 );
+				}
+				geometry3.colors = colors3;
+				// lines
+				material = new THREE.LineBasicMaterial( { color: 0xffffff, opacity: 0.7, linewidth: 10, vertexColors: THREE.VertexColors } );
+				var line, p, scale = 0.3, d = 225;
+				line = new THREE.Line(geometry3, material );
+				line.scale.x = line.scale.y = line.scale.z =  scale*1.5;
+				line.position.x = 0;
+				line.position.y = 0;
+				line.position.z = 0;
+				scene.add( line );
+				//
+				stats = new Stats();
+				//container.appendChild( stats.dom );
+				//
+				document.addEventListener( 'mousemove',  onDocumentMouseMove,  false );
+				document.addEventListener( 'touchstart', onDocumentTouchStart, false );
+				document.addEventListener( 'touchmove',  onDocumentTouchMove,  false );
+				//
+				window.addEventListener( 'resize', onWindowResize, false );
+			}
+			function onWindowResize() {
+				windowHalfX = window.innerWidth / 2;
+				windowHalfY = window.innerHeight / 2;
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+				renderer.setSize( window.innerWidth, window.innerHeight );
+			}
+			//
+			function onDocumentMouseMove( event ) {
+				mouseX = event.clientX - windowHalfX;
+				mouseY = event.clientY - windowHalfY;
+			}
+			function onDocumentTouchStart( event ) {
+				if ( event.touches.length > 1 ) {
+					event.preventDefault();
+					mouseX = event.touches[ 0 ].pageX - windowHalfX;
+					mouseY = event.touches[ 0 ].pageY - windowHalfY;
+				}
+			}
+			function onDocumentTouchMove( event ) {
+				if ( event.touches.length == 1 ) {
+					event.preventDefault();
+					mouseX = event.touches[ 0 ].pageX - windowHalfX;
+					mouseY = event.touches[ 0 ].pageY - windowHalfY;
+				}
+			}
+			//
+			function animate() {
+				requestAnimationFrame( animate );
+				render();
+				stats.update();
+			}
+			function render() {
+				camera.position.x += ( mouseX - camera.position.x ) * .05;
+				camera.position.y += ( - mouseY + 200 - camera.position.y ) * .05;
+				camera.lookAt( scene.position );
+				var time = Date.now() * 0.0002;
+				// time = 0.0;
+				for ( var i = 0; i < scene.children.length; i ++ ) {
+					var object = scene.children[i];
+					if ( object instanceof THREE.Line ) object.rotation.y = time * ( i % 2 ? 1 : -1 );
+				}
+				renderer.render(scene, camera );
+			}
+		</script>
+	</body>
+</html>
