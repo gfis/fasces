@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-<!--Meander cube with THREE.MeshLine.js and OrbitControls.js
+<!--Meander cube with STL export 
 	@(#) $Id$
 	2018-02-18: three.min.js moved to js/
 	2017-09-09, Georg Fischer
@@ -44,8 +44,18 @@
 		<script src="js/controls/OrbitControls.js"></script>
 		<script src="js/Detector.js"></script>
 		<script src="js/libs/stats.min.js"></script>
-		<script src="meander-BoxGeometry.js"></script>
+		<script src="meander-box.js"></script>
+		<script src="FileSaver.js"></script>
+		<script src="STLExporter.js"></script>
 		<script>
+			// Use FileSaver.js 'saveAs' function to save the string
+			function saveSTL( scene, name ){  
+				var exporter = new THREE.STLExporter();
+				var stlString = exporter.parse( scene );
+				var blob = new Blob([stlString], {type: 'text/plain'});
+				saveAs(blob, name + '.stl');
+			} // saveSTL
+			
 			if ( ! Detector.webgl ) {
 				Detector.addGetWebGLMessage();
 			}
@@ -58,6 +68,7 @@
 			loader.load( 'fonts/helvetiker_regular.typeface.json', function ( font ) {
 				// all remaining main code must be placed in this block
 				init( font );
+				saveSTL( scene, "meander-box" );
 				// render(); // remove when using next line for animation loop (requestAnimationFrame)
 				animate();
 			} ); // load
@@ -122,7 +133,7 @@
 			}
 			function render() {
 				var time = Date.now() * 0.0001;
-				// time = 0.0;
+				time = 0.0;
 				for ( var i = 0; i < scene.children.length; i ++ ) {
 					var object = scene.children[i];
 					object.rotation.y = time; // * ( i % 2 ? 1 : -1 );
