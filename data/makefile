@@ -1,0 +1,195 @@
+#!make
+
+# @(#) $Id$
+# Copyright (c) 2017 Georg Fischer
+# 2017-08-17
+all:
+	perl a220952.pl
+
+b53:
+	cut -b 6-8   b53.man  > b1.tmp
+	cut -b 48-50 b53.man >> b1.tmp
+	sort b1.tmp > b2.tmp
+	wc b2.tmp
+	uniq -c b2.tmp | tee b3.tmp
+	grep -v " 1 " b3.tmp
+b53kr:
+	sort -rn b53k.man > b53kr.tmp
+	perl count.pl 625 > 625.tmp
+svg: svge svgk svg4k
+svge:
+	perl b5_svg.pl -m 5 b53e.man > b53e.svg
+svgk:
+	perl b5_svg.pl -m 5 b53k.man > b53k.svg
+svg4k:
+	perl b5_svg.pl -m 5 b54k.man > b54k.svg
+kalt3:
+	perl kalt3.pl | grep -vE "^\#" | tee kalt3.tmp
+	perl b5_svg.pl -m 5 kalt3.tmp > kalt3.svg
+kalt4:
+	perl kalt3.pl 4 | grep -vE "^\#" | tee kalt4.tmp
+	perl b5_svg.pl -m 5 kalt4.tmp > kalt4.svg
+zorro: zorro3 zorro4
+zorro2:
+	rm -f b52f*.gen
+	perl zorroa.pl 2 | tee zorro2.tmp
+	make z5svg
+zorro3:
+	perl zorroa.pl 3 | grep -vE "^\#" | tee zorro3.tmp
+	perl b5_svg.pl -m 5                     zorro3.tmp > zorro3.svg
+zorro4:
+	perl zorroa.pl 4 | grep -vE "^\#" | tee zorro4.tmp
+	perl b5_svg.pl -m 5                     zorro4.tmp > zorro4.svg
+z5: z5a
+z5a:
+	rm -f b53f*.gen
+	perl zorroa.pl 3 
+z5svg:
+	find . -iname "*.gen" | xargs -l -iqqq make z5svg1 GEN=qqq
+z5svg1:
+	perl b5_svg.pl -m 5 $(GEN) > $(GEN).svg
+z3:
+	rm -f b53f*.gen
+	perl zorroa.pl 3
+sums:
+	md5sum *.gen | cut -d " " -f 1 | sort | uniq -c | grep -v " 1 " 
+find:
+	grep -iH -E "^43" *.gen
+z53:
+	perl mirror5.pl z53.half.man > z53.bf
+	perl b5_svg.pl -m 5 z53.bf > z53.svg
+mathar_svg:
+	perl b5_svg.pl -d 5 b220952.txt > a220952.mathar.svg
+gen2z:
+	perl gen2zc.pl 3 | grep -vE "^\#" > gen2z.tmp
+	perl b5_svg.pl -m 5 gen2z.tmp > gen2z.svg
+	cut -d " " -f 1 gen2z.tmp  > g1.tmp
+	cut -d " " -f 2 gen2z.tmp >> g1.tmp
+	sort -n g1.tmp > g2.tmp
+	wc g2.tmp
+	tail -4 g2.tmp
+	uniq -c g2.tmp | grep -v " 2 "
+vertex:
+	perl vertex.pl -m 5 gen2z.tmpq	
+rebase:
+	perl -w b-file_rebase.pl -f 16 -t 4 b-file_rebase.test.txt | tee b4.tmp
+	perl -w b-file_rebase.pl -f 4       b4.tmp 
+	perl -w b-file_rebase.pl            b4.tmp 
+mathar:
+	perl -w b-file_rebase.pl -f 10 -t 5 -z mathar.txt | grep -vE "^#" | head -63 | tee mathar5.tmp
+	perl mirror5.pl mathar5.tmp | tee mathar125.tmp
+	perl b-file_rebase.pl -f 5 -t 10 mathar125.tmp > m1.tmp
+	perl mathar.pl 125 > m2.tmp
+	diff -w m1.tmp m2.tmp
+#------------------------
+paths:
+	perl gen_paths.pl | tee paths.5.txt
+paths3:
+	perl gen_paths.pl -b 3 | tee paths.3.txt
+meander: meander5
+meander5:
+	perl -w gen_paths.pl  | grep " path=" | sed -e "s/ *path=//" \
+	| xargs  -l -iqqq \
+	perl -w gen_meander.pl  -l 3125 -p qqq | tee meander.3125.tmp
+meander2:
+	perl -w gen_paths.pl -r -b 2 | grep " path=" | sed -e "s/ *path=//" \
+	| xargs  -l -iqqq \
+	perl -w gen_meander.pl  -b 2 -l 1024 -p qqq | tee meander.3.tmp
+meander3:
+	perl -w gen_paths.pl -r -b 3 | grep " path=" | sed -e "s/ *path=//" \
+	| xargs  -l -iqqq \
+	perl -w gen_meander.pl  -b 3 -l 59049 -p qqq | tee meander.3.tmp
+meander4:
+	perl -w gen_paths.pl -r -b 4 | grep " path=" | sed -e "s/ *path=//" \
+	| xargs  -l -iqqq \
+	perl -w gen_meander.pl  -b 4 -l 4096 -p qqq | tee meander.4.tmp
+mea0:
+	perl gen_meander.pl -l 24 -b -p "0,1,2,3,4,9,14,19,18,17,16,11,12,13,8,7,6,5,10,15,20,21,22,23,24" \
+	| tee meander.25.tmp
+#	perl gen_meander.pl -l 625 | tee meander.625.tmp
+mea47:
+	perl gen_meander.pl -l 125 -b -p "0,1,2,3,4,9,8,7,6,5,10,15,20,21,16,11,12,17,22,23,18,13,14,19,24" \ 
+	| tee meander.47.tmp
+#-------------------------------
+# Generate SVG for n = 0..625
+svg6: Fs6 Kn6 Ls6 Ln6 nn6 nI6
+
+Fs:
+	perl gen_meander.pl  -i Fs -l 124 -b -p "0,1,2,3,4,9,14,19,18,13,8,7,12,17,16,11,6,5,10,15,20,21,22,23,24" \
+	                      > Fs.tmp
+	grep -vE "[\<\=\@]"     Fs.tmp \
+	| perl b5_svg.pl -m 5 > Fs.svg
+Fs6:
+	perl gen_meander.pl  -i Fs -l 624 -b -p "0,1,2,3,4,9,14,19,18,13,8,7,12,17,16,11,6,5,10,15,20,21,22,23,24" \
+	                      > Fs6.tmp
+	grep -vE "[\<\=\@]"     Fs6.tmp \
+	| perl b5_svg.pl -m 5 > Fs6.svg
+Kn:
+	perl gen_meander.pl  -i Kn -l 124 -b -p "0,1,2,3,4,9,14,19,18,17,16,11,12,13,8,7,6,5,10,15,20,21,22,23,24" \
+	                      > Kn.tmp
+	grep -vE "[\<\=\@]"     Kn.tmp \
+	| perl b5_svg.pl -m 5 > Kn.svg
+Kn6:
+	perl gen_meander.pl  -i Kn -l 624 -b -p "0,1,2,3,4,9,14,19,18,17,16,11,12,13,8,7,6,5,10,15,20,21,22,23,24" \
+	                      > Kn6.tmp
+	grep -vE "[\<\=\@]"     Kn6.tmp \
+	| perl b5_svg.pl -m 5 > Kn6.svg
+Ls6:
+	perl gen_meander.pl  -i Ls -l 624 -b -p "0,1,2,3,4,9,8,7,6,5,10,15,20,21,16,11,12,17,22,23,18,13,14,19,24" \
+	                      > Ls6.tmp
+	grep -vE "[\<\=\@]"     Ls6.tmp \
+	| perl b5_svg.pl -m 5 > Ls6.svg
+Ln6:
+	perl gen_meander.pl  -i Ln -l 624 -b -p "0,1,2,3,4,9,8,7,6,5,10,15,20,21,16,11,12,13,14,19,18,17,22,23,24" \
+	                      > Ln6.tmp
+	grep -vE "[\<\=\@]"     Ln6.tmp \
+	| perl b5_svg.pl -m 5 > Ln6.svg
+nn6:
+	perl gen_meander.pl  -i nn -l 624 -b -p "0,1,2,7,6,5,10,11,12,17,16,15,20,21,22,23,18,13,8,3,4,9,14,19,24" \
+	                      > nn6.tmp
+	grep -vE "[\<\=\@]"     nn6.tmp \
+	| perl b5_svg.pl -m 5 > nn6.svg
+nI6:
+	perl gen_meander.pl  -i nI -l 624 -b -p "0,1,2,7,6,5,10,11,12,13,8,3,4,9,14,19,18,17,16,15,20,21,22,23,24" \
+	                      > nI6.tmp
+	grep -vE "[\<\=\@]"     nI6.tmp \
+	| perl b5_svg.pl -m 5 > nI6.svg
+#------------------------------------
+flatKn:
+	perl gen_meander.pl -l 125        -b -p "0,1,2,3,4,9,14,19,18,17,16,11,12,13,8,7,6,5,10,15,20,21,22,23,24" \
+	> flatKn1.tmp
+	perl flatten.pl -d 0 flatKn1.tmp | tee flatKn2.tmp 
+flatFs:
+	perl gen_meander.pl -l 125        -b -p "0,1,2,3,4,9,14,19,18,13,8,7,12,17,16,11,6,5,10,15,20,21,22,23,24" \
+	> flatFs1.tmp
+	perl flatten.pl -d 0 flatFs1.tmp | tee flatFs2.tmp 
+#------------------------------------
+# JavaScript preparation
+Knjs:	
+	perl gen_meander.pl  -i Kn -l 124 -b -p "0,1,2,3,4,9,14,19,18,17,16,11,12,13,8,7,6,5,10,15,20,21,22,23,24" \
+	                      > Kn.tmp
+	grep -vE "[\<\=\@]"     Kn.tmp \
+	| grep -E "[0-9]" \
+	| cut -d " " -f 2 \
+	| sed -e "s/^/,/g" \
+	| tee Kn.tmp
+Fsjs:	
+	perl gen_meander.pl  -i Fs -l 124 -b -p "0,1,2,3,4,9,14,19,18,13,8,7,12,17,16,11,6,5,10,15,20,21,22,23,24" \
+	                      > Fs.tmp
+	grep -vE "[\<\=\@]"     Fs.tmp \
+	| grep -E "[0-9]" \
+	| cut -d " " -f 2 \
+	| sed -e "s/^/,/g" \
+	| tee Fs.tmp
+Fujs:	
+	perl gen_meander.pl  -i Fu -l 124 -b -p "0,1,2,3,4,9,8,7,6,5,10,15,20,21,16,11,12,17,22,23,18,13,14,19,24" \
+	                      > Fu.tmp
+	grep -vE "[\<\=\@]"     Fu.tmp \
+	| grep -E "[0-9]" \
+	| cut -d " " -f 2 \
+	| sed -e "s/^/,/g" \
+	| tee Fu.tmp
+	
+proof1:
+	perl gen_meander.pl -p "0,1,2,5,4,3,6,7,8" -b 3 -l 81 -f | tee r3.tmp
+	
