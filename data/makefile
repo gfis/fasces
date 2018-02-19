@@ -1,27 +1,48 @@
 #!make
 
+# in fasces/data
 # @(#) $Id$
-# Copyright (c) 2017 Georg Fischer
-# 2018-02-19: parse path descriptions
+# 2018-02-19: parse path expressions
 # 2017-08-17
 all:
-	echo please use a specific makefile target
+	# please use a specific makefile target: 
+	grep -E "^[a-zA-Z0-9]+\:" makefile | head -n 20
 #-------------------------------
-# A220925 - Knuth's matrix
-# compare results of path generation from syntax description with Mathar's b-files
-pdesc: pdesc5
-pdesc3:
-	perl Kn_syntax.pl 3 | perl parse.pl > $@.pd.tmp
-	tail -2 $@.pd.tmp | perl vector_b-file.pl > $@.bf.tmp
-	diff -w -C0 mathar.125.txt $@.bf.tmp
-pdesc4:
-	perl Kn_syntax.pl 4 | perl parse.pl > $@.pd.tmp
-	tail -2 $@.pd.tmp | perl vector_b-file.pl > $@.bf.tmp
-	diff -w -C0 mathar.625.txt $@.bf.tmp
-pdesc5:
-	perl Kn_syntax.pl 5 | perl parse.pl > $@.pd.tmp
-	tail -2 $@.pd.tmp | perl vector_b-file.pl > $@.bf.tmp
+# A220952 - Knuth's adjacency matrix
+# compare results of expanded path expressions with Mathar's b-files
+pexpr: pexpr5
+pexpr3:
+	perl gen_expr.pl 3 | perl expand_expr.pl   > $@.pe.tmp
+	tail -2 $@.pe.tmp  | perl vector_b-file.pl > $@.bf.tmp
+	diff -w -C0  mathar.125.txt $@.bf.tmp
+pexpr4:
+	perl gen_expr.pl 4 | perl expand_expr.pl   > $@.pe.tmp
+	tail -2 $@.pe.tmp  | perl vector_b-file.pl > $@.bf.tmp
+	diff -w -C0  mathar.625.txt $@.bf.tmp
+pexpr5:
+	perl gen_expr.pl 5 | perl expand_expr.pl   > $@.pe.tmp
+	tail -2 $@.pe.tmp  | perl vector_b-file.pl > $@.bf.tmp
 	diff -w -C0 mathar.3125.txt $@.bf.tmp
+#-------------------------------
+# the millionth element is 132332103(5) = 667778(10)
+# 5     6      7      8       9        10      <- exponents 
+# 3125, 15625, 78125, 390625, 1953125, 9765625 <- powers of 5
+pexpr9:
+	perl gen_expr.pl 9 | tee $@.ps.tmp
+	perl expand_expr.pl $@.ps.tmp > $@.pd.tmp
+	tail -2 $@.pd.tmp  | perl vector_b-file.pl \
+	| head -n 1000003  | tail -4
+	# x1M = 132332103 in base 5
+# time make pexpr9 shows:
+# 999998 132332202
+# 999999 132332203
+# 1000000 132332103
+# 1000001 132332102
+# # x1M = 132332103 in base 5
+# 
+# real	0m9.559s
+# user	0m9.124s
+# sys	0m0.580s
 #-------------------------------
 # old stuff
 b53:
