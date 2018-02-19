@@ -2,10 +2,28 @@
 
 # @(#) $Id$
 # Copyright (c) 2017 Georg Fischer
+# 2018-02-19: parse path descriptions
 # 2017-08-17
 all:
-	perl a220952.pl
-
+	echo please use a specific makefile target
+#-------------------------------
+# A220925 - Knuth's matrix
+# compare results of path generation from syntax description with Mathar's b-files
+pdesc: pdesc5
+pdesc3:
+	perl Kn_syntax.pl 3 | perl parse.pl > $@.pd.tmp
+	tail -2 $@.pd.tmp | perl vector_b-file.pl > $@.bf.tmp
+	diff -w -C0 mathar.125.txt $@.bf.tmp
+pdesc4:
+	perl Kn_syntax.pl 4 | perl parse.pl > $@.pd.tmp
+	tail -2 $@.pd.tmp | perl vector_b-file.pl > $@.bf.tmp
+	diff -w -C0 mathar.625.txt $@.bf.tmp
+pdesc5:
+	perl Kn_syntax.pl 5 | perl parse.pl > $@.pd.tmp
+	tail -2 $@.pd.tmp | perl vector_b-file.pl > $@.bf.tmp
+	diff -w -C0 mathar.3125.txt $@.bf.tmp
+#-------------------------------
+# old stuff
 b53:
 	cut -b 6-8   b53.man  > b1.tmp
 	cut -b 48-50 b53.man >> b1.tmp
