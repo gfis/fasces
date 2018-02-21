@@ -3,6 +3,9 @@
 # Read path expressions for FASS curves and expand them into plain element vectors
 # @(#) $Id$
 # 2018-02-18, Georg Fischer
+# Program in the public domain
+# c.f. <http://www.teherba.org/index.php/OEIS/A220952>
+#
 # usage:
 #     perl gen_expr.pl n | perl expand_expr.pl
 #

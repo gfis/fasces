@@ -12,23 +12,23 @@ all:
 # compare results of expanded path expressions with Mathar's b-files
 pexpr: pexpr5
 pexpr3:
-	perl gen_expr.pl 3 | perl expand_expr.pl   > $@.pe.tmp
-	tail -2 $@.pe.tmp  | perl vector_b-file.pl > $@.bf.tmp
+	perl gen_expr.pl 3 Kn | perl expand_expr.pl   > $@.pe.tmp
+	tail -2 $@.pe.tmp     | perl vector_b-file.pl > $@.bf.tmp
 	diff -w -C0  mathar.125.txt $@.bf.tmp
 pexpr4:
-	perl gen_expr.pl 4 | perl expand_expr.pl   > $@.pe.tmp
-	tail -2 $@.pe.tmp  | perl vector_b-file.pl > $@.bf.tmp
+	perl gen_expr.pl 4 Kn | perl expand_expr.pl   > $@.pe.tmp
+	tail -2 $@.pe.tmp     | perl vector_b-file.pl > $@.bf.tmp
 	diff -w -C0  mathar.625.txt $@.bf.tmp
 pexpr5:
-	perl gen_expr.pl 5 | perl expand_expr.pl   > $@.pe.tmp
-	tail -2 $@.pe.tmp  | perl vector_b-file.pl > $@.bf.tmp
+	perl gen_expr.pl 5 Kn | perl expand_expr.pl   > $@.pe.tmp
+	tail -2 $@.pe.tmp     | perl vector_b-file.pl > $@.bf.tmp
 	diff -w -C0 mathar.3125.txt $@.bf.tmp
 #-------------------------------
 # the millionth element is 132332103(5) = 667778(10)
 # 5     6      7      8       9        10      <- exponents 
 # 3125, 15625, 78125, 390625, 1953125, 9765625 <- powers of 5
 pexpr9:
-	perl gen_expr.pl 9 | tee $@.ps.tmp
+	perl gen_expr.pl 9 Kn | tee $@.ps.tmp
 	perl expand_expr.pl $@.ps.tmp > $@.pd.tmp
 	tail -2 $@.pd.tmp  | perl vector_b-file.pl \
 	| head -n 1000003  | tail -4
@@ -43,6 +43,63 @@ pexpr9:
 # real	0m9.559s
 # user	0m9.124s
 # sys	0m0.580s
+single:
+	perl gen_expr.pl -1000000
+	# Kn[1000000] 132332103(5)
+#-------------------------------
+# Fs adjacency matrix
+pfs3:
+	perl gen_expr.pl 3 Fs | perl expand_expr.pl   > $@.pe.tmp
+	tail -2 $@.pe.tmp     | perl vector_b-file.pl > $@.bf.tmp
+	perl gen_meander.pl  -i Fs -f -l 125 -b 5 -p "0,1,2,3,4,9,14,19,18,13,8,7,12,17,16,11,6,5,10,15,20,21,22,23,24" \
+		> $@.gm.tmp
+	diff -C1 -w $@.bf.tmp $@.gm.tmp
+pfs5:
+	perl gen_expr.pl 5 Fs | perl expand_expr.pl   > $@.pe.tmp
+	tail -2 $@.pe.tmp     | perl vector_b-file.pl > $@.bf.tmp
+	perl gen_meander.pl  -i Fs -f -l 3125 -b 5 -p "0,1,2,3,4,9,14,19,18,13,8,7,12,17,16,11,6,5,10,15,20,21,22,23,24" \
+		> $@.gm.tmp
+	diff -C1 -w $@.bf.tmp $@.gm.tmp
+#-------------------------------
+paths:
+	perl gen_paths.pl | tee paths.5.txt
+paths3:
+	perl gen_paths.pl -b 3 | tee paths.3.txt
+meander: meander5
+meander5:
+	perl -w gen_paths.pl  | grep " path=" | sed -e "s/ *path=//" \
+	| xargs  -l -iqqq \
+	perl -w gen_meander.pl  -l 3125 -p qqq | tee meander.3125.tmp
+meander2:
+	perl -w gen_paths.pl -r -b 2 | grep " path=" | sed -e "s/ *path=//" \
+	| xargs  -l -iqqq \
+	perl -w gen_meander.pl  -b 2 -l 1024 -p qqq | tee meander.3.tmp
+meander3:
+	perl -w gen_paths.pl -r -b 3 | grep " path=" | sed -e "s/ *path=//" \
+	| xargs  -l -iqqq \
+	perl -w gen_meander.pl  -b 3 -l 59049 -p qqq | tee meander.3.tmp
+meander4:
+	perl -w gen_paths.pl -r -b 4 | grep " path=" | sed -e "s/ *path=//" \
+	| xargs  -l -iqqq \
+	perl -w gen_meander.pl  -b 4 -l 4096 -p qqq | tee meander.4.tmp
+mea0:
+	perl gen_meander.pl -l 24 -b 5 -p "0,1,2,3,4,9,14,19,18,17,16,11,12,13,8,7,6,5,10,15,20,21,22,23,24"\
+	| tee meander.25.tmp
+#	perl gen_meander.pl -l 625 | tee meander.625.tmp
+mea47:
+	perl gen_meander.pl -l 125 -b 5 -f -p "0,1,2,3,4,9,8,7,6,5,10,15,20,21,16,11,12,17,22,23,18,13,14,19,24" \
+	| tee meander.47.tmp
+#-------------------------------
+rebase:
+	perl -w b-file_rebase.pl -f 16 -t 4 b-file_rebase.test.txt | tee b4.tmp
+	perl -w b-file_rebase.pl -f 4       b4.tmp 
+	perl -w b-file_rebase.pl            b4.tmp 
+mathar:
+	perl -w b-file_rebase.pl -f 10 -t 5 -z mathar.txt | grep -vE "^#" | head -63 | tee mathar5.tmp
+	perl mirror5.pl mathar5.tmp | tee mathar125.tmp
+	perl b-file_rebase.pl -f 5 -t 10 mathar125.tmp > m1.tmp
+	perl mathar.pl 125 > m2.tmp
+	diff -w m1.tmp m2.tmp
 #-------------------------------
 # old stuff
 b53:
@@ -110,124 +167,86 @@ gen2z:
 	uniq -c g2.tmp | grep -v " 2 "
 vertex:
 	perl vertex.pl -m 5 gen2z.tmpq	
-rebase:
-	perl -w b-file_rebase.pl -f 16 -t 4 b-file_rebase.test.txt | tee b4.tmp
-	perl -w b-file_rebase.pl -f 4       b4.tmp 
-	perl -w b-file_rebase.pl            b4.tmp 
-mathar:
-	perl -w b-file_rebase.pl -f 10 -t 5 -z mathar.txt | grep -vE "^#" | head -63 | tee mathar5.tmp
-	perl mirror5.pl mathar5.tmp | tee mathar125.tmp
-	perl b-file_rebase.pl -f 5 -t 10 mathar125.tmp > m1.tmp
-	perl mathar.pl 125 > m2.tmp
-	diff -w m1.tmp m2.tmp
-#------------------------
-paths:
-	perl gen_paths.pl | tee paths.5.txt
-paths3:
-	perl gen_paths.pl -b 3 | tee paths.3.txt
-meander: meander5
-meander5:
-	perl -w gen_paths.pl  | grep " path=" | sed -e "s/ *path=//" \
-	| xargs  -l -iqqq \
-	perl -w gen_meander.pl  -l 3125 -p qqq | tee meander.3125.tmp
-meander2:
-	perl -w gen_paths.pl -r -b 2 | grep " path=" | sed -e "s/ *path=//" \
-	| xargs  -l -iqqq \
-	perl -w gen_meander.pl  -b 2 -l 1024 -p qqq | tee meander.3.tmp
-meander3:
-	perl -w gen_paths.pl -r -b 3 | grep " path=" | sed -e "s/ *path=//" \
-	| xargs  -l -iqqq \
-	perl -w gen_meander.pl  -b 3 -l 59049 -p qqq | tee meander.3.tmp
-meander4:
-	perl -w gen_paths.pl -r -b 4 | grep " path=" | sed -e "s/ *path=//" \
-	| xargs  -l -iqqq \
-	perl -w gen_meander.pl  -b 4 -l 4096 -p qqq | tee meander.4.tmp
-mea0:
-	perl gen_meander.pl -l 24 -b -p "0,1,2,3,4,9,14,19,18,17,16,11,12,13,8,7,6,5,10,15,20,21,22,23,24" \
-	| tee meander.25.tmp
-#	perl gen_meander.pl -l 625 | tee meander.625.tmp
-mea47:
-	perl gen_meander.pl -l 125 -b -p "0,1,2,3,4,9,8,7,6,5,10,15,20,21,16,11,12,17,22,23,18,13,14,19,24" \ 
-	| tee meander.47.tmp
 #-------------------------------
 # Generate SVG for n = 0..625
 svg6: Fs6 Kn6 Ls6 Ln6 nn6 nI6
 
 Fs:
-	perl gen_meander.pl  -i Fs -l 124 -b -p "0,1,2,3,4,9,14,19,18,13,8,7,12,17,16,11,6,5,10,15,20,21,22,23,24" \
+	perl gen_meander.pl  -i Fs -l 124 -b 5 -p "0,1,2,3,4,9,14,19,18,13,8,7,12,17,16,11,6,5,10,15,20,21,22,23,24" \
 	                      > Fs.tmp
 	grep -vE "[\<\=\@]"     Fs.tmp \
 	| perl b5_svg.pl -m 5 > Fs.svg
 Fs6:
-	perl gen_meander.pl  -i Fs -l 624 -b -p "0,1,2,3,4,9,14,19,18,13,8,7,12,17,16,11,6,5,10,15,20,21,22,23,24" \
+	perl gen_meander.pl  -i Fs -l 624 -b 5 -p "0,1,2,3,4,9,14,19,18,13,8,7,12,17,16,11,6,5,10,15,20,21,22,23,24" \
 	                      > Fs6.tmp
 	grep -vE "[\<\=\@]"     Fs6.tmp \
 	| perl b5_svg.pl -m 5 > Fs6.svg
 Kn:
-	perl gen_meander.pl  -i Kn -l 124 -b -p "0,1,2,3,4,9,14,19,18,17,16,11,12,13,8,7,6,5,10,15,20,21,22,23,24" \
+	perl gen_meander.pl  -i Kn -l 124 -b 5 -p "0,1,2,3,4,9,14,19,18,17,16,11,12,13,8,7,6,5,10,15,20,21,22,23,24" \
 	                      > Kn.tmp
 	grep -vE "[\<\=\@]"     Kn.tmp \
 	| perl b5_svg.pl -m 5 > Kn.svg
 Kn6:
-	perl gen_meander.pl  -i Kn -l 624 -b -p "0,1,2,3,4,9,14,19,18,17,16,11,12,13,8,7,6,5,10,15,20,21,22,23,24" \
+	perl gen_meander.pl  -i Kn -l 624 -b 5 -p "0,1,2,3,4,9,14,19,18,17,16,11,12,13,8,7,6,5,10,15,20,21,22,23,24" \
 	                      > Kn6.tmp
 	grep -vE "[\<\=\@]"     Kn6.tmp \
 	| perl b5_svg.pl -m 5 > Kn6.svg
 Ls6:
-	perl gen_meander.pl  -i Ls -l 624 -b -p "0,1,2,3,4,9,8,7,6,5,10,15,20,21,16,11,12,17,22,23,18,13,14,19,24" \
+	perl gen_meander.pl  -i Ls -l 624 -b 5 -p "0,1,2,3,4,9,8,7,6,5,10,15,20,21,16,11,12,17,22,23,18,13,14,19,24" \
 	                      > Ls6.tmp
 	grep -vE "[\<\=\@]"     Ls6.tmp \
 	| perl b5_svg.pl -m 5 > Ls6.svg
 Ln6:
-	perl gen_meander.pl  -i Ln -l 624 -b -p "0,1,2,3,4,9,8,7,6,5,10,15,20,21,16,11,12,13,14,19,18,17,22,23,24" \
+	perl gen_meander.pl  -i Ln -l 624 -b 5 -p "0,1,2,3,4,9,8,7,6,5,10,15,20,21,16,11,12,13,14,19,18,17,22,23,24" \
 	                      > Ln6.tmp
 	grep -vE "[\<\=\@]"     Ln6.tmp \
 	| perl b5_svg.pl -m 5 > Ln6.svg
 nn6:
-	perl gen_meander.pl  -i nn -l 624 -b -p "0,1,2,7,6,5,10,11,12,17,16,15,20,21,22,23,18,13,8,3,4,9,14,19,24" \
+	perl gen_meander.pl  -i nn -l 624 -b 5 -p "0,1,2,7,6,5,10,11,12,17,16,15,20,21,22,23,18,13,8,3,4,9,14,19,24" \
 	                      > nn6.tmp
 	grep -vE "[\<\=\@]"     nn6.tmp \
 	| perl b5_svg.pl -m 5 > nn6.svg
 nI6:
-	perl gen_meander.pl  -i nI -l 624 -b -p "0,1,2,7,6,5,10,11,12,13,8,3,4,9,14,19,18,17,16,15,20,21,22,23,24" \
+	perl gen_meander.pl  -i nI -l 624 -b 5 -p "0,1,2,7,6,5,10,11,12,13,8,3,4,9,14,19,18,17,16,15,20,21,22,23,24" \
 	                      > nI6.tmp
 	grep -vE "[\<\=\@]"     nI6.tmp \
 	| perl b5_svg.pl -m 5 > nI6.svg
 #------------------------------------
 flatKn:
-	perl gen_meander.pl -l 125        -b -p "0,1,2,3,4,9,14,19,18,17,16,11,12,13,8,7,6,5,10,15,20,21,22,23,24" \
+	perl gen_meander.pl -l 125        -b 5 -p "0,1,2,3,4,9,14,19,18,17,16,11,12,13,8,7,6,5,10,15,20,21,22,23,24" \
 	> flatKn1.tmp
 	perl flatten.pl -d 0 flatKn1.tmp | tee flatKn2.tmp 
 flatFs:
-	perl gen_meander.pl -l 125        -b -p "0,1,2,3,4,9,14,19,18,13,8,7,12,17,16,11,6,5,10,15,20,21,22,23,24" \
+	perl gen_meander.pl -l 125        -b 5 -p "0,1,2,3,4,9,14,19,18,13,8,7,12,17,16,11,6,5,10,15,20,21,22,23,24" \
 	> flatFs1.tmp
 	perl flatten.pl -d 0 flatFs1.tmp | tee flatFs2.tmp 
 #------------------------------------
 # JavaScript preparation
 Knjs:	
-	perl gen_meander.pl  -i Kn -l 124 -b -p "0,1,2,3,4,9,14,19,18,17,16,11,12,13,8,7,6,5,10,15,20,21,22,23,24" \
+	perl gen_meander.pl  -i Kn -l 124 -b 5 -p "0,1,2,3,4,9,14,19,18,17,16,11,12,13,8,7,6,5,10,15,20,21,22,23,24" \
 	                      > Kn.tmp
 	grep -vE "[\<\=\@]"     Kn.tmp \
 	| grep -E "[0-9]" \
 	| cut -d " " -f 2 \
 	| sed -e "s/^/,/g" \
-	| tee Kn.tmp
+	| tee $@.tmp
 Fsjs:	
-	perl gen_meander.pl  -i Fs -l 124 -b -p "0,1,2,3,4,9,14,19,18,13,8,7,12,17,16,11,6,5,10,15,20,21,22,23,24" \
+	perl gen_meander.pl  -i Fs -l 124 -b 5 -f -p "0,1,2,3,4,9,14,19,18,13,8,7,12,17,16,11,6,5,10,15,20,21,22,23,24" \
 	                      > Fs.tmp
 	grep -vE "[\<\=\@]"     Fs.tmp \
 	| grep -E "[0-9]" \
 	| cut -d " " -f 2 \
 	| sed -e "s/^/,/g" \
-	| tee Fs.tmp
+	| perl -Ep "s/\\n//"\
+	| tee $@.tmp
 Fujs:	
-	perl gen_meander.pl  -i Fu -l 124 -b -p "0,1,2,3,4,9,8,7,6,5,10,15,20,21,16,11,12,17,22,23,18,13,14,19,24" \
+	perl gen_meander.pl  -i Fu -l 124 -b 5 -p "0,1,2,3,4,9,8,7,6,5,10,15,20,21,16,11,12,17,22,23,18,13,14,19,24" \
 	                      > Fu.tmp
 	grep -vE "[\<\=\@]"     Fu.tmp \
 	| grep -E "[0-9]" \
 	| cut -d " " -f 2 \
 	| sed -e "s/^/,/g" \
-	| tee Fu.tmp
+	| tee $@.tmp
 	
 proof1:
 	perl gen_meander.pl -p "0,1,2,5,4,3,6,7,8" -b 3 -l 81 -f | tee r3.tmp
