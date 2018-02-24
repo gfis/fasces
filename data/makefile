@@ -51,16 +51,27 @@ single:
 pfs3:
 	perl gen_expr.pl 3 Fs | perl expand_expr.pl   > $@.pe.tmp
 	tail -2 $@.pe.tmp     | perl vector_b-file.pl > $@.bf.tmp
-	perl gen_meander.pl  -i Fs -f -l 125 -b 5 -p "0,1,2,3,4,9,14,19,18,13,8,7,12,17,16,11,6,5,10,15,20,21,22,23,24" \
+	perl gen_meander.pl  -i Fs -f -l 125 -b 5 -p "0,1,2,3,4,9,14,19,18,13,8,7,12,17,16,11,6,5,10,15,20,21,22,23,24"\
 		> $@.gm.tmp
 	diff -C1 -w $@.bf.tmp $@.gm.tmp
 pfs5:
 	perl gen_expr.pl 5 Fs | perl expand_expr.pl   > $@.pe.tmp
 	tail -2 $@.pe.tmp     | perl vector_b-file.pl > $@.bf.tmp
-	perl gen_meander.pl  -i Fs -f -l 3125 -b 5 -p "0,1,2,3,4,9,14,19,18,13,8,7,12,17,16,11,6,5,10,15,20,21,22,23,24" \
+	perl gen_meander.pl  -i Fs -f -l 3125 -b 5 -p "0,1,2,3,4,9,14,19,18,13,8,7,12,17,16,11,6,5,10,15,20,21,22,23,24"\
 		> $@.gm.tmp
 	diff -C1 -w $@.bf.tmp $@.gm.tmp
 #-------------------------------
+# partial 12222...
+pr75:
+	perl gen_meander.pl  -i r7 -f -l 3125 -b 5 -p "0,1,2,7,12,17,16,11,6,5,10,15,20,21,22,23,18,13,8,3,4,9,14,19,24"\
+		> $@.gm.tmp
+#-------------------------------
+pls5a:
+	perl gen_expr.pl 5 Fs | perl expand_expr.pl   > $@.pe.tmp
+	tail -2 $@.pe.tmp     | perl vector_b-file.pl > $@.bf.tmp
+pls5:
+	perl gen_meander.pl  -i Ls -f -l 3125 -b 5 -p ="0,1,2,3,4,9,8,7,6,5,10,15,20,21,16,11,12,17,22,23,18,13,14,19,24"\
+		> $@.gm.tmp
 paths:
 	perl gen_paths.pl | tee paths.5.txt
 paths3:
@@ -250,4 +261,3 @@ Fujs:
 	
 proof1:
 	perl gen_meander.pl -p "0,1,2,5,4,3,6,7,8" -b 3 -l 81 -f | tee r3.tmp
-	
