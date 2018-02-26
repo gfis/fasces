@@ -52,7 +52,7 @@ while ($k <= $n) {
     $busy = 1;
     if (0) {
     } elsif ($rule == 1 or $rule == 2) { # for A131388, A257705 et al.
-	    $dk = -1; # start downwards
+        $dk = -1; # start downwards
         if ($rule == 2 and $dkm1 < 0) { # for A131393 et al.
             $dk = $dkm1 - 1;
         }
@@ -75,29 +75,32 @@ while ($k <= $n) {
                 $dk ++;
             }
         } # while upwards
+
     } elsif ($rule == 3) { # for A257905, 908
-	    $dk = -1; # start downwards
-        while ($busy == 1 and $dk > $s - $akm1) { # downwards
+    	# print "$k $akm1 dk=$dkm1\n";
+        $dk = $s - $akm1 + 1; # start upwards in negative
+        while ($busy == 1 and $dk < 0) { 
             $ak = $akm1 + $dk;
             if (!defined($aset{$ak}) and !defined($dset{$dk} and $ak>0)) {
                 $busy=0; $aset{$ak} = $k;         $dset{$dk}=$k;
             } else {
-                $dk --;
+                $dk ++;
             }
-        } # while downwards
+        } # while negative
         if ($busy == 1) {
             $dk = +1; # start upwards
         }
         while ($busy == 1                     ) { # upwards
             $ak = $akm1 + $dk;
-            if (!defined($aset{$ak}) and !defined($dset{$dk}          )) {
-                $busy=0; $aset{$ak} = $k;         $dset{$dk}=$k;
+            if (!defined($aset{$akm1 - $dk}) and !defined($dset{$dk}          )) {
+                $busy=0; $aset{$ak        } = $k;         $dset{$dk}=$k;
             } else {
                 $dk ++;
             }
         } # while upwards
+
     } elsif ($rule == 4) { # "Algorithm" for A257883 et al.
-    	$dk = $s - $ak + 1;
+        $dk = $s - $ak + 1;
         while ($busy == 1                      ) { # upwards
             $ak = $akm1 + $dk;
             if (!defined($aset{$ak}) and !defined($dset{$dk} and $ak>0)) {
@@ -121,7 +124,7 @@ while ($k <= $n) {
 if ($op !~ m{ak|dk}) { # output of operations other than "ak", "dk"
     my @ainv = sort(map { $_ = sprintf("%06d %d", $_, $aset{$_}); $_ } keys(%aset));
     my @dpos = sort(map { $_ = sprintf("%06d %d", $dset{$_}, $_); $_ } keys(%dset));
-    my $temp = shift(@dpos); # accounts for positions "-1"
+    # my $temp = shift(@dpos); # accounts for positions "-1"
     # print join("\n", @dpos) . "\n";
     if (0) {
     } elsif ($op =~ m{in}) {
@@ -136,12 +139,12 @@ if ($op !~ m{ak|dk}) { # output of operations other than "ak", "dk"
             }
             $k ++;
         } # while $k
-    } elsif ($op =~ m{cp|dp}) {
+    } elsif ($op =~ m{cp|dp|c0|d0}) {
         my $k = 0;
         print join("", map { my ($j, $dj) = split(/\s+/); 
                 $j = ($op =~ m{\Ac}) ? $j - 1 : $j + 0; 
                 $_ = "";
-                if ($dj >= 0) {
+                if ($dj > (($op =~ m{0}) ? -1 : 0)) {
                     $k ++;
                     $_ = "$k $j\n";
                 }

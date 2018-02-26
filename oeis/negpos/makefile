@@ -6,6 +6,7 @@
 # 2018-02-23, Georg Fischer
 # 
 TARGET=negpos
+LIMIT=2000
 
 all: rule1 rule2 rule3 rule4
 #----------------------------------------------------------------
@@ -13,20 +14,20 @@ all: rule1 rule2 rule3 rule4
 rule1: np131388 np257705 np257879 np257905
 np131388: 131388
 131388: 131389 175007 175008 131390 131391 131392 
-	make $(TARGET) RULE=1 S=1 NOEIS=$@ LEN=1000 OPER=ak A1=1 D1=0
+	make $(TARGET) RULE=1 S=1 NOEIS=$@ LEN=$(LIMIT) OPER=ak A1=1 D1=0
 131389: 
-	make $(TARGET) RULE=1 S=1 NOEIS=$@ LEN=1000 OPER=dk A1=1 D1=0
+	make $(TARGET) RULE=1 S=1 NOEIS=$@ LEN=$(LIMIT) OPER=dk A1=1 D1=0
 175007:
-	make $(TARGET) RULE=1 S=1 NOEIS=$@ LEN=1000 OPER=dp A1=1 D1=0
+	make $(TARGET) RULE=1 S=1 NOEIS=$@ LEN=$(LIMIT) OPER=d0 A1=1 D1=0
 175008:
-	make $(TARGET) RULE=1 S=1 NOEIS=$@ LEN=1000 OPER=dn A1=1 D1=0
+	make $(TARGET) RULE=1 S=1 NOEIS=$@ LEN=$(LIMIT) OPER=dn A1=1 D1=0
 131390:
-	make $(TARGET) RULE=1 S=1 NOEIS=$@ LEN=1000 OPER=in A1=1 D1=0
+	make $(TARGET) RULE=1 S=1 NOEIS=$@ LEN=$(LIMIT) OPER=in A1=1 D1=0
 	# last 11 lines of b-file are wrong
 131391:
-	make $(TARGET) RULE=1 S=1 NOEIS=$@ LEN=1000 OPER=cp A1=1 D1=0
+	make $(TARGET) RULE=1 S=1 NOEIS=$@ LEN=$(LIMIT) OPER=cp A1=1 D1=0
 131392:
-	make $(TARGET) RULE=1 S=1 NOEIS=$@ LEN=1000 OPER=cn A1=1 D1=0
+	make $(TARGET) RULE=1 S=1 NOEIS=$@ LEN=$(LIMIT) OPER=cn A1=1 D1=0
 #--------
 # from A257705:
 # a(1)  d(1)      (a(n))             (d(n))
@@ -42,45 +43,45 @@ np131388: 131388
 # Rule 1: Step 1 downwards, Step 2 upwards
 np257705: 257705 257876 257877 257915 257878
 257705:
-	make $(TARGET) RULE=1 S=1 NOEIS=$@ LEN=1000 OPER=ak A1=0 D1=0
+	make $(TARGET) RULE=1 S=1 NOEIS=$@ LEN=$(LIMIT) OPER=ak A1=0 D1=0
 257876:
-	make $(TARGET) RULE=1 S=1 NOEIS=$@ LEN=1000 OPER=ak A1=0 D1=2
+	make $(TARGET) RULE=1 S=1 NOEIS=$@ LEN=$(LIMIT) OPER=ak A1=0 D1=2
 257877:
-	make $(TARGET) RULE=1 S=1 NOEIS=$@ LEN=1000 OPER=ak A1=0 D1=3
+	make $(TARGET) RULE=1 S=1 NOEIS=$@ LEN=$(LIMIT) OPER=ak A1=0 D1=3
 257915:
-	make $(TARGET) RULE=1 S=1 NOEIS=$@ LEN=1000 OPER=dk A1=0 D1=3
+	make $(TARGET) RULE=1 S=1 NOEIS=$@ LEN=$(LIMIT) OPER=dk A1=0 D1=3
 257878:
-	make $(TARGET) RULE=1 S=1 NOEIS=$@ LEN=1000 OPER=ak A1=1 D1=1
+	make $(TARGET) RULE=1 S=1 NOEIS=$@ LEN=$(LIMIT) OPER=ak A1=1 D1=1
 #--------
 np257879: 257706 257879 257880 257881 257882 257918
 # wrong descriptions with S=1 instead of 0
 257706:
-	make $(TARGET) RULE=1 S=0 NOEIS=$@ LEN=1000 OPER=ak A1=0 D1=1
+	make $(TARGET) RULE=1 S=0 NOEIS=$@ LEN=$(LIMIT) OPER=ak A1=0 D1=1
 257879:
-	make $(TARGET) RULE=1 S=0 NOEIS=$@ LEN=1000 OPER=ak A1=2 D1=0
+	make $(TARGET) RULE=1 S=0 NOEIS=$@ LEN=$(LIMIT) OPER=ak A1=2 D1=0
 257880:
-	make $(TARGET) RULE=1 S=0 NOEIS=$@ LEN=1000 OPER=dk A1=2 D1=0
+	make $(TARGET) RULE=1 S=0 NOEIS=$@ LEN=$(LIMIT) OPER=dk A1=2 D1=0
 257881:
-	make $(TARGET) RULE=1 S=0 NOEIS=$@ LEN=1000 OPER=ak A1=2 D1=1
+	make $(TARGET) RULE=1 S=0 NOEIS=$@ LEN=$(LIMIT) OPER=ak A1=2 D1=1
 257882:
-	make $(TARGET) RULE=1 S=0 NOEIS=$@ LEN=1000 OPER=ak A1=2 D1=2
+	make $(TARGET) RULE=1 S=0 NOEIS=$@ LEN=$(LIMIT) OPER=ak A1=2 D1=2
 257918:
-	make $(TARGET) RULE=1 S=0 NOEIS=$@ LEN=1000 OPER=dk A1=2 D1=2
+	make $(TARGET) RULE=1 S=0 NOEIS=$@ LEN=$(LIMIT) OPER=dk A1=2 D1=2
 #----------------------------------------------------------------
 rule2: np131393
 # Rule 2 like Rule 1 with different start of $dk
 np131393: 131393 131394 131395 131396 131397
 131393:
-	make $(TARGET) RULE=2 S=1 NOEIS=$@ LEN=200 OPER=ak A1=1 D1=0
+	make $(TARGET) RULE=2 S=1 NOEIS=$@ LEN=$(LIMIT) OPER=ak A1=1 D1=0
 131394: 
-	make $(TARGET) RULE=2 S=1 NOEIS=$@ LEN=200 OPER=dk A1=1 D1=0
+	make $(TARGET) RULE=2 S=1 NOEIS=$@ LEN=$(LIMIT) OPER=dk A1=1 D1=0
 131395:
-	make $(TARGET) RULE=2 S=1 NOEIS=$@ LEN=200 OPER=in A1=1 D1=0
+	make $(TARGET) RULE=2 S=1 NOEIS=$@ LEN=$(LIMIT) OPER=in A1=1 D1=0
 	# last 8 lines of b-file are wrong
 131396:
-	make $(TARGET) RULE=2 S=1 NOEIS=$@ LEN=200 OPER=cp A1=1 D1=0
+	make $(TARGET) RULE=2 S=1 NOEIS=$@ LEN=$(LIMIT) OPER=cp A1=1 D1=0
 131397:
-	make $(TARGET) RULE=2 S=1 NOEIS=$@ LEN=200 OPER=cn A1=1 D1=0
+	make $(TARGET) RULE=2 S=1 NOEIS=$@ LEN=$(LIMIT) OPER=cn A1=1 D1=0
 #----------------------------------------------------------------
 # Rule 3: 
 rule3:
@@ -88,50 +89,43 @@ rule3:
 #----------------------------------------------------------------
 # Rule 4: upwards from lowest
 rule4: np257883
-np257883: 257883 257884 257885 257903 175498 257905.411 257908.102 257910 257911  
+np257883: 257883 257884 257885 257903 175498 257905 175499 257908 257909 257910 257911  
 257883:
-	make $(TARGET) RULE=4 S=0 NOEIS=$@ LEN=1000 OPER=ak A1=0 D1=0
+	make $(TARGET) RULE=4 S=0 NOEIS=$@ LEN=$(LIMIT) OPER=ak A1=0 D1=0
 # A175499 except for first initial terms
 
 257884: 175499
-	make $(TARGET) RULE=4 S=0 NOEIS=$@ LEN=1000 OPER=ak A1=0 D1=1
+	make $(TARGET) RULE=4 S=0 NOEIS=$@ LEN=$(LIMIT) OPER=ak A1=0 D1=1
 175499:
-	make $(TARGET) RULE=4 S=0 NOEIS=$@ LEN=1000 OPER=dk A1=0 D1=1
+	make $(TARGET) RULE=4 S=0 NOEIS=$@ LEN=$(LIMIT) OPER=dk A1=0 D1=1
 
 257885: 257902
-	make $(TARGET) RULE=4 S=0 NOEIS=$@ LEN=1000 OPER=ak A1=0 D1=2
+	make $(TARGET) RULE=4 S=0 NOEIS=$@ LEN=$(LIMIT) OPER=ak A1=0 D1=2
 257902:
-	make $(TARGET) RULE=4 S=0 NOEIS=$@ LEN=1000 OPER=dk A1=0 D1=2
+	make $(TARGET) RULE=4 S=0 NOEIS=$@ LEN=$(LIMIT) OPER=dk A1=0 D1=2
 
 257903: 257904
-	make $(TARGET) RULE=4 S=0 NOEIS=$@ LEN=1000 OPER=ak A1=0 D1=3
+	make $(TARGET) RULE=4 S=0 NOEIS=$@ LEN=$(LIMIT) OPER=ak A1=0 D1=3
 257904:
-	make $(TARGET) RULE=4 S=0 NOEIS=$@ LEN=1000 OPER=dk A1=0 D1=3
+	make $(TARGET) RULE=4 S=0 NOEIS=$@ LEN=$(LIMIT) OPER=dk A1=0 D1=3
 
 175498:
-	make $(TARGET) RULE=4 S=0 NOEIS=$@ LEN=1000 OPER=ak A1=1 D1=0
+	make $(TARGET) RULE=4 S=0 NOEIS=$@ LEN=$(LIMIT) OPER=ak A1=1 D1=0
 # A175499 except for first term 
 
-257905.411: 175499.411
-	make $(TARGET) RULE=4 S=0 NOEIS=257905 LEN=1000 OPER=ak A1=1 D1=1
-175499.411:
-	make $(TARGET) RULE=4 S=0 NOEIS=175499 LEN=1000 OPER=dk A1=1 D1=1
-
 257908: 257909
-	make $(TARGET) RULE=4 S=0 NOEIS=$@ LEN=1000 OPER=ak A1=2 D1=0
+	make $(TARGET) RULE=3 S=0 NOEIS=$@ LEN=$(LIMIT) OPER=ak A1=0 D1=2
 257909:
-	make $(TARGET) RULE=4 S=0 NOEIS=$@ LEN=1000 OPER=dk A1=2 D1=0
+	make $(TARGET) RULE=3 S=0 NOEIS=$@ LEN=$(LIMIT) OPER=dk A1=0 D1=2
 
-257910: 257909.421
-	make $(TARGET) RULE=4 S=0 NOEIS=$@ LEN=1000 OPER=ak A1=2 D1=1
-257909.421:
-	# make $(TARGET) RULE=4 S=0 NOEIS=257909 LEN=1000 OPER=dk A1=2 D1=1
-	# except for initial terms
+257910: 
+	make $(TARGET) RULE=3 S=0 NOEIS=$@ LEN=$(LIMIT) OPER=ak A1=0 D1=3
+# A257909 except for initial terms
 
 257911: 257912
-	make $(TARGET) RULE=4 S=0 NOEIS=$@ LEN=1000 OPER=ak A1=2 D1=2
+	make $(TARGET) RULE=4 S=0 NOEIS=$@ LEN=$(LIMIT) OPER=ak A1=2 D1=2
 257912:
-	make $(TARGET) RULE=4 S=0 NOEIS=$@ LEN=1000 OPER=dk A1=2 D1=2
+	make $(TARGET) RULE=4 S=0 NOEIS=$@ LEN=$(LIMIT) OPER=dk A1=2 D1=2
 
 # from A257883:
 # a(1)   d(1)    (a(n))       (d(n))
@@ -149,62 +143,49 @@ np257905: \
 	257905      258047 \
 	257906      257907 \
 	257908      257909 \
-	257910.103  257980 \
-	258046      258047.110 \
+	257910      257980 \
+	258046      258047 \
 	257981      257982 \
 	257983      257909 \
-	257985      258047.120 \
+	257985      258047 \
 	257986      257982 \
-	257987      257909.122
+	257987      257909
 257905: 258047
-	make $(TARGET) RULE=1 S=1 NOEIS=$@ LEN=1000 OPER=ak A1=0 D1=0
+	make $(TARGET) RULE=3 S=1 NOEIS=$@ LEN=$(LIMIT) OPER=ak A1=0 D1=0
 258047:
-	make $(TARGET) RULE=1 S=1 NOEIS=$@ LEN=1000 OPER=dk A1=0 D1=0
+	make $(TARGET) RULE=3 S=1 NOEIS=$@ LEN=$(LIMIT) OPER=dk A1=1 D1=0
 
 257906: 257907
-	make $(TARGET) RULE=1 S=1 NOEIS=$@ LEN=1000 OPER=ak A1=0 D1=1
+	make $(TARGET) RULE=3 S=1 NOEIS=$@ LEN=$(LIMIT) OPER=ak A1=0 D1=1
 257907:
-	make $(TARGET) RULE=1 S=1 NOEIS=$@ LEN=1000 OPER=dk A1=0 D1=1
+	make $(TARGET) RULE=3 S=1 NOEIS=$@ LEN=$(LIMIT) OPER=dk A1=0 D1=1
 
-257908.102: 257909.102
-	make $(TARGET) RULE=1 S=1 NOEIS=257908 LEN=1000 OPER=ak A1=0 D1=2
-257909.102:
-	make $(TARGET) RULE=1 S=1 NOEIS=257909 LEN=1000 OPER=dk A1=0 D1=2
-
-257910.103: 257980
-	make $(TARGET) RULE=1 S=1 NOEIS=257910 LEN=1000 OPER=ak A1=0 D1=3
 257980:
-	make $(TARGET) RULE=1 S=1 NOEIS=$@ LEN=1000 OPER=dk A1=0 D1=3
+	make $(TARGET) RULE=3 S=1 NOEIS=$@ LEN=$(LIMIT) OPER=dk A1=0 D1=3
 
-258046: 258047.110
-	make $(TARGET) RULE=1 S=1 NOEIS=$@ LEN=1000 OPER=ak A1=1 D1=0
-258047.110:
-	make $(TARGET) RULE=1 S=1 NOEIS=258047 LEN=1000 OPER=dk A1=1 D1=0
+258046: 258047
+	make $(TARGET) RULE=3 S=1 NOEIS=$@ LEN=$(LIMIT) OPER=ak A1=1 D1=0
 
 257981: 257982
-	make $(TARGET) RULE=1 S=1 NOEIS=$@ LEN=1000 OPER=ak A1=1 D1=1
+	make $(TARGET) RULE=3 S=1 NOEIS=$@ LEN=$(LIMIT) OPER=ak A1=1 D1=1
 257982:
-	make $(TARGET) RULE=1 S=1 NOEIS=$@ LEN=1000 OPER=dk A1=1 D1=1
+	make $(TARGET) RULE=3 S=1 NOEIS=$@ LEN=$(LIMIT) OPER=dk A1=1 D1=1
 
-257983: 257909.112
-	make $(TARGET) RULE=1 S=1 NOEIS=$@ LEN=1000 OPER=ak A1=1 D1=2
-257909.112:
-	make $(TARGET) RULE=1 S=1 NOEIS=257909 LEN=1000 OPER=dk A1=1 D1=2
+257983: 
+	make $(TARGET) RULE=3 S=1 NOEIS=$@ LEN=$(LIMIT) OPER=ak A1=1 D1=2
+# 257909.112:
 
-257985: 258047.120
-	make $(TARGET) RULE=1 S=1 NOEIS=$@ LEN=1000 OPER=ak A1=2 D1=0
-258047.120:
-	make $(TARGET) RULE=1 S=1 NOEIS=258047 LEN=1000 OPER=dk A1=2 D1=0
+257985: 
+	make $(TARGET) RULE=3 S=1 NOEIS=$@ LEN=$(LIMIT) OPER=ak A1=2 D1=0
+# 258047
 
-257986: 257982.121
-	make $(TARGET) RULE=1 S=1 NOEIS=$@ LEN=1000 OPER=ak A1=2 D1=1
-257982.121:
-	make $(TARGET) RULE=1 S=1 NOEIS=257982 LEN=1000 OPER=dk A1=2 D1=1
+257986: 257982
+	make $(TARGET) RULE=3 S=1 NOEIS=$@ LEN=$(LIMIT) OPER=ak A1=2 D1=1
+# 257982.121:
 
 257987:
-	make $(TARGET) RULE=1 S=1 NOEIS=$@ LEN=1000 OPER=ak A1=2 D1=2
-257909.122:
-	make $(TARGET) RULE=1 S=1 NOEIS=257909 LEN=1000 OPER=dk A1=2 D1=2
+	make $(TARGET) RULE=3 S=1 NOEIS=$@ LEN=$(LIMIT) OPER=ak A1=2 D1=2
+# 257909.122:
 
 # from A257905:
 # a(1)  d(1)      (a(n))       (d(n))
@@ -221,9 +202,10 @@ np257905: \
 #---------------------------------------------------------------
 negpos:
 	# -------------------------------------------------------
+	echo perl negpos.pl $(RULE) $(S) $(NOEIS) $(LEN) $(OPER) $(A1) $(D1)
 	test -s b$(NOEIS).txt || wget http://oeis.org/A$(NOEIS)/b$(NOEIS).txt
 	perl negpos.pl $(RULE) $(S) $(NOEIS) $(LEN) $(OPER) $(A1) $(D1) > A$(NOEIS).pn.tmp
-	grep -Ev "^ *#" b$(NOEIS).txt | head -n 30 > bf.tmp 
+	grep -Ev "^ *#" b$(NOEIS).txt | head -n $(LIMIT) > bf.tmp 
 	grep -Ev "^ *#" A$(NOEIS).pn.tmp | head -n `wc -l bf.tmp | cut -d " " -f 1` > pn.tmp
 #	diff -w -y                         --width=32  bf.tmp pn.tmp || :
 	diff -w -y --suppress-common-lines --width=32  bf.tmp pn.tmp || :
@@ -284,3 +266,10 @@ listing:
 	wc listing.tmp
 list1: 
 	echo $(NOEIS) Rule $(RULE).$(S)  $(OPER)  $(A1) $(D1)
+#----
+# e.g. https://oeis.org/search?q=id:A257908&fmt=text
+internal: Anoeis
+	cat Anoeis.tmp | xargs -l -i{} make intern1 ANOEIS={}
+intern1:
+	test -s $(ANOEIS).int || \
+	wget -O $(ANOEIS).int "http://oeis.org/search?q=id:$(ANOEIS)\&fmt=text" 
