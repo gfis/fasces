@@ -1,0 +1,53 @@
+A131388  (a(n))   Rule 1  a(1) = 1 and d(1) = 0.
+A131389  (d(n))   Rule 1 (see Comments) with a(1) = 1 and d(1) = 0.
+A131390 positive integers; inverse of  A131388.
+A131391 Positions of positive integers in A131389, minus 1.
+A131392 Positions of negative integers in A131389, minus 1.
+A131393 positive integers using Rule 2 with a(1)=1.
+A131394 integers using Rule 2 with A131393(1)=1.
+A131395 positive integers; inverse of  A131393.
+A131396 Positions of n-th positive integer in A131394, minus 1.
+A131397 Positions of negative integers in A131394, minus 1.
+A175007 Positions of nonnegative terms in A131389.
+A175008 Positions of negative terms in A131389.
+A175498 a(1)=1. a(n) = the smallest positive integer not occurring earlier such 
+A175499 a(n) = A175498(n+1)-A175498(n).
+A256283 Smallest m such that A257905(m) = n.
+A257465 Inverse permutation to A175498.
+A257705  (a(n))   Rule 1  a(1) = 0 and d(1) = 0.
+A257706  (a(n))   Rule 1  a(1) = 0 and d(1) = 1.
+A257876  (a(n))   Rule 1  a(1) = 0 and d(1) = 2.
+A257877  (a(n))   Rule 1  a(1) = 0 and d(1) = 3.
+A257878  (a(n))   Rule 1  a(1) = 1 and d(1) = 1.
+A257879  (a(n))   Rule 1  a(1) = 2 and d(1) = 0.
+A257880  (d(n))   Rule 1  a(1) = 2 and d(1) = 0.
+A257881  (a(n))   Rule 1  a(1) = 2 and d(1) = 1.
+A257882  (a(n))   Rule 1  a(1) = 2 and d(1) = 2.
+A257883  (a(n))   Algorithm  a(1) = 0 and d(1) = 0.
+A257884  (a(n))   Algorithm  a(1) = 0 and d(1) = 1.
+A257885  (a(n))   Algorithm  a(1) = 0 and d(1) = 2.
+A257902  (d(n))   Algorithm  a(1) = 0 and d(1) = 2.
+A257903  (a(n))   Algorithm  a(1) = 0 and d(1) = 3.
+A257904  (d(n))   Algorithm  a(1) = 0 and d(1) = 2.
+A257905  (a(n))   Rule 3  a(1) = 0 and d(1) = 0.
+A257906  (a(n))   Rule 3  a(1) = 0 and d(1) = 1.
+A257907 After 1, the first differences of A257906 (its d-).
+A257908  (a(n))   Rule 3  a(1) = 0 and d(1) = 2.
+A257909  (d(n))   Rule 3  a(1) = 0 and d(1) = 2.
+A257910  (a(n))   Rule 3  a(1) = 0 and d(1) = 3.
+A257911  (a(n))   Algorithm  a(1) = 2 and d(1) = 2.
+A257912  (d(n))   Algorithm  a(1) = 2 and d(1) = 2.
+A257915  (d(n))   Rule 1  a(1) = 0 and d(1) = 3.
+A257918  (d(n))   Rule 1  a(1) = 2 and d(1) = 2.
+A257980  (d(n))   Rule 3  a(1) = 0 and d(1) = 3.
+A257981  (a(n))   Rule 3  a(1) = 1 and d(1) = 1.
+A257982  (d(n))   Rule 3  a(1) = 1 and d(1) = 1.
+A257983  (a(n))   Rule 3  a(1) = 1 and d(1) = 2.
+A257985  (a(n))   Rule 3  a(1) = 2 and d(1) = 0.
+A257986  (a(n))   Rule 3  a(1) = 2 and d(1) = 1.
+A257987  (a(n))   Rule 3  a(1) = 2 and d(1) = 2.
+A258046  (a(n))   Rule 3  a(1) = 1 and d(1) = 0.
+A258047  (d(n))   Rule 3  a(1) = 1 and d(1) = 0.
+A258049 Position of n in A258047 after deleting the initial 0.
+A258050 Position of -n in A258047 after deleting the initial 0.
+A258105 Inverse to  defined as {b(1) = 1, and for n>1: b(n) = A257906(n)}, which

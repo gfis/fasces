@@ -5,14 +5,16 @@
 #------------------------------------------------------
 # C.f. list of sequences in https://oeis.org/search?q=A257705
 # usage:
-#   perl negpos.pl [noeis [n [oper a1 d1]]]
-#       noeis = "131388|131389|1313393|131394..."
+#   perl negpos.pl rulle noeis n oper a1 d1
+#       rule  = 1|2|3
+#       s     = 0|1
+#       noeis = "131388|131389|1313393|131394..." (without "A")
 #       n     = length of sequence to be generated
-#       oper  = ak, dk, dp, dn, ia, id 
+#       oper  = ak, dk, cp, cn, dp, dn, in 
 #       a1    = starting value for a(1)
 #       d1    = starting value for d(1)
 #------------------------------------------------------
-# Formula:
+# Formula (Rule 1):
 # a(k) = a(k-1) + d(k) 
 # d(k) = max({s, s-1 ... 1-a(k-1)}) such that
 #   d(k) not in d(1..k-1) and
@@ -25,69 +27,90 @@
 #--------------------------------------------------------
 use strict;
 
-my $noeis = "131393";
-if (scalar(@ARGV) > 0) {
-    $noeis = substr(shift(@ARGV), 1); # 1st argument without "A"
-}
-my $n = 1000;
-if (scalar(@ARGV) > 0) {
-    $n = shift(@ARGV); 
-}
-my $oper = "ak";
-if (scalar(@ARGV) > 0) {
-    $oper = shift(@ARGV); # 2nd argument: ak, dk, dp, dn, ia, id ...
-}
-my $a1 = 1;
-if (scalar(@ARGV) > 0) {
-    $a1 = shift(@ARGV); 
-}
-my $d1 = 0;
-if (scalar(@ARGV) > 0) {
-    $d1 = shift(@ARGV); 
-}
+my $rule = 1;   if (scalar(@ARGV) > 0) { $rule  = shift(@ARGV); }
+my $s = 1;      if (scalar(@ARGV) > 0) { $s     = shift(@ARGV); }
+my $noeis = ""; if (scalar(@ARGV) > 0) { $noeis = shift(@ARGV); }
+my $n = 1000;   if (scalar(@ARGV) > 0) { $n     = shift(@ARGV); }
+my $op = "ak";  if (scalar(@ARGV) > 0) { $op    = shift(@ARGV); }
+my $a1 = 1;     if (scalar(@ARGV) > 0) { $a1    = shift(@ARGV); }
+my $d1 = 0;     if (scalar(@ARGV) > 0) { $d1    = shift(@ARGV); }
 my $k = 1;
 my $ak = $a1; my $akm1 = $ak; my %aset = ($ak, $k);
-my $dk = $d1; my $dkm1 = $dk; my %dset = ($dk, $k);
+my $dk = $d1; my $dkm1 = $dk; my %dset = ($dk, $k); # $dk is h
 print "# http://oeis.org/A$noeis/b$noeis.txt:"
         . " table n,a(n),n=1..$n\n";
 #    print "# ak = $ak, dk = $dk, akm1 = $akm1, dkm1 = $dkm1 \n";
     if (0) {
-    } elsif ($oper eq "ak") {
+    } elsif ($op eq "ak") {
         print "$k $ak\n";
-    } elsif ($oper eq "dk") {
+    } elsif ($op eq "dk") {
         print "$k $dk\n";
     }
 my $busy;
 $k ++;
 while ($k <= $n) {
     $busy = 1;
-    $dk = -1;
-    if (($noeis =~ m{131393|131394|131395|131396|131397}) && $dkm1 < 0) { 
-        $dk = $dkm1 - 1;
-    } # else 131388|131389 etc. without this condition
-    while ($busy == 1 and $dk > $d1 - $akm1) { # negative
-        $ak = $akm1 + $dk;
-        if (!defined($aset{$ak}) and !defined($dset{$dk} and $ak>0)) {
-            $busy=0; $aset{$ak} = $k;         $dset{$dk}=$k;
-        } else {
-            $dk --;
-        }
-    } # while negative
-    if ($busy == 1) {
-        $dk = +1;
-    }
-    while ($busy == 1                    ) { # positive
-        $ak = $akm1 + $dk;
-        if (!defined($aset{$ak}) and !defined($dset{$dk}          )) {
-            $busy=0; $aset{$ak} = $k;         $dset{$dk}=$k;
-        } else {
-            $dk ++;
-        }
-    } # while positive
     if (0) {
-    } elsif ($oper eq "ak") {
+    } elsif ($rule == 1 or $rule == 2) { # for A131388, A257705 et al.
+	    $dk = -1; # start downwards
+        if ($rule == 2 and $dkm1 < 0) { # for A131393 et al.
+            $dk = $dkm1 - 1;
+        }
+        while ($busy == 1 and $dk > $s - $akm1) { # downwards
+            $ak = $akm1 + $dk;
+            if (!defined($aset{$ak}) and !defined($dset{$dk} and $ak>0)) {
+                $busy=0; $aset{$ak} = $k;         $dset{$dk}=$k;
+            } else {
+                $dk --;
+            }
+        } # while downwards
+        if ($busy == 1) {
+            $dk = +1; # start upwards
+        }
+        while ($busy == 1                     ) { # upwards
+            $ak = $akm1 + $dk;
+            if (!defined($aset{$ak}) and !defined($dset{$dk}          )) {
+                $busy=0; $aset{$ak} = $k;         $dset{$dk}=$k;
+            } else {
+                $dk ++;
+            }
+        } # while upwards
+    } elsif ($rule == 3) { # for A257905, 908
+	    $dk = -1; # start downwards
+        while ($busy == 1 and $dk > $s - $akm1) { # downwards
+            $ak = $akm1 + $dk;
+            if (!defined($aset{$ak}) and !defined($dset{$dk} and $ak>0)) {
+                $busy=0; $aset{$ak} = $k;         $dset{$dk}=$k;
+            } else {
+                $dk --;
+            }
+        } # while downwards
+        if ($busy == 1) {
+            $dk = +1; # start upwards
+        }
+        while ($busy == 1                     ) { # upwards
+            $ak = $akm1 + $dk;
+            if (!defined($aset{$ak}) and !defined($dset{$dk}          )) {
+                $busy=0; $aset{$ak} = $k;         $dset{$dk}=$k;
+            } else {
+                $dk ++;
+            }
+        } # while upwards
+    } elsif ($rule == 4) { # "Algorithm" for A257883 et al.
+    	$dk = $s - $ak + 1;
+        while ($busy == 1                      ) { # upwards
+            $ak = $akm1 + $dk;
+            if (!defined($aset{$ak}) and !defined($dset{$dk} and $ak>0)) {
+                $busy=0; $aset{$ak} = $k;         $dset{$dk}=$k;
+            } else {
+                $dk ++;
+            }
+        } # while upwards
+    }
+    if (0) {
+    } elsif ($op eq "ak") {
         print "$k $ak\n";
-    } elsif ($oper eq "dk") {
+    } elsif ($op eq "dk") {
         print "$k $dk\n";
     }
     # print "\t# ak = $ak, dk = $dk, akm1 = $akm1, dkm1 = $dkm1\n";
@@ -95,13 +118,13 @@ while ($k <= $n) {
     $k ++; # iterate
 } # while $k
 #--------
-if ($oper !~ m{ak|dk}) { # output of operations other than "ak", "dk"
+if ($op !~ m{ak|dk}) { # output of operations other than "ak", "dk"
     my @ainv = sort(map { $_ = sprintf("%06d %d", $_, $aset{$_}); $_ } keys(%aset));
     my @dpos = sort(map { $_ = sprintf("%06d %d", $dset{$_}, $_); $_ } keys(%dset));
     my $temp = shift(@dpos); # accounts for positions "-1"
     # print join("\n", @dpos) . "\n";
     if (0) {
-    } elsif ($oper =~ m{in}) {
+    } elsif ($op =~ m{in}) {
         $k = 0;
         $busy = 1;
         while ($busy == 1 and $k < scalar(@ainv)) {
@@ -113,19 +136,21 @@ if ($oper !~ m{ak|dk}) { # output of operations other than "ak", "dk"
             }
             $k ++;
         } # while $k
-    } elsif ($oper =~ m{dp}) {
+    } elsif ($op =~ m{cp|dp}) {
         my $k = 0;
         print join("", map { my ($j, $dj) = split(/\s+/); 
-                $j --; $_ = "";
-                if ($dj > 0) {
+                $j = ($op =~ m{\Ac}) ? $j - 1 : $j + 0; 
+                $_ = "";
+                if ($dj >= 0) {
                     $k ++;
                     $_ = "$k $j\n";
                 }
                 $_ } @dpos) . "\n";
-    } elsif ($oper =~ m{dn}) {
+    } elsif ($op =~ m{cn|dn}) {
         my $k = 0;
         print join("", map { my ($j, $dj) = split(/\s+/); 
-                $j --; $_ = "";
+                $j = ($op =~ m{\Ac}) ? $j - 1 : $j + 0; 
+                $_ = "";
                 if ($dj < 0) {
                     $k ++;
                     $_ = "$k $j\n";
