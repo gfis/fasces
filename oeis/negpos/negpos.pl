@@ -1,6 +1,8 @@
 #!perl
 
 # Generate OEIS Sequence A131393 and its companions
+# as defined by Clark Kimberling
+# @(#) $Id$
 # 2018-02-24, Georg Fischer
 #------------------------------------------------------
 # C.f. list of sequences in https://oeis.org/search?q=A257705
