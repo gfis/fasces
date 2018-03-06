@@ -44,7 +44,7 @@ while ($rowno < $max_row) {
     } # while $cind
    $rowno ++;
 } # while rowno ++
-my $lrow = $rowno - 1; # last row, lowest row
+my $last_row = $rowno - 1; # last row, lowest row
 my $size = $cind; # number of elements in the triangle
 my $width = $size;
 my $filled = 0;
@@ -60,7 +60,15 @@ if ($debug >= 2) {
 my $count = 0; # number of triangles which fulfill the interlacing condition
 my $level = 0; # nesting level
 my $start_time = time();
-&test(0);
+if ($between == 0) {
+    &alloc(0,         $srow[$last_row    ]    );
+    &alloc(1,         $srow[$last_row - 1]    );
+    &alloc($size - 1, $erow[$last_row    ] - 1);
+    &alloc($size - 2, $erow[$last_row - 1] - 1);
+    &test(2);
+} else {
+    &test(0);
+}
 my $duration = (time() - $start_time);
 $duration =~ s{(\d+)\.(\d{3})\d*}{$1.$2};
 print        "# $count triangles found in $duration s\n";
@@ -72,8 +80,15 @@ sub test {
     my ($elem) = @_; 
     $level ++;
     my $result = $FAIL;
-    my $tpos = $size - 1; # position where $elem should be allocated
-    while ($tpos >= 0) {
+    my $range0 = 0;
+    my $range9 = $size - 1;
+    if ($elem == $range0 or $elem == $range9) { # restrict to last row
+        # this brings max_row=4 down from 36 s to 3.3 s
+        $range0 = $srow[$last_row];
+        $range9 = $erow[$last_row] - 1;
+    } # restrict
+    my $tpos = $range9; # position where $elem should be allocated
+    while ($tpos >= $range0) {
         $result = $FAIL;
         if ($trel[$tpos] == $FREE) {
             $result = $SUCC;
@@ -84,8 +99,8 @@ sub test {
             print "# $level alloc $elem at $tpos, filled=$filled, trel="  . join(" ", @trel) . "\n" if $debug >= 2;
 
             # check other conditions and refine $result
-            if (&possible($tpos) == $FALSE) {
-            	$result = $FAIL;
+            if (&possible(2, $tpos) == $FALSE) {
+                $result = $FAIL;
             }
             if ($result == $SUCC) { # other conditions true
                 my $nxelem = $size - 1 - $elem;
@@ -99,10 +114,8 @@ sub test {
                     # check whole triangle again
                     $result = &check_all();
                     if ($result == $SUCC) {
-                    	if ($size <= 10) {
-                    		print join(",", @trel) . "\n" if $debug >= 1;
-                    	}
-                    	$count ++;
+                        print join(" ", @trel) . "\n" if $debug >= 1;
+                        $count ++;
                     }
                 } # all exhausted
             } # other conditions
@@ -118,46 +131,121 @@ sub test {
     return $result;
 } # test
 
+# allocate an element
+sub alloc {
+    my ($elem, $tpos) = @_;
+    $filled ++;
+    $trel[$tpos] = $elem;
+    $elpo[$elem] = $tpos;
+    print "# $level alloc $elem at $tpos, filled=$filled, trel="  . join(" ", @trel) . "\n" if $debug >= 2;
+} # alloc
+    
 # neighbourhood access and test methods
 
 sub check_all { # check all positions
-	my $cpos = 0;
-	my $result = $TRUE;
-	while ($cpos < $srow[$lrow]) {
-		if (&possible($cpos) != $TRUE) {
-			$result = $FALSE;
-		}
-		$cpos ++;
-	} # while $cpos
-	return $result;
+    my $cpos = 0;
+    my $result = $SUCC;
+    while ($cpos < $srow[$last_row]) {
+        if (&possible(1, $cpos) == $FALSE) {
+            $result = $FAIL;
+        }
+        $cpos ++;
+    } # while $cpos
+    return $result;
 } # check_all
 
-sub possible { # whether the body fits between its 2 children
-    my ($bpos) = @_; # position of body
-    my $result = $UNKNOWN; # -1: UNKNOWN, 0 = FALSE, 1 = TRUE
-    my $body = $trel[$bpos]; # body element
-    my $brow = $nrow[$bpos]; # row of body
-    if ($brow < $lrow) { # not last
-        my $legrow  = $brow + 1; # row of children
-        my $llegpos = $srow[$legrow] + $bpos - $srow[$brow];
-        my $lleg  = $trel[$llegpos];
+# Naming of the neighbours of element $focus:
+#
+#       larm   rarm
+#      /   \   /   \
+#   lhip   FOCUS   rhip
+#      \   /   \   /
+#       lleg   rleg
+#
+# conditions for (a) between = 0, (b) for between = 1
+# (1a) not last and lleg < focus < rleg    
+# (2a) 0,1,8,9 in lower corners
+# (1b) not last and lleg < focus < rleg or lleg > focus > rleg
+# (2b) 0,9 in last row
+# (3) abs(lhip-focus) > 1, abs(rhip-focus) > 1 (is implied by (4,5)
+# (4a) lhip  < larm < focus
+# (4b) lhip  < larm < focus or lhip  > larm > focus
+# (5a) focus < rarm < rhip
+# (5b) focus < rarm < rhip  or focus > rarm > rhip
+
+sub possible { # whether the focus fits in its neighbourhood
+    my ($rule, $fpos) = @_; # position of focus
+    my $result = $TRUE; # -1: UNKNOWN, 0 = FALSE, 1 = TRUE
+    my $focus  = $trel[$fpos]; # focus element
+    my $frow   = $nrow[$fpos]; # row of focus
+    
+    if ($frow < $last_row) { # not last
+    	# rule 1, legs, condition (1)
+        my $legrow  = $frow + 1; # row of legs = children of focus element
+        my $llegpos = $srow[$legrow] + $fpos - $srow[$frow];
+        my $lleg    = $trel[$llegpos]; # left leg element
         if ($lleg != $FREE) {
             my $rlegpos = $llegpos + 1;
-            my $rleg = $trel[$rlegpos];
+            my $rleg = $trel[$rlegpos]; # right leg element
             if ($rleg != $FREE) {
-                if  ( ($lleg < $body and $body < $rleg) 
+                if  ( ($lleg < $focus and $focus < $rleg) 
                       or ($between == 1 and
-                      ($lleg > $body and $body > $rleg))
+                      ($lleg > $focus and $focus > $rleg))
                     ) {
-                    $result = $TRUE;
+                    # $result = $TRUE;
                 } else {
                     $result = $FALSE;
                 }   
             } # else $rleg == $FREE -> $UNKNOWN
         } # else $lleg == $FREE -> $UNKNOWN
     } else { # last row 
-        $result = $TRUE; # always possible
+        # $result = $TRUE; # always possible
     }
+    if ($rule > 1 and $frow > 0) { # check arms
+        my $armrow   = $frow - 1; # row of arms = predecessors of focus element
+        # left arm, condition (4)
+        my $larmpos   = $srow[$armrow] + $fpos - $srow[$frow] - 1;
+        if ($result == $TRUE and $larmpos >= $srow[$armrow]) { # in row
+            my $larm  = $trel[$larmpos]; # left  arm element
+            if ($larm != $FREE) { # larm allocated
+                my $lhippos = $fpos - 1;
+                if ($lhippos >= $srow[$frow]) { # lhip in row
+                    my $lhip = $trel[$lhippos];
+                    if ($lhip != $FREE) {
+                        if  ( ($lhip < $larm and $larm < $focus) 
+                               or ($between == 1 and
+                              ($lhip > $larm and $larm > $focus))
+                            ) {
+                            # $result = $TRUE;
+                        } else {
+                            $result = $FALSE;
+                        }  
+                    } # lhip allocated
+                } # lhip in row 
+            } # larm allocated
+        } # larmpos in row
+        # right arm, condition (5)
+        my $rarmpos   = $larmpos + 1;
+        if ($result == $TRUE and $rarmpos <  $erow[$armrow]) { # in row
+            my $rarm  = $trel[$rarmpos]; # left  arm element
+            if ($rarm != $FREE) { # rarm allocated
+                my $rhippos = $fpos + 1;
+                if ($rhippos <  $erow[$frow]) { # rhip in row
+                    my $rhip = $trel[$rhippos];
+                    if ($rhip != $FREE) {
+                        if  ( ($focus < $rarm and $rarm < $rhip) 
+                               or ($between == 1 and
+                              ($focus > $rarm and $rarm > $rhip) )
+                            ) {
+                            # $result = $TRUE;
+                        } else {
+                            $result = $FALSE;
+                        }  
+                    } # rhip allocated
+                } # rhip in row 
+            } # rarm allocated
+        } # rarmpos in row
+    } # arms, rule > 1
     return $result;
 } # possible
 #------------------------------------------
