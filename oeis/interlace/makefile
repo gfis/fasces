@@ -4,7 +4,16 @@
 # @(#) $Id$
 # 2018-02-27, Georg Fischer
 # 
-all: perm3 perm6 inter10.0
+all: intrian
+intrian: intrian3
+intrian3:
+	perl intrian.pl 3 0 | grep -v "^#" > $@.in.tmp
+	sort $@.in.tmp | uniq | wc
+intrian4:
+	perl intrian.pl 4 0 | grep -v "^#" > $@.in.tmp
+	sort $@.in.tmp | uniq | wc
+
+# perm3 perm6 inter10.0
 # perm10
 
 perm3:
