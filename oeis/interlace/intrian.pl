@@ -30,6 +30,20 @@ my @nrow; # row number for a position in the triangle
 my @trel; # element which fills the position in the triangle, or $FREE
 my @elpo; # position in the triangle for an element
 
+# positions of the neighbours for the focus element
+my @polarm;
+my @porarm;
+my @polhip;
+my @porhip;
+my @polleg;
+my @porleg;
+# Naming of the neighbours of element $focus:
+#
+#       larm   rarm
+#      /   \   /   \
+#   lhip   FOCUS   rhip
+#      \   /   \   /
+#       lleg   rleg
 my $cind = 0; # current index 
 my $rowno = 0; # current row
 while ($rowno < $max_row) {
@@ -37,30 +51,62 @@ while ($rowno < $max_row) {
     $srow[$rowno] = $cind;
     $erow[$rowno] = $nind;
     while ($cind < $nind) {
-        $nrow[$cind] = $rowno;
-        $trel[$cind] = $FREE;
-        $elpo[$cind] = $NALL;
+        $nrow[$cind]   = $rowno;
+        $trel[$cind]   = $FREE;
+        $elpo[$cind]   = $NALL;
+        $polarm[$cind] = $FREE; 
+        $porarm[$cind] = $FREE;
+        $polhip[$cind] = $FREE;
+        $porhip[$cind] = $FREE;
+        if ($cind > $srow[$rowno]    ) {
+            $polhip[$cind] = $cind - 1;
+            $polarm[$cind] = $srow[$rowno - 1] + $polhip[$cind] - $srow[$rowno];
+        }
+        if ($cind < $erow[$rowno] - 1) {
+            $porhip[$cind] = $cind + 1;
+            $porarm[$cind] = $srow[$rowno - 1] + $cind          - $srow[$rowno];
+        }
+        # arms of row 0 remain free be conditions above
+        # legs always exist
+        $polleg[$cind] = $erow[$rowno] + $cind - $srow[$rowno];
+        $porleg[$cind] = $polleg[$cind] + 1;
         $cind ++;
     } # while $cind
-   $rowno ++;
+    $rowno ++;
 } # while rowno ++
 my $last_row = $rowno - 1; # last row, lowest row
 my $size = $cind; # number of elements in the triangle
 my $width = $size;
+
+if (1) { # repair legs of last row - they do not exist
+    $cind = $srow[$last_row];
+    while ($cind < $erow[$last_row]) {
+        $polleg[$cind] = $FREE;
+        $porleg[$cind] = $FREE;
+        $cind ++;
+    } # while $cind
+} # repair last row     
+
 my $filled = 0;
 print "# arrange $size numbers in a triangle with $rowno rows, with "
         . ($between == 0 ? "child1 < father < child2" : "father between child1 and child2") ."\n";
 if ($debug >= 2) {
-    print "# srow: " . join(",", @srow) . "\n";
-    print "# erow: " . join(",", @erow) . "\n";
-    print "# nrow: " . join(",", @nrow) . "\n";
+    print "# srow:   " . join(",", @srow  ) . "\n";
+    print "# erow:   " . join(",", @erow  ) . "\n";
+    print "# nrow:   " . join(",", @nrow  ) . "\n";
+    print "# polarm: " . join(",", @polarm) . "\n";
+    print "# porarm: " . join(",", @porarm) . "\n";
+    print "# polhip: " . join(",", @polhip) . "\n";
+    print "# porhip: " . join(",", @porhip) . "\n";
+    print "# polleg: " . join(",", @polleg) . "\n";
+    print "# porleg: " . join(",", @porleg) . "\n";                                  
     print "#\n";
 }
 #----
 my $count = 0; # number of triangles which fulfill the interlacing condition
 my $level = 0; # nesting level
 my $start_time = time();
-if ($between == 0) {
+if ($between == 0) { # 
     &alloc(0,         $srow[$last_row    ]    );
     &alloc(1,         $srow[$last_row - 1]    );
     &alloc($size - 1, $erow[$last_row    ] - 1);
@@ -87,19 +133,19 @@ sub test {
         $range0 = $srow[$last_row];
         $range9 = $erow[$last_row] - 1;
     } # restrict
-    my $tpos = $range9; # position where $elem should be allocated
-    while ($tpos >= $range0) {
+    my $fpos = $range9; # position where $elem should be allocated
+    while ($fpos >= $range0) {
         $result = $FAIL;
-        if ($trel[$tpos] == $FREE) {
+        if ($trel[$fpos] == $FREE) {
             $result = $SUCC;
             # allocate $elem here
             $filled ++;
-            $trel[$tpos] = $elem;
-            $elpo[$elem] = $tpos;
-            print "# $level alloc $elem at $tpos, filled=$filled, trel="  . join(" ", @trel) . "\n" if $debug >= 2;
+            $trel[$fpos] = $elem;
+            $elpo[$elem] = $fpos;
+            print "# $level alloc $elem at $fpos, filled=$filled, trel="  . join(" ", @trel) . "\n" if $debug >= 2;
 
             # check other conditions and refine $result
-            if (&possible(2, $tpos) == $FALSE) {
+            if (&possible(2, $fpos) == $FALSE) {
                 $result = $FAIL;
             }
             if ($result == $SUCC) { # other conditions true
@@ -121,23 +167,23 @@ sub test {
             } # other conditions
             # deallocate $elem
             $elpo[$elem] = $NALL; 
-            $trel[$tpos] = $FREE;
+            $trel[$fpos] = $FREE;
             $filled --;
-            print "# $level free  $elem at $tpos, filled=$filled, trel="  . join(" ", @trel) . "\n" if $debug >= 2;
+            print "# $level free  $elem at $fpos, filled=$filled, trel="  . join(" ", @trel) . "\n" if $debug >= 2;
         } # if SUCC
-        $tpos --;
-    } # while $tpos 
+        $fpos --;
+    } # while $fpos 
     $level --;
     return $result;
 } # test
 
 # allocate an element
 sub alloc {
-    my ($elem, $tpos) = @_;
+    my ($elem, $fpos) = @_;
     $filled ++;
-    $trel[$tpos] = $elem;
-    $elpo[$elem] = $tpos;
-    print "# $level alloc $elem at $tpos, filled=$filled, trel="  . join(" ", @trel) . "\n" if $debug >= 2;
+    $trel[$fpos] = $elem;
+    $elpo[$elem] = $fpos;
+    print "# $level alloc $elem at $fpos, filled=$filled, trel="  . join(" ", @trel) . "\n" if $debug >= 2;
 } # alloc
     
 # neighbourhood access and test methods
@@ -180,7 +226,7 @@ sub possible { # whether the focus fits in its neighbourhood
     my $frow   = $nrow[$fpos]; # row of focus
     
     if ($frow < $last_row) { # not last
-    	# rule 1, legs, condition (1)
+        # rule 1, legs, condition (1)
         my $legrow  = $frow + 1; # row of legs = children of focus element
         my $llegpos = $srow[$legrow] + $fpos - $srow[$frow];
         my $lleg    = $trel[$llegpos]; # left leg element
@@ -198,20 +244,25 @@ sub possible { # whether the focus fits in its neighbourhood
                 }   
             } # else $rleg == $FREE -> $UNKNOWN
         } # else $lleg == $FREE -> $UNKNOWN
-    } else { # last row 
-        # $result = $TRUE; # always possible
-    }
+    } else { # last row - hips may not have distance 1
+        # $result = $TRUE;
+    } # last row
+    
     if ($rule > 1 and $frow > 0) { # check arms
         my $armrow   = $frow - 1; # row of arms = predecessors of focus element
         # left arm, condition (4)
-        my $larmpos   = $srow[$armrow] + $fpos - $srow[$frow] - 1;
-        if ($result == $TRUE and $larmpos >= $srow[$armrow]) { # in row
-            my $larm  = $trel[$larmpos]; # left  arm element
-            if ($larm != $FREE) { # larm allocated
-                my $lhippos = $fpos - 1;
-                if ($lhippos >= $srow[$frow]) { # lhip in row
-                    my $lhip = $trel[$lhippos];
-                    if ($lhip != $FREE) {
+        my $lhippos = $fpos - 1;
+        if ($lhippos >= $srow[$frow]) { # lhip in row
+            my $lhip = $trel[$lhippos];
+            if ($lhip != $FREE) { # lhip allocated
+                my $dist = $lhip - $focus;
+                if ($dist == -1 or $dist == 1) {
+                    $result = $FALSE;
+                }
+                my $larmpos   = $srow[$armrow] + $fpos - $srow[$frow] - 1;
+                if ($result == $TRUE and $larmpos >= $srow[$armrow]) { # in row
+                    my $larm  = $trel[$larmpos]; # left  arm element
+                    if ($larm != $FREE) { # larm allocated
                         if  ( ($lhip < $larm and $larm < $focus) 
                                or ($between == 1 and
                               ($lhip > $larm and $larm > $focus))
@@ -220,19 +271,24 @@ sub possible { # whether the focus fits in its neighbourhood
                         } else {
                             $result = $FALSE;
                         }  
-                    } # lhip allocated
-                } # lhip in row 
-            } # larm allocated
-        } # larmpos in row
+                    } # larm allocated
+                } # larmpos in row
+             } # lhip allocated
+        } # lhip in row 
+
         # right arm, condition (5)
-        my $rarmpos   = $larmpos + 1;
-        if ($result == $TRUE and $rarmpos <  $erow[$armrow]) { # in row
-            my $rarm  = $trel[$rarmpos]; # left  arm element
-            if ($rarm != $FREE) { # rarm allocated
-                my $rhippos = $fpos + 1;
-                if ($rhippos <  $erow[$frow]) { # rhip in row
-                    my $rhip = $trel[$rhippos];
-                    if ($rhip != $FREE) {
+        my $rhippos = $fpos + 1;
+        if ($rhippos <  $erow[$frow]) { # rhip in row
+            my $rhip = $trel[$rhippos];
+            if ($rhip != $FREE) { # rhip allocated
+                my $dist = $rhip - $focus;
+                if ($dist == -1 or $dist == 1) {
+                    $result = $FALSE;
+                }
+                my $rarmpos   = $srow[$armrow] + $fpos - $srow[$frow] + 0;
+                if ($result == $TRUE and $rarmpos <  $erow[$armrow]) { # in row
+                    my $rarm  = $trel[$rarmpos]; # right arm element
+                    if ($rarm != $FREE) { # rarm allocated
                         if  ( ($focus < $rarm and $rarm < $rhip) 
                                or ($between == 1 and
                               ($focus > $rarm and $rarm > $rhip) )
@@ -241,10 +297,10 @@ sub possible { # whether the focus fits in its neighbourhood
                         } else {
                             $result = $FALSE;
                         }  
-                    } # rhip allocated
-                } # rhip in row 
-            } # rarm allocated
-        } # rarmpos in row
+                    } # rarm allocated
+                } # rarmpos in row
+             } # rhip allocated
+        } # rhip in row 
     } # arms, rule > 1
     return $result;
 } # possible
@@ -624,3 +680,106 @@ try 09 in 9    (1 of 2)
 try 10 in 2    (1 of 2)
 try 11 in 13   (1 of 2)
 3456 possibilities
+
+======================================================
+2018-03-07
+intrian.pl 2 1 ->
+   1           1
+  2 0  symm.  0 2
+  
+=> *2 + 1
+
+            3
+        5       1
+a   0:4     =6      =0          
+    2:4     =6      =0            
+3 5 1 2 6 0 ->  3 4 1 2 5 0
+3 5 1 4 6 0 ->  2 4 1 3 5 0
+            3
+        5       1
+b   =6      2:6     =0          
+    =6      2:4     =0          
+3 5 1 6 2 0 ->  3 4 1 5 2 0
+3 5 1 6 4 0 ->  2 4 1 5 3 0 = c2
+
+            3
+        5       1
+c   =6      =0      2:6         
+    =6      =0      2:4           
+3 5 1 6 0 2 ->  3 4 1 5 0 2
+3 5 1 6 0 4 ->  2 4 1 5 0 3 = b2
+
+intrian.pl 3 1 ->
+a   3 4 1 5 2 0     /s
+b   2 4 1 5 3 0     /t
+c   3 4 2 1 5 0     /h
+d   3 2 4 1 5 0     /g
+e   3 4 1 2 5 0     /j
+f   2 4 1 3 5 0     /l
+i   3 4 1 5 0 2     /o
+k   2 4 1 5 0 3     /p
+m   2 3 1 5 0 4     /r
+n   2 1 3 5 0 4     /q
+following counts *=2 because of  symmetry:
+
+o   3 1 4 2 0 5         5       1       11
+                  2:4     6:10     =0      =12      2*3
+                  6:10    2:4      =0      =12      3*2
+                  6:10    =0       2:10    =12      3*4
+                  6:10    =0       =12     2:10     3*4 -> 36
+
+p   2 1 4 3 0 5         7       1       11
+                  2:6     8:10     =0      =12      3*2
+                  8:10    2:6      =0      =12      2*3
+                  8:10    =0       2:10    =12      2*4
+                  8:10    =0       =12     2:10     2*4 -> 28
+
+q   2 3 1 4 0 5         9       1       11
+                  2:8     =10      =0      =12      4  
+                  =10     2:8      =0      =12      4  
+                  =10     =0       2:8     =12      5  
+                  =10     =0       =12     2:8      5   -> 16
+
+r   2 1 3 4 0 5         9       1       11
+                  2:8     =10      =0      =12      4  
+                  =10     2:8      =0      =12      4  
+                  =10     =0       2:8     =12      4  
+                  =10     =0       =12     2:8      4   -> 16
+
+s   3 1 4 0 2 5         1       5       11
+                  =0       2:4     6:10    =12      2*3
+                  =0       2:4     =12     2:10     2*4
+                  =0       6:10    2:4     =12      3*2
+                  2:10      =0     6:10    =12      3*4
+                  2:10      =0     =12     2:10     5*4 -> 52
+
+t   2 1 4 0 3 5         1       7       11
+                  =0       2:6     8:10    =12      3*2
+                  =0       2:6     =12     2:10     3*4
+                  =0       8:10    2:6     =12      2*3
+                  2:10      =0     8:10    =12      2*4
+                  2:10      =0     =12     2:10     5*4 -> 52
+
+g   3 4 2 0 5 1         1       11      3
+                  =0       4:10    =12     =2       4  
+                  =0       =12     4:10    =2       4  
+                  =0       =12     =2      4:10     4  
+                  4:10      =0     =12     =2       4   -> 16
+
+h   3 2 4 0 5 1         1       11      3
+                  =0       4:10    =12     =2       4  
+                  =0       =12     4:10    =2       4  
+                  =0       =12     =2      4:10     4  
+                  4:10      =0     =12     =2       4   -> 16
+
+j   3 1 4 0 5 2         1       11      5
+                  =0       2:10    =12     2:4      2*4
+                  =0       =12     6:10    2:4      2*3
+                  =0       =12     2:4     6:10     2*3
+                  2:10      =0     =12     2:4      2*4 -> 28
+
+l   2 1 4 0 5 3         1       11      7
+                  =0       2:10    =12     2:6      3*4
+                  =0       =12     8:10    2:6      2*3
+                  =0       =12     2:6     8:10     2*3
+                  2:10      =0     =12     2:6      3*4 -> 36
