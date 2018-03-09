@@ -11,7 +11,7 @@
 use strict;
 use Time::HiRes qw(time); # yields microseconds
 
-my $debug = 1; # 0 = none, 1 = some, 2 = more
+my $debug = 0; # 0 = none, 1 = some, 2 = more
 my $max_row = shift(@ARGV); # rowno runs from 0 to max_row - 1
 my $between = 0; # whether strictly less than (0) or between (1)
 if (scalar(@ARGV) > 0) {
@@ -148,22 +148,34 @@ sub test {
             if (&possible(2, $fpos) == $FALSE) {
                 $result = $FAIL;
             }
-            if ($result == $SUCC) { # other conditions true
-                my $nxelem = $size - 1 - $elem;
-                if ($nxelem < $elem) {
-                    $nxelem ++;
-                }
-                if ($filled < $size) {
-                    print "# $level next = $nxelem, " . join(" ", @trel) . "\n" if $debug >= 2;
-                    &test($nxelem);
-                } else { # all elements exhausted, check, count and maybe print
-                    # check whole triangle again
-                    $result = &check_all();
-                    if ($result == $SUCC) {
-                        print join(" ", @trel) . "\n" if $debug >= 1;
-                        $count ++;
+            if ($result == $SUCC) 
+            { # other conditions true
+                my $conj = $size - 1 - $elem; # conjugate element, 0 -> 9, 9 -> 1, 1 -> 8 ...
+                if ($conj < $elem) { # $elem in right half
+                    $conj ++; # adjust it
+                    if ($elem < $size - 2) {
+                        $result = &check_right_connection($elem, $fpos);
                     }
-                } # all exhausted
+                    # right half
+                } else { # $elem in left half
+                    if ($elem > 1) {
+                        $result = &check_left_connection ($elem, $fpos);
+                    }
+                    # left half
+                } 
+                if ($result == $SUCC) { # connectivity
+                    if ($filled < $size) {
+                        print "# $level next = $conj, " . join(" ", @trel) . "\n" if $debug >= 2;
+                        &test($conj);
+                    } else { # all elements exhausted, check, count and maybe print
+                        # check whole triangle again
+                        $result = &check_all();
+                        if ($result == $SUCC) {
+                            print join(" ", @trel) . "\n" if $debug >= 1;
+                            $count ++;
+                        }
+                    } # all exhausted
+                } # with connectivity
             } # other conditions
             # deallocate $elem
             $elpo[$elem] = $NALL; 
@@ -186,7 +198,45 @@ sub alloc {
     print "# $level alloc $elem at $fpos, filled=$filled, trel="  . join(" ", @trel) . "\n" if $debug >= 2;
 } # alloc
     
-# neighbourhood access and test methods
+# neighbourhood access, connectivity and test methods
+
+sub check_left_connection { # whether the element has a connection to any member of the "left" set
+    my ($elem, $fpos) = @_;
+    my $memb;
+    my $pos;
+    my $result = $FAIL;
+    if ($between == 1 and $fpos >= $srow[$last_row]) {
+        $result = $SUCC;
+    } else {
+    if ($result == $FAIL) { $pos = $polarm[$fpos]; print "pola $pos\n" if $debug > 1; if ($pos != $FREE) { $memb = $trel[$pos]; if ($memb != $FREE and $memb < $elem) { $result = $SUCC; }}}
+    if ($result == $FAIL) { $pos = $polleg[$fpos]; print "poll $pos\n" if $debug > 1; if ($pos != $FREE) { $memb = $trel[$pos]; if ($memb != $FREE and $memb < $elem) { $result = $SUCC; }}}
+    if ($result == $FAIL) { $pos = $polhip[$fpos]; print "polh $pos\n" if $debug > 1; if ($pos != $FREE) { $memb = $trel[$pos]; if ($memb != $FREE and $memb < $elem) { $result = $SUCC; }}}
+    if ($result == $FAIL) { $pos = $porarm[$fpos]; print "pora $pos\n" if $debug > 1; if ($pos != $FREE) { $memb = $trel[$pos]; if ($memb != $FREE and $memb < $elem) { $result = $SUCC; }}}
+    if ($result == $FAIL) { $pos = $porleg[$fpos]; print "porl $pos\n" if $debug > 1; if ($pos != $FREE) { $memb = $trel[$pos]; if ($memb != $FREE and $memb < $elem) { $result = $SUCC; }}}
+    if ($result == $FAIL) { $pos = $porhip[$fpos]; print "porh $pos\n" if $debug > 1; if ($pos != $FREE) { $memb = $trel[$pos]; if ($memb != $FREE and $memb < $elem) { $result = $SUCC; }}}
+    }
+    print "check_left_connection  elem=$elem, fpos=$fpos, memb=$memb, result=$result; \n" if $debug >= 2;
+    return $result;
+} # check_left_connection
+
+sub check_right_connection { # whether the element has a connection to any member of the "right" set 
+    my ($elem, $fpos) = @_;
+    my $memb;
+    my $pos;
+    my $result = $FAIL;
+    if ($between == 1 and $fpos >= $srow[$last_row]) {
+        $result = $SUCC;
+    } else {
+    if ($result == $FAIL) { $pos = $polarm[$fpos]; print "pola $pos\n" if $debug > 1; if ($pos != $FREE) { $memb = $trel[$pos]; if ($memb != $FREE and $memb > $elem) { $result = $SUCC; }}}
+    if ($result == $FAIL) { $pos = $polleg[$fpos]; print "poll $pos\n" if $debug > 1; if ($pos != $FREE) { $memb = $trel[$pos]; if ($memb != $FREE and $memb > $elem) { $result = $SUCC; }}}
+    if ($result == $FAIL) { $pos = $polhip[$fpos]; print "polh $pos\n" if $debug > 1; if ($pos != $FREE) { $memb = $trel[$pos]; if ($memb != $FREE and $memb > $elem) { $result = $SUCC; }}}
+    if ($result == $FAIL) { $pos = $porarm[$fpos]; print "pora $pos\n" if $debug > 1; if ($pos != $FREE) { $memb = $trel[$pos]; if ($memb != $FREE and $memb > $elem) { $result = $SUCC; }}}
+    if ($result == $FAIL) { $pos = $porleg[$fpos]; print "porl $pos\n" if $debug > 1; if ($pos != $FREE) { $memb = $trel[$pos]; if ($memb != $FREE and $memb > $elem) { $result = $SUCC; }}}
+    if ($result == $FAIL) { $pos = $porhip[$fpos]; print "porh $pos\n" if $debug > 1; if ($pos != $FREE) { $memb = $trel[$pos]; if ($memb != $FREE and $memb > $elem) { $result = $SUCC; }}}
+    }
+    print "check_right_connection elem=$elem, fpos=$fpos, memb=$memb, result=$result; \n" if $debug >= 2;
+    return $result;
+} # check_right_connection
 
 sub check_all { # check all positions
     my $cpos = 0;
@@ -227,42 +277,44 @@ sub possible { # whether the focus fits in its neighbourhood
     
     if ($frow < $last_row) { # not last
         # rule 1, legs, condition (1)
-        my $legrow  = $frow + 1; # row of legs = children of focus element
-        my $llegpos = $srow[$legrow] + $fpos - $srow[$frow];
-        my $lleg    = $trel[$llegpos]; # left leg element
-        if ($lleg != $FREE) {
-            my $rlegpos = $llegpos + 1;
-            my $rleg = $trel[$rlegpos]; # right leg element
-            if ($rleg != $FREE) {
-                if  ( ($lleg < $focus and $focus < $rleg) 
-                      or ($between == 1 and
-                      ($lleg > $focus and $focus > $rleg))
-                    ) {
-                    # $result = $TRUE;
-                } else {
-                    $result = $FALSE;
-                }   
-            } # else $rleg == $FREE -> $UNKNOWN
-        } # else $lleg == $FREE -> $UNKNOWN
+        my $poll = $polleg[$fpos];
+        if ($poll != $FREE) {
+            my $lleg     = $trel[$poll]; # left  leg element
+            if ($lleg != $FREE) {
+                my $porl = $porleg[$fpos];
+                if ($porl != $FREE) {
+                    my $rleg = $trel[$porl]; # right leg element
+                    if ($rleg != $FREE) {
+                        if  ( ($lleg < $focus and $focus < $rleg) 
+                              or ($between == 1 and
+                              ($lleg > $focus and $focus > $rleg))
+                            ) {
+                            # $result = $TRUE;
+                        } else {
+                            $result = $FALSE;
+                        }   
+                    } # rleg allocated
+                } # rleg exists
+            } # lleg allocated
+        } # lleg exists
     } else { # last row - hips may not have distance 1
         # $result = $TRUE;
     } # last row
     
     if ($rule > 1 and $frow > 0) { # check arms
-        my $armrow   = $frow - 1; # row of arms = predecessors of focus element
         # left arm, condition (4)
-        my $lhippos = $fpos - 1;
-        if ($lhippos >= $srow[$frow]) { # lhip in row
-            my $lhip = $trel[$lhippos];
+        my $polh = $polhip[$fpos];
+        if ($polh != $FREE) {
+            my $lhip = $trel[$polh];
             if ($lhip != $FREE) { # lhip allocated
                 my $dist = $lhip - $focus;
                 if ($dist == -1 or $dist == 1) {
                     $result = $FALSE;
                 }
-                my $larmpos   = $srow[$armrow] + $fpos - $srow[$frow] - 1;
-                if ($result == $TRUE and $larmpos >= $srow[$armrow]) { # in row
-                    my $larm  = $trel[$larmpos]; # left  arm element
-                    if ($larm != $FREE) { # larm allocated
+                my $pola  = $polarm[$fpos];
+                if ($pola != $FREE) {
+                    my $larm  = $trel[$pola]; # left  arm element
+                    if ($larm != $FREE and $result == $TRUE) { # larm allocated
                         if  ( ($lhip < $larm and $larm < $focus) 
                                or ($between == 1 and
                               ($lhip > $larm and $larm > $focus))
@@ -272,23 +324,23 @@ sub possible { # whether the focus fits in its neighbourhood
                             $result = $FALSE;
                         }  
                     } # larm allocated
-                } # larmpos in row
-             } # lhip allocated
-        } # lhip in row 
+                } # larm exists
+            } # lhip allocated
+        } # lhip exists
 
         # right arm, condition (5)
-        my $rhippos = $fpos + 1;
-        if ($rhippos <  $erow[$frow]) { # rhip in row
-            my $rhip = $trel[$rhippos];
+        my $porh = $porhip[$fpos];
+        if ($porh != $FREE) {
+            my $rhip = $trel[$porh];
             if ($rhip != $FREE) { # rhip allocated
                 my $dist = $rhip - $focus;
                 if ($dist == -1 or $dist == 1) {
                     $result = $FALSE;
                 }
-                my $rarmpos   = $srow[$armrow] + $fpos - $srow[$frow] + 0;
-                if ($result == $TRUE and $rarmpos <  $erow[$armrow]) { # in row
-                    my $rarm  = $trel[$rarmpos]; # right arm element
-                    if ($rarm != $FREE) { # rarm allocated
+                my $pora  = $porarm[$fpos];
+                if ($pora != $FREE) {
+                    my $rarm  = $trel[$pora]; # right arm element
+                    if ($rarm != $FREE and $result == $TRUE) { # rarm allocated
                         if  ( ($focus < $rarm and $rarm < $rhip) 
                                or ($between == 1 and
                               ($focus > $rarm and $rarm > $rhip) )
@@ -298,9 +350,9 @@ sub possible { # whether the focus fits in its neighbourhood
                             $result = $FALSE;
                         }  
                     } # rarm allocated
-                } # rarmpos in row
-             } # rhip allocated
-        } # rhip in row 
+                } # rarm exists
+            } # rhip allocated
+        } # rhip exists
     } # arms, rule > 1
     return $result;
 } # possible
@@ -372,6 +424,24 @@ exit;
 print STDERR "$count triangles with interlacing rows\n";
 # https://oeis.org/wiki/User:Georg_Fischer Feb. 27, 2018
 __DATA__
+georg@nunki:~/work/gits/fasces/oeis/interlace$ perl -w intrian.pl 4 0
+# arrange 10 numbers in a triangle with 4 rows, with child1 < father < child2
+# 12 triangles found in 0.004 s
+# 12 triangles found in 0.004 s
+georg@nunki:~/work/gits/fasces/oeis/interlace$ perl -w intrian.pl 5 0
+# arrange 15 numbers in a triangle with 5 rows, with child1 < father < child2
+# 286 triangles found in 12.475 s
+# 286 triangles found in 12.475 s
+georg@nunki:~/work/gits/fasces/oeis/interlace$ perl -w intrian.pl 4 1
+# arrange 10 numbers in a triangle with 4 rows, with father between child1 and child2
+# 1744 triangles found in 1.337 s
+# 1744 triangles found in 1.337 s
+georg@nunki:~/work/gits/fasces/oeis/interlace$ perl -w intrian.pl 5 1
+# arrange 15 numbers in a triangle with 5 rows, with father between child1 and child2
+# 2002568 triangles found in 22308.002 s
+# 2002568 triangles found in 22308.002 s
+georg@nunki:~/work/gits/fasces/oeis/interlace$ 
+
 georg@nunki:~/work/gits/fasces/oeis/interlace$ perl intrian.pl 4 
 # arrange 10 numbers in a triangle with 4 rows, with child1 < father < child2
 # srow: 0,1,3,6
