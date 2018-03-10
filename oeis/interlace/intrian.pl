@@ -206,16 +206,16 @@ sub check_left_connection { # whether the element has a connection to any member
     my $pos;
     my $result = $FAIL;
     if ($between == 1 and $fpos >= $srow[$last_row]) {
-        $result = $SUCC;
+        return $SUCC;
     } else {
-    if ($result == $FAIL) { $pos = $polarm[$fpos]; print "pola $pos\n" if $debug > 1; if ($pos != $FREE) { $memb = $trel[$pos]; if ($memb != $FREE and $memb < $elem) { $result = $SUCC; }}}
-    if ($result == $FAIL) { $pos = $polleg[$fpos]; print "poll $pos\n" if $debug > 1; if ($pos != $FREE) { $memb = $trel[$pos]; if ($memb != $FREE and $memb < $elem) { $result = $SUCC; }}}
-    if ($result == $FAIL) { $pos = $polhip[$fpos]; print "polh $pos\n" if $debug > 1; if ($pos != $FREE) { $memb = $trel[$pos]; if ($memb != $FREE and $memb < $elem) { $result = $SUCC; }}}
-    if ($result == $FAIL) { $pos = $porarm[$fpos]; print "pora $pos\n" if $debug > 1; if ($pos != $FREE) { $memb = $trel[$pos]; if ($memb != $FREE and $memb < $elem) { $result = $SUCC; }}}
-    if ($result == $FAIL) { $pos = $porleg[$fpos]; print "porl $pos\n" if $debug > 1; if ($pos != $FREE) { $memb = $trel[$pos]; if ($memb != $FREE and $memb < $elem) { $result = $SUCC; }}}
-    if ($result == $FAIL) { $pos = $porhip[$fpos]; print "porh $pos\n" if $debug > 1; if ($pos != $FREE) { $memb = $trel[$pos]; if ($memb != $FREE and $memb < $elem) { $result = $SUCC; }}}
+    	{ $pos = $polarm[$fpos]; if ($pos != $FREE) { $memb = $trel[$pos]; if ($memb != $FREE and $memb < $elem) { return $SUCC; }}}
+    	{ $pos = $polleg[$fpos]; if ($pos != $FREE) { $memb = $trel[$pos]; if ($memb != $FREE and $memb < $elem) { return $SUCC; }}}
+#   	{ $pos = $polhip[$fpos]; if ($pos != $FREE) { $memb = $trel[$pos]; if ($memb != $FREE and $memb < $elem) { return $SUCC; }}}
+    	{ $pos = $porarm[$fpos]; if ($pos != $FREE) { $memb = $trel[$pos]; if ($memb != $FREE and $memb < $elem) { return $SUCC; }}}
+    	{ $pos = $porleg[$fpos]; if ($pos != $FREE) { $memb = $trel[$pos]; if ($memb != $FREE and $memb < $elem) { return $SUCC; }}}
+#   	{ $pos = $porhip[$fpos]; if ($pos != $FREE) { $memb = $trel[$pos]; if ($memb != $FREE and $memb < $elem) { return $SUCC; }}}
     }
-    print "check_left_connection  elem=$elem, fpos=$fpos, memb=$memb, result=$result; \n" if $debug >= 2;
+    # print "check_left_connection  elem=$elem, fpos=$fpos, memb=$memb, result=$result; \n" if $debug >= 2;
     return $result;
 } # check_left_connection
 
@@ -225,16 +225,16 @@ sub check_right_connection { # whether the element has a connection to any membe
     my $pos;
     my $result = $FAIL;
     if ($between == 1 and $fpos >= $srow[$last_row]) {
-        $result = $SUCC;
+        return $SUCC;
     } else {
-    if ($result == $FAIL) { $pos = $polarm[$fpos]; print "pola $pos\n" if $debug > 1; if ($pos != $FREE) { $memb = $trel[$pos]; if ($memb != $FREE and $memb > $elem) { $result = $SUCC; }}}
-    if ($result == $FAIL) { $pos = $polleg[$fpos]; print "poll $pos\n" if $debug > 1; if ($pos != $FREE) { $memb = $trel[$pos]; if ($memb != $FREE and $memb > $elem) { $result = $SUCC; }}}
-    if ($result == $FAIL) { $pos = $polhip[$fpos]; print "polh $pos\n" if $debug > 1; if ($pos != $FREE) { $memb = $trel[$pos]; if ($memb != $FREE and $memb > $elem) { $result = $SUCC; }}}
-    if ($result == $FAIL) { $pos = $porarm[$fpos]; print "pora $pos\n" if $debug > 1; if ($pos != $FREE) { $memb = $trel[$pos]; if ($memb != $FREE and $memb > $elem) { $result = $SUCC; }}}
-    if ($result == $FAIL) { $pos = $porleg[$fpos]; print "porl $pos\n" if $debug > 1; if ($pos != $FREE) { $memb = $trel[$pos]; if ($memb != $FREE and $memb > $elem) { $result = $SUCC; }}}
-    if ($result == $FAIL) { $pos = $porhip[$fpos]; print "porh $pos\n" if $debug > 1; if ($pos != $FREE) { $memb = $trel[$pos]; if ($memb != $FREE and $memb > $elem) { $result = $SUCC; }}}
+    	{ $pos = $polarm[$fpos]; if ($pos != $FREE) { $memb = $trel[$pos]; if ($memb != $FREE and $memb > $elem) { return $SUCC; }}}
+    	{ $pos = $polleg[$fpos]; if ($pos != $FREE) { $memb = $trel[$pos]; if ($memb != $FREE and $memb > $elem) { return $SUCC; }}}
+#   	{ $pos = $polhip[$fpos]; if ($pos != $FREE) { $memb = $trel[$pos]; if ($memb != $FREE and $memb > $elem) { return $SUCC; }}}
+    	{ $pos = $porarm[$fpos]; if ($pos != $FREE) { $memb = $trel[$pos]; if ($memb != $FREE and $memb > $elem) { return $SUCC; }}}
+    	{ $pos = $porleg[$fpos]; if ($pos != $FREE) { $memb = $trel[$pos]; if ($memb != $FREE and $memb > $elem) { return $SUCC; }}}
+#   	{ $pos = $porhip[$fpos]; if ($pos != $FREE) { $memb = $trel[$pos]; if ($memb != $FREE and $memb > $elem) { return $SUCC; }}}
     }
-    print "check_right_connection elem=$elem, fpos=$fpos, memb=$memb, result=$result; \n" if $debug >= 2;
+    # print "check_right_connection elem=$elem, fpos=$fpos, memb=$memb, result=$result; \n" if $debug >= 2;
     return $result;
 } # check_right_connection
 
