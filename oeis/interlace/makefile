@@ -54,4 +54,9 @@ inter10.1:
 perm15:
 	java -cp ~/work/gits/ramath/dist/ramath.jar org.teherba.ramath.util.Permutator 15 > $@.tmp
 	wc $@.tmp
-	
+#-------------------------------
+gen:
+	perl perl2c.pl connected.pl > connected.tmp
+cc:
+	gcc -c -o connected.o connected.c
+	gcc -o connected connected.o

@@ -11,7 +11,6 @@
 use strict;
 use Time::HiRes qw(time); # yields microseconds
 
-
 my $max_row = shift(@ARGV); # rowno runs from 0 to max_row - 1
 my $size = ($max_row * ($max_row + 1)) / 2; # number of elements in the triangle
 my $debug = 0; # 0 = none, 1 = some, 2 = more
@@ -20,8 +19,6 @@ if (scalar(@ARGV) > 0) {
 }
 my $FAIL = 0;
 my $SUCC = 1;
-my $LSET = 0; # indicator that 0 <= $elem <= 4 (for size=10)
-my $RSET = 1; # indicator that 5 <= $elem <= 9
 
 my @srow; # start index of a row
 my @erow; # end   index of a row + 1
@@ -40,10 +37,6 @@ my @polsib;
 my @porsib;
 my @polleg;
 my @porleg;
-my $LARM  = 0x01; my $NOT_LARM = 0xff ^ $LARM;
-my $RARM  = 0x02; my $NOT_RARM = 0xff ^ $RARM;
-my $LLEG  = 0x04; my $NOT_LLEG = 0xff ^ $LLEG;
-my $RLEG  = 0x08; my $NOT_RLEG = 0xff ^ $RLEG;
 #
 # Naming of the neighbours of element $focus:
 #
@@ -125,21 +118,20 @@ if ($debug >= 2) {
 # main program
 my $count  = 0; # number of triangles which fulfill the interlacing condition
 my $missed = 0; # number of triangles which were constructed, but failed the final test
+my $investigated = 0; # number of free positions which were tried
 my $level  = 0; # nesting level
 my $start_time = time();
-my $range9 = $size - 1;
 
-&test_lset(0, $LSET); # start with $elem = 0 in lset
+&test_lset(0); # start with $elem = 0 in lset
 
 my $duration = (time() - $start_time);
 $duration =~ s{(\d+)\.(\d{3})\d*}{$1.$2};
 print        "# $count triangles found in $duration s\n";
 print STDERR "# $count triangles found in $duration s\n";
-print STDERR "# $missed failed the final test\n";
+print STDERR "# $investigated investigated, $missed triangles failed the final test\n";
 exit; # main
 #-----------------------
-sub test_lset {
-    my ($elem) = @_;
+sub test_lset { my ($elem) = @_;
     $level ++;
     my $result = $FAIL;
     my $fpos;
@@ -157,8 +149,7 @@ sub test_lset {
     } # while last
 } # test_lset
 
-sub test_rset {
-    my ($elem) = @_;
+sub test_rset { my ($elem) = @_;
     $level ++;
     my $result = $FAIL;
     my $fpos;
@@ -169,15 +160,14 @@ sub test_rset {
         &evaluate($elem, $fpos, +1); # look at right arm
         $relem ++;
     } # while $relem
-    $fpos = $srow[$last_row];
-    while ($fpos < $erow[$last_row]) { # look at some FREE in the last row
+    $fpos = $erow[$last_row] - 1;
+    while ($fpos >= $srow[$last_row]) { # look at some FREE in the last row
         &evaluate($elem, $fpos,  0);
-        $fpos ++;
+        $fpos --;
     } # while last
 } # test_rset
 
-sub evaluate {
-    my ($elem, $fpos, $arm) = @_;
+sub evaluate { my ($elem, $fpos, $arm) = @_;
     my $epos; # where to allocate $elem
     if ($arm == 0) { # in last row
         $epos = $fpos;
@@ -194,23 +184,34 @@ sub evaluate {
                 if (abs($lsib - $elem) <= 1) {
                     $result = $FAIL;
                 }
+                my $larm = $trel[$polarm[$epos]];
+                if (0 and $larm < $size) {
+                    if ($lsib < $larm and $larm < $elem or
+                        $lsib > $larm and $larm > $elem) {
+                    } else {
+                        $result = $FAIL;
+                    }
+                } # larm exists
             }
             if ($result == $SUCC) {
-            my $rsib = $trel[$porsib[$epos]];
-            if ($rsib < $size) { # != NOEX and != FREE
-                if (abs($rsib - $elem) <= 1) {
-                    $result = $FAIL;
-                }
-            }
+                my $rsib = $trel[$porsib[$epos]];
+                if ($rsib < $size) { # != NOEX and != FREE
+                    if (abs($rsib - $elem) <= 1) {
+                        $result = $FAIL;
+                    }
+                    my $rarm = $trel[$porarm[$epos]];
+                    if (0 and $rarm < $size) {
+                        if ($elem < $rarm and $rarm < $rsib or
+                            $elem > $rarm and $rarm > $rsib) {
+                        } else {
+                            $result = $FAIL;
+                        }
+                    } # rarm exists
+                } # rsib exists
             }
         } else { # not last row
             my $leg1 = $trel[$fpos]; # != $NOEX, were we came from, == $lelem
-            my $leg2 = $NOEX; # other leg of element to be allocated
-            if ($arm < 0) { # left arm
-                $leg2 = $trel[$polleg[$epos]];
-            } elsif ($arm > 0) {
-                $leg2 = $trel[$porleg[$epos]];
-            }
+            my $leg2 = $trel[$arm < 0 ? $polleg[$epos] : $porleg[$epos]];
             if ($leg2 < $size) { # != NOEX and != FREE
                 if ($leg1 < $elem and $elem < $leg2 or
                     $leg1 > $elem and $elem > $leg2) {
@@ -222,6 +223,7 @@ sub evaluate {
         } # not last
         if ($result == $SUCC) { # is possible
             # &allocate($elem, $epos);
+            $investigated ++;
             $filled ++;
             $trel[$epos] = $elem;
             $elpo[$elem] = $epos;
@@ -238,7 +240,9 @@ sub evaluate {
                 $result = &check_all();
                 if ($result == $SUCC) {
                     my $ind = 0;
-                    print join(" ", grep { $ind ++; $ind <= $size } @trel) . "\n" if $debug >= 1;
+                    if ($debug >= 1) {
+                        print join(" ", grep { $ind ++; $ind <= $size } @trel) . "\n";
+                    }
                     $count ++;
                 } else { # constructed, but still not possible
                     $missed ++;
@@ -254,16 +258,16 @@ sub evaluate {
     return $result;
 } # evaluate
 
-sub allocate { # allocate $elem at $epos
-    my ($elem, $epos) = @_;
+sub allocate { my ($elem, $epos) = @_;
+	# allocate $elem at $epos
     $filled ++;
     $trel[$epos] = $elem;
     $elpo[$elem] = $epos;
     # print "# $level allocate $elem at $epos, filled=$filled, trel="  . join(" ", @trel) . "\n" if $debug >= 2;
 } # allocate
 
-sub remove { # undo the allocation of $elem at $epos
-    my ($elem, $epos) = @_;
+sub remove { my ($elem, $epos) = @_;
+	# undo the allocation of $elem at $epos
     $filled --;
     $trel[$epos] = $FREE;
     $elpo[$elem] = $NOEX;
@@ -271,7 +275,8 @@ sub remove { # undo the allocation of $elem at $epos
 } # remove
 
 # neighbourhood access, connectivity and test methods
-sub check_all { # check all positions
+sub check_all { 
+	# check all positions
     my $result = $SUCC;
     my $focus = 0;
     while ($result == $SUCC and $focus < $srow[$last_row]) {
