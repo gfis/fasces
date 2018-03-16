@@ -3,12 +3,11 @@
 /* Fill triangles with interlaced rows */
 /* defined by Clark Kimberling */
 /* @(#) Id */
-/* 2018-03-15, Georg Fischer: 7th attempt, generated from connected.pl 
-for 6: > 25.000.000.000
-*/
+/* 2018-03-16, Georg Fischer: 8th attempt, copied from connect.c */
+/* time measurement taken from https://stackoverflow.com/questions/13156031/measuring-time-in-c */
 /*------------------------------------------------------ */
 /* usage: */
-/*    ./connected [max_row [debug]] */
+/*   time ./armleg [max_row [debug]] */
 /*-------------------------------------------------------- */
 #include <stdio.h>
 #include <stdlib.h>
@@ -68,10 +67,8 @@ PRIVATE int check_all() {
         elem = trel[focus];
         larm = trel[polleg[focus]];
         rarm = trel[porleg[focus]];
-        if (larm < elem && elem < rarm ||
-            larm > elem && elem > rarm) {
-                /* ok */
-        } else {
+        if (! (larm < elem && elem < rarm ||
+               larm > elem && elem > rarm   )) {
             result = FAIL;
         }
         focus ++;
@@ -82,13 +79,24 @@ PRIVATE int check_all() {
 PRIVATE void evaluate(int elem, int fpos, int arm) {
     int epos; /* where to allocate elem */
     int lsib, rsib, leg1, leg2, conj;
-    if (arm == 0) { /* in last row */
-        epos = fpos;
-    } else if (arm < 0) { /* take left arm */
-        epos = polarm[fpos];
-    } else { 
-        epos = porarm[fpos];
-    }
+    switch (arm) {
+        default:
+        case 0: /* in last row */
+            epos = fpos;
+            break;
+        case -1: /* take left  arm */
+            epos = polarm[fpos];
+            break;
+        case +1: /* take right arm */
+            epos = porarm[fpos];
+            break;
+        case -2: /* take left  leg */
+            epos = polleg[fpos];
+            break;
+        case +2: /* take right leg */
+            epos = porleg[fpos];
+            break;
+    } /* switch arm */
     int result = SUCC;
     if (trel[epos] == empty) { /* and therefore != nonex */
         if (arm == 0) { /* last row */
@@ -97,7 +105,6 @@ PRIVATE void evaluate(int elem, int fpos, int arm) {
                 if (abs(lsib - elem) <= 1) {
                     result = FAIL;
                 }
-                /* int larm = trel[polarm[epos]]; */
             }
             if (result == SUCC) {
                 rsib = trel[porsib[epos]];
@@ -105,20 +112,40 @@ PRIVATE void evaluate(int elem, int fpos, int arm) {
                     if (abs(rsib - elem) <= 1) {
                         result = FAIL;
                     }
-                    /* int rarm = trel[porarm[epos]]; */
                 } /* rsib exists */
             }
         } else { /* not last row */
-            leg1 = trel[fpos]; /* != nonex, were we came from, == lelem */
-            leg2 = trel[arm < 0 ? polleg[epos] : porleg[epos]];
-            if (leg2 < size) { /* != nonex and != empty */
-                if (leg1 < elem && elem < leg2 ||
-                    leg1 > elem && elem > leg2) {
-                    /* ok */
-                } else {
-                    result = FAIL;
-                }
-            }
+            switch (arm) {
+                default:
+                case -1: /* leg2 / elem \ leg1 */
+                    leg1 = trel[fpos]; /* != nonex, were we came from, == lelem */
+                    leg2 = trel[polleg[epos]];
+                    if (leg2 < size && ! (
+                        leg1 < elem && elem < leg2 ||
+                        leg1 > elem && elem > leg2    )) { result = FAIL; }
+                    break;
+                case +1: /* leg1 / elem \ leg2 */
+                    leg1 = trel[fpos]; /* != nonex, were we came from, == lelem */
+                    leg2 = trel[porleg[epos]];
+                    if (leg2 < size && ! (
+                        leg1 < elem && elem < leg2 ||
+                        leg1 > elem && elem > leg2    )) { result = FAIL; }
+                    break;
+                case -2: /* elem / leg1 \ leg2 */  
+                    leg1 = trel[fpos]; /* != nonex, were we came from, == lelem */
+                    leg2 = trel[porleg[fpos]];
+                    if (leg2 < size && ! (
+                        elem < leg1 && leg1 < leg2 ||
+                        elem > leg1 && leg1 > leg2    )) { result = FAIL; }
+                    break;
+                case +2: /* leg2 / leg1 \ elem */
+                    leg1 = trel[fpos]; /* != nonex, were we came from, == lelem */
+                    leg2 = trel[polleg[fpos]];
+                    if (leg2 < size && ! (
+                        leg2 < leg1 && leg1 < elem ||
+                        leg2 > leg1 && leg1 > elem    )) { result = FAIL; }
+                    break;
+            } /* switch arm */
         } /* not last */
         if (result == SUCC) { /* is possible */
             /* allocate(elem, epos); */
@@ -128,16 +155,15 @@ PRIVATE void evaluate(int elem, int fpos, int arm) {
             elpo[elem] = epos;
             if (filled < size) {
                 conj = size - 1 - elem;
+                int cpos;
                 if (elem < conj) {
-                    test_rset(conj    );
-                } else {
+                    test_rset(conj);
+                } else { /* elem >= conj */
                     test_lset(conj + 1);
-                }
+                } /* elem >= conj */
             } else { /* all elements exhausted, check, count and maybe print */
                 /* check whole triangle again */
                 result = check_all();
-                /*
-                */
                 if (result == SUCC) {
                     if (debug >= 1) {
                         int ind = 0;
@@ -161,7 +187,6 @@ PRIVATE void evaluate(int elem, int fpos, int arm) {
 } /* evaluate */
 
 PRIVATE void test_lset(int elem) {
-    int result = FAIL;
     int fpos;
     int lelem = elem - 1; /* element of lset */
     while (lelem >= 0) { /* try all arms of the lset */
@@ -178,7 +203,6 @@ PRIVATE void test_lset(int elem) {
 } /* test_lset */
 
 PRIVATE void test_rset(int elem) {
-    int result = FAIL;
     int fpos;
     int relem = elem + 1; /* element of rset */
     while (relem < size) { /* try all arms of the rset */
@@ -261,5 +285,4 @@ PUBLIC int main(int argc, char *argv[]) {
     printf("# %ld triangles found in %ld ms\n", count, end - start);
     printf("# %ld investigated, %ld triangles failed the final test\n", investigated, missed);
     return 0;
-    
 } /* main */

@@ -57,6 +57,15 @@ perm15:
 #-------------------------------
 gen:
 	perl perl2c.pl connected.pl > connected.tmp
-cc:
-	gcc -c -o connected.o connected.c
-	gcc -o connected connected.o
+connected: connected.c
+	gcc -Ofast -c -o $@.o $@.c
+	gcc -o $@ $@.o
+	chmod 755 $@
+armleg: armleg.c
+	gcc -Ofast -c -o $@.o $@.c
+	gcc -o $@ $@.o
+	chmod 755 $@
+arm4:
+	./armleg 4 1 | grep -v "#" | sort | uniq | wc
+arm5:
+	./armleg 5 1 | grep -v "#" | sort | uniq | wc
