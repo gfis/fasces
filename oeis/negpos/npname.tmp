@@ -1,5 +1,5 @@
 A131388  (a(n))   Rule 1  a(1) = 1 and d(1) = 0.
-A131389  (d(n))   Rule 1 (see Comments) with a(1) = 1 and d(1) = 0.
+A131389  (d(n))   Rule 1 () with a(1) = 1 and d(1) = 0.
 A131390 positive integers; inverse of  A131388.
 A131391 Positions of positive integers in A131389, minus 1.
 A131392 Positions of negative integers in A131389, minus 1.
@@ -10,7 +10,7 @@ A131396 Positions of n-th positive integer in A131394, minus 1.
 A131397 Positions of negative integers in A131394, minus 1.
 A175007 Positions of nonnegative terms in A131389.
 A175008 Positions of negative terms in A131389.
-A175498 a(1)=1. a(n) = the smallest positive integer not occurring earlier such 
+A175498 a(1)=1. a(n) = the smallest positive integer not o
 A175499 a(n) = A175498(n+1)-A175498(n).
 A256283 Smallest m such that A257905(m) = n.
 A257465 Inverse permutation to A175498.
@@ -50,4 +50,4 @@ A258046  (a(n))   Rule 3  a(1) = 1 and d(1) = 0.
 A258047  (d(n))   Rule 3  a(1) = 1 and d(1) = 0.
 A258049 Position of n in A258047 after deleting the initial 0.
 A258050 Position of -n in A258047 after deleting the initial 0.
-A258105 Inverse to  defined as {b(1) = 1, and for n>1: b(n) = A257906(n)}, which
+A258105 Inverse to {b(1) = 1, and for n>1: b(n) = A257906(n)}

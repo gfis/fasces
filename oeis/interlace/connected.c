@@ -261,5 +261,16 @@ PUBLIC int main(int argc, char *argv[]) {
     printf("# %ld triangles found in %ld ms\n", count, end - start);
     printf("# %ld investigated, %ld triangles failed the final test\n", investigated, missed);
     return 0;
-    
+/*
+282963869598 investigated, 42262921216 found
+282964279740 investigated, 42262986752 found
+42263042752 triangles found in 0.000 s
+282964613990 investigated, 0 triangles failed the
+
+real    2013m20.191s
+user    1995m30.233s
+sys     2m8.265s
+
+gfis@sirus /cygdrive/c/Users/gfis/work/gits/fasces
+*/
 } /* main */
