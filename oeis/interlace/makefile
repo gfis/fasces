@@ -62,7 +62,7 @@ connected: connected.c
 	gcc -o $@ $@.o
 	chmod 755 $@
 armleg: armleg.c
-	gcc -Ofast -c -o $@.o $@.c
+	gcc -Ofast  -c -o $@.o $@.c
 	gcc -o $@ $@.o
 	chmod 755 $@
 arm4:
