@@ -1,15 +1,17 @@
 #!make
 
-# for OEIS sequences defined by Clark Kimberling
+# Check OEIS sequences defined by Clark Kimberling
 # @(#) $Id$
 # 2018-02-26: RULE=
 # 2018-02-23, Georg Fischer
 # 
+# c.f. listing.tmp (produced by target "listing", below)
+#---------------------------------
 TARGET=negpos
 LIMIT=2000
 
 all: rule1 rule2 rule3 rule4
-#----------------------------------------------------------------
+#----------
 # Rule 1: Step 1 downwards, Step 2 upwards
 rule1: np131388 np257705 np257879 np257905
 np131388: 131388
@@ -265,7 +267,7 @@ listing:
 	| tee listing.tmp
 	wc listing.tmp
 list1: 
-	echo $(NOEIS) Rule $(RULE).$(S)  $(OPER)  $(A1) $(D1)
+	echo [https://oeis.org/A$(NOEIS) A$(NOEIS)]   Rule $(RULE).$(S)   $(OPER)   $(A1) $(D1)
 #----
 # e.g. https://oeis.org/search?q=id:A257908&fmt=text
 internal: Anoeis
