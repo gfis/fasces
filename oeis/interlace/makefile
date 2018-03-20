@@ -65,7 +65,7 @@ armleg: armleg.c
 	gcc -Ofast  -c -o $@.o $@.c
 	gcc -o $@ $@.o
 	chmod 755 $@
-arm4:
-	./armleg 4 1 | grep -v "#" | sort | uniq | wc
+armcount:
+	./armleg $(N) 1 | grep -vE "^#" | cut -d " " -f $$(($(N)+2)) | sort | uniq -c
 arm5:
 	./armleg 5 1 | grep -v "#" | sort | uniq | wc

@@ -12,6 +12,10 @@ use integer;
 my $str = shift(@ARGV);
 my $k = shift(@ARGV);
 &generate($str, $k);
+
+my $test = "112223444455";
+$test =~ s/(.)\1+/\1/g;
+print "$test\n";
 exit(0);
 
 sub generate {

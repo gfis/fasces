@@ -205,12 +205,7 @@ PRIVATE void evaluate(int elem, int fpos, int arm) {
 
 PRIVATE void test_rset(int elem) {
     int fpos, relem;
-#undef upwards  
-#ifdef upwards
-    for (relem = elem + 1; relem < size; relem ++) { /* try all arms of the rset */
-#else
     for (relem = size; relem > elem; relem --) { /* try all arms of the rset */
-#endif
         fpos = elpo[relem]; /* must be allocated (by construction) */
         evaluate(elem, fpos, -1); /* look at left  arm */
         evaluate(elem, fpos, +1); /* look at right arm */
@@ -222,11 +217,7 @@ PRIVATE void test_rset(int elem) {
 
 PRIVATE void test_lset(int elem) {
     int fpos, lelem;
-#ifdef upwards
-    for (lelem = elem - 1; lelem >= 0  ; lelem --) { /* try all arms of the lset */
-#else
     for (lelem = 0; lelem < elem  ; lelem ++) { /* try all arms of the lset */
-#endif
         fpos = elpo[lelem]; /* must be allocated (by construction) */
         evaluate(elem, fpos, -1); /* look at left  arm */
         evaluate(elem, fpos, +1); /* look at right arm */
@@ -247,8 +238,10 @@ PRIVATE void test_lset0() {
 PUBLIC int main(int argc, char *argv[]) {
     cind = 0; /* current index */
     int iarg = 1;
+/*
     prevc = 44000000000l;
     printf("test: %lld\n", prevc);
+*/
     prevc = 0l;
     count = 0l; 
     sscanf(argv[iarg ++], "%d", & max_row); /* rowno runs from 0 to max_row - 1 */
@@ -307,49 +300,54 @@ PUBLIC int main(int argc, char *argv[]) {
 
     gettimeofday(&timecheck, NULL);
     start = (long) timecheck.tv_sec * 1000 + (long) timecheck.tv_usec / 1000;
-#define half
-#ifdef half
     int ele0 = 0;
-    for (int pos0 = srow[last_row]; pos0 < erow[last_row] - 1; pos0 ++) {
+    for (int pos0 = srow[last_row]; pos0 < erow[last_row]; pos0 ++) {
         filled ++;
         trel[pos0] = ele0;
         elpo[ele0] = pos0;
         int ele9 = size - 1;
+#undef half
+#ifdef half
         for (int pos9 = pos0 + 1; pos9 < erow[last_row]; pos9 ++) {
-            filled ++;
-            trel[pos9] = ele9;
-            elpo[ele9] = pos9;
-            test_lset(1);
-            int ind = srow[last_row];
-            while (ind < size) {
-                printf("%d ", trel[ind]);
-                ind ++;
-            }
-            printf(" # %lld %lld\n", count - prevc, count);
-            prevc = count;
-            filled --;
-            trel[pos9] = empty;
-            elpo[ele9] = nonex;
+#else
+        for (int pos9 = srow[last_row]; pos9 < erow[last_row]; pos9 ++) {
+#endif
+            if (pos0 != pos9) {
+                filled ++;
+                trel[pos9] = ele9;
+                elpo[ele9] = pos9;
+                test_lset(1);
+                int ind = srow[last_row];
+                while (ind < size) {
+                    printf("%d ", trel[ind]);
+                    ind ++;
+                }
+                printf("# %lld %lld\n", count - prevc, count);
+                prevc = count;
+                filled --;
+                trel[pos9] = empty;
+                elpo[ele9] = nonex;
+            } /* if pos0 != pos9 */
         } /* for pos9 */
         filled --;
         trel[pos0] = empty;
         elpo[ele0] = nonex;
     } /* for pos0 */
-#else
-    test_lset(0); /* start with elem = 0 in lset */
-#endif
+    /* replacement for the loop above
+    test_lset(0); 
+    */
     gettimeofday(&timecheck, NULL);
     end = (long) timecheck.tv_sec * 1000 + (long) timecheck.tv_usec / 1000;
     printf("# %lld triangles found in %ld ms\n", count, end - start);
 #ifdef check
     printf("# %ld investigated", investigated);
     printf("%ld triangles failed the final test", missed);
-#endif
     printf("\n");
+#endif
     return 0;
 /*
-georg@nunki:~/work/gits/fasces/oeis/interlace$ ./armleg 4
-test: 44000000000
+with #define half (final sums must be doubled)
+# ./armleg 4
 # arrange 10 numbers in a triangle with 4 rows
 0 9 11 11  # 160 160
 0 11 9 11  # 110 270
@@ -359,8 +357,7 @@ test: 44000000000
 11 11 0 9  # 160 872
 # 872 triangles found in 1 ms
 
-georg@nunki:~/work/gits/fasces/oeis/interlace$ ./armleg 5
-test: 2002568
+# ./armleg 5
 # arrange 15 numbers in a triangle with 5 rows
 0 14 16 16 16  # 90594 90594
 0 16 14 16 16  # 76886 167480
@@ -374,8 +371,7 @@ test: 2002568
 16 16 16 0 14  # 90594 1001284
 # 1001284 triangles found in 430 ms
 
-georg@nunki:~/work/gits/fasces/oeis/interlace$ ./armleg 6
-test: 42263042752
+# ./armleg 6
 # arrange 21 numbers in a triangle with 6 rows
 0 20 22 22 22 22  # 1003632544  1003632544  a
 0 22 20 22 22 22  #  980045344  1983677888  b
@@ -393,6 +389,6 @@ test: 42263042752
 22 22 22 0 22 20  #  980045344 20127888832  b
 22 22 22 22 0 20  # 1003632544 21131521376  a
 # 21131521376 triangles found in 11303834 ms
-georg@nunki:~/work/gits/fasces/oeis/interlace$ 
+# 
 */
 } /* main */
