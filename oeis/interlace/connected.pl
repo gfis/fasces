@@ -239,11 +239,11 @@ sub evaluate { my ($elem, $fpos, $arm) = @_;
                 # check whole triangle again
                 $result = &check_all();
                 if ($result == $SUCC) {
+                    $count ++;
                     my $ind = 0;
                     if ($debug >= 1) {
                         print join(" ", grep { $ind ++; $ind <= $size } @trel) . "\n";
                     }
-                    $count ++;
                 } else { # constructed, but still not possible
                     $missed ++;
                 }

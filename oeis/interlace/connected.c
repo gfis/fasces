@@ -26,7 +26,7 @@ PRIVATE int rowno;
 PRIVATE int cind;
 PRIVATE int size; /* number of elements in the triangle */
 PRIVATE int debug; /* 0 = none, 1 = some, 2 = more */
-PRIVATE int  filled = 0;
+PRIVATE int filled = 0;
 PRIVATE long count  = 0l; /* number of triangles which fulfill the interlacing condition */
 PRIVATE int  cnt = 0;
 PRIVATE long missed = 0l; /* number of triangles which were constructed, but failed the final test */
