@@ -7,7 +7,7 @@
 #------------------------------------------------------
 # C.f. list of sequences in https://oeis.org/search?q=A257705
 # usage:
-#   perl negpos.pl rulle noeis n oper a1 d1
+#   perl negpos.pl rule noeis n oper a1 d1
 #       rule  = 1|2|3
 #       s     = 0|1
 #       noeis = "131388|131389|1313393|131394..." (without "A")
