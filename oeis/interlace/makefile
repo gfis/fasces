@@ -4,7 +4,18 @@
 # @(#) $Id$
 # 2018-02-27, Georg Fischer
 # 
-all: intrian
+N=4
+
+all: diff2
+#------------------
+diff1:
+	./armleg $(N) 1 | grep -vE "^#" | cut -d " " -f $$(($(N)+2)) \
+	| perl diffs.pl
+diff2:
+	./armleg $(N) 1 | grep -vE "^#" | cut -d " " -f $$(($(N)+2)) \
+	| sort -n | uniq \
+	| perl diffs.pl
+#--------------------------------------
 intrian: intrian3
 intrian3:
 	perl intrian.pl 3 0 | grep -v "^#" > $@.in.tmp
