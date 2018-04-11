@@ -301,16 +301,17 @@ PUBLIC int main(int argc, char *argv[]) {
     gettimeofday(&timecheck, NULL);
     start = (long) timecheck.tv_sec * 1000 + (long) timecheck.tv_usec / 1000;
     int ele0 = 0;
-    for (int pos0 = srow[last_row]; pos0 < erow[last_row]; pos0 ++) {
+    int pos0, pos9;
+    for (pos0 = srow[last_row]; pos0 < erow[last_row]; pos0 ++) {
         filled ++;
         trel[pos0] = ele0;
         elpo[ele0] = pos0;
         int ele9 = size - 1;
 #undef half
 #ifdef half
-        for (int pos9 = pos0 + 1; pos9 < erow[last_row]; pos9 ++) {
+        for (pos9 = pos0 + 1; pos9 < erow[last_row]; pos9 ++) {
 #else
-        for (int pos9 = srow[last_row]; pos9 < erow[last_row]; pos9 ++) {
+        for (pos9 = srow[last_row]; pos9 < erow[last_row]; pos9 ++) {
 #endif
             if (pos0 != pos9) {
                 filled ++;

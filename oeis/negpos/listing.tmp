@@ -1,48 +1,48 @@
-[https://oeis.org/A131388 A131388] Rule 1.1 a  1 0
-[https://oeis.org/A131389 A131389] Rule 1.1 d  1 0
-[https://oeis.org/A131390 A131390] Rule 1.1 in 1 0
-[https://oeis.org/A131391 A131391] Rule 1.1 cp 1 0
-[https://oeis.org/A131392 A131392] Rule 1.1 cn 1 0
-[https://oeis.org/A131393 A131393] Rule 2.1 a  1 0
-[https://oeis.org/A131394 A131394] Rule 2.1 d  1 0
-[https://oeis.org/A131395 A131395] Rule 2.1 in 1 0
-[https://oeis.org/A131396 A131396] Rule 2.1 cp 1 0
-[https://oeis.org/A131397 A131397] Rule 2.1 cn 1 0
-[https://oeis.org/A175007 A175007] Rule 1.1 d0 1 0
-[https://oeis.org/A175008 A175008] Rule 1.1 dn 1 0
-[https://oeis.org/A175498 A175498] Rule 4.0 a  1 0
-[https://oeis.org/A175499 A175499] Rule 4.0 d  0 1
-[https://oeis.org/A257705 A257705] Rule 1.1 a  0 0
-[https://oeis.org/A257706 A257706] Rule 1.0 a  0 1
-[https://oeis.org/A257876 A257876] Rule 1.1 a  0 2
-[https://oeis.org/A257877 A257877] Rule 1.1 a  0 3
-[https://oeis.org/A257878 A257878] Rule 1.1 a  1 1
-[https://oeis.org/A257879 A257879] Rule 1.0 a  2 0
-[https://oeis.org/A257880 A257880] Rule 1.0 d  2 0
-[https://oeis.org/A257881 A257881] Rule 1.0 a  2 1
-[https://oeis.org/A257882 A257882] Rule 1.0 a  2 2
-[https://oeis.org/A257883 A257883] Rule 4.0 a  0 0
-[https://oeis.org/A257884 A257884] Rule 4.0 a  0 1
-[https://oeis.org/A257885 A257885] Rule 4.0 a  0 2
-[https://oeis.org/A257902 A257902] Rule 4.0 d  0 2
-[https://oeis.org/A257903 A257903] Rule 4.0 a  0 3
-[https://oeis.org/A257904 A257904] Rule 4.0 d  0 3
-[https://oeis.org/A257905 A257905] Rule 3.1 a  0 0
-[https://oeis.org/A257906 A257906] Rule 3.1 a  0 1
-[https://oeis.org/A257907 A257907] Rule 3.1 d  0 1
-[https://oeis.org/A257908 A257908] Rule 3.0 a  0 2
-[https://oeis.org/A257909 A257909] Rule 3.0 d  0 2
-[https://oeis.org/A257910 A257910] Rule 3.0 a  0 3
-[https://oeis.org/A257911 A257911] Rule 4.0 a  2 2
-[https://oeis.org/A257912 A257912] Rule 4.0 d  2 2
-[https://oeis.org/A257915 A257915] Rule 1.1 d  0 3
-[https://oeis.org/A257918 A257918] Rule 1.0 d  2 2
-[https://oeis.org/A257980 A257980] Rule 3.1 d  0 3
-[https://oeis.org/A257981 A257981] Rule 3.1 a  1 1
-[https://oeis.org/A257982 A257982] Rule 3.1 d  1 1
-[https://oeis.org/A257983 A257983] Rule 3.1 a  1 2
-[https://oeis.org/A257985 A257985] Rule 3.1 a  2 0
-[https://oeis.org/A257986 A257986] Rule 3.1 a  2 1
-[https://oeis.org/A257987 A257987] Rule 3.1 a  2 2
-[https://oeis.org/A258046 A258046] Rule 3.1 a  1 0
-[https://oeis.org/A258047 A258047] Rule 3.1 d  1 0
+ [https://oeis.org/A131388 A131388] Rule 1.1 a  1 0
+ [https://oeis.org/A131389 A131389] Rule 1.1 d  1 0
+ [https://oeis.org/A131390 A131390] Rule 1.1 in 1 0
+ [https://oeis.org/A131391 A131391] Rule 1.1 cp 1 0
+ [https://oeis.org/A131392 A131392] Rule 1.1 cn 1 0
+ [https://oeis.org/A131393 A131393] Rule 2.1 a  1 0
+ [https://oeis.org/A131394 A131394] Rule 2.1 d  1 0
+ [https://oeis.org/A131395 A131395] Rule 2.1 in 1 0
+ [https://oeis.org/A131396 A131396] Rule 2.1 cp 1 0
+ [https://oeis.org/A131397 A131397] Rule 2.1 cn 1 0
+ [https://oeis.org/A175007 A175007] Rule 1.1 d0 1 0
+ [https://oeis.org/A175008 A175008] Rule 1.1 dn 1 0
+ [https://oeis.org/A175498 A175498] Rule 4.0 a  1 0
+ [https://oeis.org/A175499 A175499] Rule 4.0 d  0 1
+ [https://oeis.org/A257705 A257705] Rule 1.1 a  0 0
+ [https://oeis.org/A257706 A257706] Rule 1.0 a  0 1
+ [https://oeis.org/A257876 A257876] Rule 1.1 a  0 2
+ [https://oeis.org/A257877 A257877] Rule 1.1 a  0 3
+ [https://oeis.org/A257878 A257878] Rule 1.1 a  1 1
+ [https://oeis.org/A257879 A257879] Rule 1.0 a  2 0
+ [https://oeis.org/A257880 A257880] Rule 1.0 d  2 0
+ [https://oeis.org/A257881 A257881] Rule 1.0 a  2 1
+ [https://oeis.org/A257882 A257882] Rule 1.0 a  2 2
+ [https://oeis.org/A257883 A257883] Rule 4.0 a  0 0
+ [https://oeis.org/A257884 A257884] Rule 4.0 a  0 1
+ [https://oeis.org/A257885 A257885] Rule 4.0 a  0 2
+ [https://oeis.org/A257902 A257902] Rule 4.0 d  0 2
+ [https://oeis.org/A257903 A257903] Rule 4.0 a  0 3
+ [https://oeis.org/A257904 A257904] Rule 4.0 d  0 3
+ [https://oeis.org/A257905 A257905] Rule 3.1 a  0 0
+ [https://oeis.org/A257906 A257906] Rule 3.1 a  0 1
+ [https://oeis.org/A257907 A257907] Rule 3.1 d  0 1
+ [https://oeis.org/A257908 A257908] Rule 3.0 a  0 2
+ [https://oeis.org/A257909 A257909] Rule 3.0 d  0 2
+ [https://oeis.org/A257910 A257910] Rule 3.0 a  0 3
+ [https://oeis.org/A257911 A257911] Rule 4.0 a  2 2
+ [https://oeis.org/A257912 A257912] Rule 4.0 d  2 2
+ [https://oeis.org/A257915 A257915] Rule 1.1 d  0 3
+ [https://oeis.org/A257918 A257918] Rule 1.0 d  2 2
+ [https://oeis.org/A257980 A257980] Rule 3.1 d  0 3
+ [https://oeis.org/A257981 A257981] Rule 3.1 a  1 1
+ [https://oeis.org/A257982 A257982] Rule 3.1 d  1 1
+ [https://oeis.org/A257983 A257983] Rule 3.1 a  1 2
+ [https://oeis.org/A257985 A257985] Rule 3.1 a  2 0
+ [https://oeis.org/A257986 A257986] Rule 3.1 a  2 1
+ [https://oeis.org/A257987 A257987] Rule 3.1 a  2 2
+ [https://oeis.org/A258046 A258046] Rule 3.1 a  1 0
+ [https://oeis.org/A258047 A258047] Rule 3.1 d  1 0
