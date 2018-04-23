@@ -2,6 +2,7 @@
 
 # Build b-file of OEIS A291939 from Collatz sequences in A070165
 # @(#) $Id$
+# 2018-04-11: 2 x ")" removed
 # 2018-03-23, Georg Fischer
 #------------------------------------------------------
 # Usage:
@@ -24,8 +25,8 @@
 # the starting number. Name the elements e(1) = 1, e(2) = 2, e(3) = 4 etc.
 # Start by positioning the trailing element e(1) = 1 at (x,y,z) = (1,1,1). 
 # For all e[i] (i > 1), investigate e[i-1]:
-# If e[i-1] is even, store e[i] at (e[i-1)].(x+1), e[i].y, e[i].z), and
-# if e[i-1] is odd,  store e[i] at (e[i-1)].x, e[i].(y+1), e[i].z),
+# If e[i-1] is even, store e[i] at (e[i-1].(x+1), e[i].y, e[i].z), and
+# if e[i-1] is odd,  store e[i] at (e[i-1].x, e[i].(y+1), e[i].z),
 # whenever that position is not occupied by a different number, 
 # otherwise increase the layer z by one for all new elements
 # to be stored from now on.
