@@ -1,133 +1,225 @@
 <!DOCTYPE html>
 <html lang="en">
 <!--3D visualization of OEIS A291939 
-	@(#) $Id$
-	2018-03-25, Georg Fischer
+    @(#) $Id$
+    2018-03-25, dr.georg.fischer@gmail.com
 -->
-	<head>
-		<title>A291939.3D</title>
-		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-		<style>
-			body {
-				color: #ccc;
-				font-family:Monospace;
-				font-size:13px;
-				text-align:center;
-				font-weight: bold;
-				background-color: #fff;
-				margin: 0px;
-				overflow: hidden;
-			}
-			#info {
-				color:#ccc;
-				position: absolute;
-				top: 0px; width: 100%;
-				padding: 5px;
-			}
-			a {
-				color: red;
-			}
-		/*
-		*/
-		</style>
-	</head>
-	<body>
-		<div id="container"></div>
-		<div id="info">
-			<a href="http://threejs.org" target="_blank" rel="noopener">three.js</a> - OEIS A291939 by Georg Fischer
-		</div>
-		<script src="js/three.min.js"></script>
-		<script src="THREE.MeshLine.js"></script>
-		<script src="js/renderers/Projector.js"></script>
-		<script src="js/controls/OrbitControls.js"></script>
-		<script src="js/Detector.js"></script>
-		<script src="js/libs/stats.min.js"></script>
-		<script src="a291939-3d.js"></script>
-		<script>		
-			if ( ! Detector.webgl ) {
-				Detector.addGetWebGLMessage();
-			}
-			var stats;
-			var camera;
-			var controls;
-			var scene;
-			var renderer;
-			var loader = new THREE.FontLoader();
-			loader.load( 'fonts/helvetiker_regular.typeface.json', function ( font ) {
-				// all remaining main code must be placed in this block
-				init( font );
-				// render(); // remove when using next line for animation loop (requestAnimationFrame)
-				animate();
-			} ); // load
+<head>
+    <title>A291939.3D</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <style>
+        body {
+            color: #ccc;
+            font-family:Monospace;
+            font-size:13px;
+            text-align:center;
+            font-weight: bold;
+            background-color: #fff;
+            margin: 0px;
+            overflow: hidden;
+        }
+        #info {
+            color:#ccc;
+            position: absolute;
+            top: 0px; width: 100%;
+            padding: 5px;
+        }
+        a {
+            color: red;
+        }
+    /*
+    */
+    </style>
+</head>
+<body>
+    <div id="container"></div>
+    <div id="info">
+        <a href="http://threejs.org" target="_blank" rel="noopener">three.js</a> - OEIS A291939 by Georg Fischer
+    </div>
+    <script src="js/three.min.js"></script>
+    <script src="THREE.MeshLine.js"></script>
+    <script src="js/renderers/Projector.js"></script>
+    <script src="js/controls/OrbitControls.js"></script>
+    <script src="js/Detector.js"></script>
+    <script src="js/libs/stats.min.js"></script>
+    <script src="a291939-3d.js"></script>
+    <script>
+    var xmax = 0;
+    var ymax = 0;
+    var zmax = 0;
+    </script>
+    <script>
+    function world(scene, myfont) {
+        var center = new THREE.Vector3(0, 0, 0);
+        var points = [];
+        var elems  = [];
+        var layers = []; // 
+        xmax   = 0;
+        ymax   = 0;
+        zmax   = 0;
+        var i = 0;
+        while (i < vec.length) { // determine maximums
+            var xcor = vec[i ++]; if (xcor > xmax) { xmax = xcor; }
+            var ycor = vec[i ++]; if (ycor > ymax) { ymax = ycor; }
+            var zcor = vec[i ++]; if (zcor > zmax) { zmax = zcor; }
+            i ++;
+        } // while maximums
+        var sizex   = parseInt(xmax * 0.66); // slightly shifted to the left
+        var sizey   = parseInt(ymax / 2);
+        var sizez   = parseInt(zmax / 2);
+        var width  = 1; // of the cubes
+        var fact = 10;
+        i = 0;
+        while (i < vec.length) {
+            var xcor = vec[i ++];
+            var ycor = vec[i ++];
+            var zcor = vec[i ++];
+            var elem = vec[i ++];
+            layers.push(zcor);
+            elems.push(elem);
+            var x = center.x + (xcor - sizex) * fact;
+            var y = center.y + (ycor - sizey) * fact;
+            var z = center.z + (zcor - sizez) * fact;
+            points.push(new THREE.Vector3(x, -y, z));
+        } // while i
+    
+        var materials = [
+            new THREE.MeshBasicMaterial({ color: 0xffffff, overdraw: 0.5 }),
+            new THREE.MeshBasicMaterial({ color: 0xffffff, overdraw: 0.5 })
+            ];
+        var color3 = new THREE.Color(0xffffff);
+        var icoll = 0; // index for collisions
+        for (i = 0; i < points.length - 1; i ++) {
+            var group  = new THREE.Group();
+            var elem = elems[i];
+            color3.setHSL((0.1 + layers[i] * 0.7) / zmax, 1.0, 0.5);
+            var geometry = new THREE.BoxGeometry(width * fact, width * fact, width * fact);
+            geometry.translate(points[i].x, points[i].y, points[i].z);
+            var material = new THREE.MeshBasicMaterial(
+                    { color: color3, opacity: 0.4, transparent: true} );
+            var matwhite = new THREE.MeshBasicMaterial(
+                    { color: 0xffffff, opacity: 0.4, transparent: false} );
+            group.add(new THREE.Mesh(geometry, material));
+            if (elem == colls[icoll+ 3]) { // element moves to next layer
+                var line = new THREE.LineSegments(new THREE.EdgesGeometry(geometry)
+                        , new THREE.LineBasicMaterial({ color: 0xffffff }));
+                group.add(line);
+                var geop = new THREE.Geometry();
+                geop.vertices.push(new THREE.Vector3(points[i].x + fact*0.5, points[i].y + fact*0.5, points[i].z+ fact*0.5));
+                var endp = new THREE.Vector3(points[i].x + fact*2, points[i].y + fact*2, points[i].z+ fact*2);
+                geop.vertices.push(endp);
+                line = new THREE.Line(geop, new THREE.LineBasicMaterial({ color: 0xffffff }))
+                group.add(line);
+                var geot = new THREE.TextGeometry(colls[icoll + 4], 
+                        { font: myfont, size: fact/3, height: fact/16, curveSegments: 8 });
+                geot.translate
+                    ( points[i].x + fact*2
+                    , points[i].y + fact*2
+                    , points[i].z + fact*2
+                    );
+                group.add(new THREE.Mesh(geot, matwhite));
+                icoll += 5;
+                // next layer
+            } else {
+                var line = new THREE.LineSegments(new THREE.EdgesGeometry(geometry)
+                        , new THREE.LineBasicMaterial({ color: color3 }));
+                group.add(line);
+            }
+            var geometry2 = new THREE.TextGeometry(elem, 
+                    { font: myfont, size: fact/3, height: fact/16, curveSegments: 8 });
+            geometry2.translate
+                    ( points[i].x - fact / 3
+                    , points[i].y
+                    , points[i].z - fact / 4
+                    );
+            group.add(new THREE.Mesh(geometry2, materials));
+            scene.add(group);
+        } // for i 
+    } // world
+    </script>
+    <script>        
+        if ( ! Detector.webgl ) {
+            Detector.addGetWebGLMessage();
+        }
+        var stats;
+        var camera;
+        var controls;
+        var scene;
+        var renderer;
+        var loader = new THREE.FontLoader();
+        loader.load( 'fonts/helvetiker_regular.typeface.json', function ( font ) {
+            // all remaining main code must be placed in this block
+            init( font );
+            // render(); // remove when using next line for animation loop (requestAnimationFrame)
+            animate();
+        } ); // load
 
-			function init( myfont ) {
-				scene = new THREE.Scene();
-				scene.background = new THREE.Color( 0x000000 ); // 0xcccccc );
-				// scene.fog = new THREE.FogExp2( 0xcccccc, 0.002 );
-				renderer = new THREE.WebGLRenderer();
-				renderer.setPixelRatio( window.devicePixelRatio );
-				renderer.setSize( window.innerWidth, window.innerHeight );
-				var container = document.getElementById( 'container' );
-				container.appendChild( renderer.domElement );
-				camera = new THREE.PerspectiveCamera( 33, window.innerWidth / window.innerHeight, 1, 10000 );
-				camera.position.z = 700;
-				controls = new THREE.OrbitControls( camera, renderer.domElement );
-				controls.addEventListener( 'change', render ); // remove when using animation loop
-				// enable animation loop when using damping or autorotation
-				controls.enableDamping = true;
-				controls.dampingFactor = 0.25;
-				controls.enableZoom = true;
-
-				world( scene, myfont );
-
-				if (false) { // lights
-					var lights = [];
-					lights[ 0 ] = new THREE.PointLight( 0xffffff, 1, 0 );
-					lights[ 1 ] = new THREE.PointLight( 0xffffff, 1, 0 );
-					lights[ 2 ] = new THREE.PointLight( 0xffffff, 1, 0 );
-					lights[ 0 ].position.set( 0, 200, 0 );
-					lights[ 1 ].position.set( 100, 200, 100 );
-					lights[ 2 ].position.set( - 100, - 200, - 100 );
-					scene.add( lights[ 0 ] );
-					scene.add( lights[ 1 ] );
-					scene.add( lights[ 2 ] );
-				} else { // lights                         
-					var 
-					light = new THREE.DirectionalLight( 0xffffff );
-					light.position.set( 1, 1, 1 );
-					scene.add( light );
-					light = new THREE.DirectionalLight( 0x002288 );
-					light.position.set( -1, -1, -1 );
-					scene.add( light );
-					light = new THREE.AmbientLight( 0x222222 );
-					scene.add( light );
-				} // lights
-				stats = new Stats();
-				container.appendChild( stats.dom );
-				window.addEventListener( 'resize', onWindowResize, false );
-			} // init
-			
-			function onWindowResize() {
-				camera.aspect = window.innerWidth / window.innerHeight;
-				camera.updateProjectionMatrix();
-				renderer.setSize( window.innerWidth, window.innerHeight );
-			}
-			function animate() {
-				requestAnimationFrame( animate );
-				controls.update(); // required if controls.enableDamping = true, or if controls.autoRotate = true
-				stats.update();
-				render();
-			}
-			function render() {
-				var time = Date.now() * 0.0001;
-				time = 0.0;
-				for ( var i = 0; i < scene.children.length; i ++ ) {
-					var object = scene.children[i];
-					object.rotation.y = time; // * ( i % 2 ? 1 : -1 );
-				}
-				renderer.render( scene, camera );
-			}
-		</script>
-	</body>
+        function init( myfont ) {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color( 0x000000 ); // 0xcccccc );
+            world( scene, myfont );
+            renderer = new THREE.WebGLRenderer();
+            renderer.setPixelRatio( window.devicePixelRatio );
+            renderer.setSize( window.innerWidth, window.innerHeight );
+            var container = document.getElementById( 'container' );
+            container.appendChild( renderer.domElement );
+            camera = new THREE.PerspectiveCamera( 33, window.innerWidth / window.innerHeight, 1, 10000 );
+            camera.position.z = 20 * xmax;
+            controls = new THREE.OrbitControls( camera, renderer.domElement );
+            controls.addEventListener( 'change', render ); // remove when using animation loop
+            // enable animation loop when using damping or autorotation
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.25;
+            controls.enableZoom = true;
+            
+            if (false) { // lights
+                var lights = [];
+                lights[ 0 ] = new THREE.PointLight( 0xffffff, 1, 0 );
+                lights[ 1 ] = new THREE.PointLight( 0xffffff, 1, 0 );
+                lights[ 2 ] = new THREE.PointLight( 0xffffff, 1, 0 );
+                lights[ 0 ].position.set( 0, 200, 0 );
+                lights[ 1 ].position.set( 100, 200, 100 );
+                lights[ 2 ].position.set( - 100, - 200, - 100 );
+                scene.add( lights[ 0 ] );
+                scene.add( lights[ 1 ] );
+                scene.add( lights[ 2 ] );
+            } else { // lights                         
+                var 
+                light = new THREE.DirectionalLight( 0xffffff );
+                light.position.set( 1, 1, 1 );
+                scene.add( light );
+                light = new THREE.DirectionalLight( 0x002288 );
+                light.position.set( -1, -1, -1 );
+                scene.add( light );
+                light = new THREE.AmbientLight( 0x222222 );
+                scene.add( light );
+            } // lights
+            stats = new Stats();
+            container.appendChild( stats.dom );
+            window.addEventListener( 'resize', onWindowResize, false );
+        } // init
+        
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize( window.innerWidth, window.innerHeight );
+        }
+        function animate() {
+            requestAnimationFrame( animate );
+            controls.update(); // required if controls.enableDamping = true, or if controls.autoRotate = true
+            stats.update();
+            render();
+        }
+        function render() {
+            var time = Date.now() * 0.0001;
+            time = 0.0;
+            for ( var i = 0; i < scene.children.length; i ++ ) {
+                var object = scene.children[i];
+                object.rotation.y = time; // * ( i % 2 ? 1 : -1 );
+            }
+            renderer.render( scene, camera );
+        }
+    </script>
+</body>
 </html>

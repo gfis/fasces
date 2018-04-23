@@ -1,0 +1,60 @@
+#!make
+
+# for the restauration of the content of trottermath.net 
+# @(#) $Id$
+# 2018-04-06, Georg Fischer
+# 
+WTM=trottermath.net
+
+all: contents trotterget links
+#------------------
+contents:
+	mkdir -p $(WTM)
+	wget -O "$(WTM)/contents.html" https://web.archive.org/web/20041209003827/http://www.trottermath.net:80/contents.html
+	wget -O "$(WTM)/index.html"    https://web.archive.org/web/20041209003827/http://www.trottermath.net:80/index.html
+	perl -i.tmp trotterget.pl -i $(WTM)/contents.html
+	perl -i.tmp trotterget.pl -i $(WTM)/index.html
+	perl -i.way -pe "s{\.\.\/}{}g;" $(WTM)/index.html
+	perl -i.way -pe "s{\.\.\/}{}g;" $(WTM)/contents.html
+	rm -f $(WTM)/smiley.gif
+trotterget:
+	perl trotterget.pl -u $(WTM)/contents.html
+hidden:
+	perl trotterget.pl -u $(WTM)/hidden_contents.html
+links:
+	wget -O "$(WTM)/links.html" https://web.archive.org/web/20041209003827/http://www.trottermath.net:80/links.html
+	perl -i.tmp trotterget.pl -i $(WTM)/links.html
+	perl -i.way -pe "s{\.\.\/}{}g;" $(WTM)/links.html
+check:
+	perl trotterget.pl -l $(WTM)/contents.html | sort | tee cont1.tmp
+	find $(WTM) -iname "*.html"                | sort | tee cont2.tmp
+	diff -y --suppress-common-lines cont1.tmp cont2.tmp \
+	| perl trotterget.pl -a | tee $(WTM)/hidden_contents.html 
+#--------------------------------------
+clean1:
+	perl -i.bak trotterget.pl -i $(WTM)/numthry/polynos.html
+unprep:
+	tar -xzvf trotterway.tgz
+	rm -rvf $(WTM)/wp-includes
+	rm -rvf $(WTM)/numthry/admir2.html
+	rm -rvf $(WTM)/numthry/charlene2.html
+	find $(WTM) -iname "*.html" | grep -E "[A-Z]" || exit 0
+	rm -rvf $(WTM)/Sexy*.html
+	rm -rvf $(WTM)/Paln*.html
+	rm -rvf $(WTM)/Ruth*.html
+	find $(WTM) -iname "*.html" | xargs -l perl -i.way trotterget.pl -i 
+	find $(WTM) -iname "*.html" | xargs -l grep -iH "viag" || exit 0
+cleanall:
+	find $(WTM) -iname "*.html" | xargs -l perl -i.way trotterget.pl -i 
+clean:
+	rm -rf $(WTM)
+untar:
+	tar -xzvf $(WTM).tgz 
+	mv -v $(WTM)/www.$(WTM)/* $(WTM)
+	rm -rf $(WTM)/wp-includes
+	du -m
+	ls -al $(WTM)
+deploy:
+	rm -f $(WTM).zip
+	zip -r $(WTM).zip $(WTM)
+	scp $(WTM).zip gfis@punctum.com:/var/www/html/teherba.org/trottermath.net/
