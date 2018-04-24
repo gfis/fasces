@@ -12,7 +12,9 @@
 #       s     = 1
 #       noeis = "131388|131389|1313393|131394..." (without "A")
 #       n     = length of sequence to be generated
-#       op    = "io" (increasing order), "fa" (first appearance) 
+#       op    = "io" (increasing order), 
+#               "ic" (increasing order complete), 
+#               "fa" (first appearance) 
 #       a1    = starting value for a(1): 0,1, ... 5
 #       debug = 0 (none), 1 (with segments)
 #------------------------------------------------------
@@ -42,6 +44,7 @@ my $sseg  = 1;             # index of 1st element in segment
 my $eseg  = scalar(@seql); # index of 1st element behind segment
 my $k  = $eseg;
 my $inoun;
+my $sum;
 print <<"GFis";
 # http://oeis.org/A$noeis/b$noeis.txt: table n,a(n),n=1..$n
 1 $a1
@@ -58,7 +61,7 @@ while ($k <= $n) { # fill b-file
         my $attr = $seql[$inoun + 0];
         my $noun = $seql[$inoun + 1];
         if (1) {
-            my $sum = $attr + &count($noun, $sseg, $eseg);
+            $sum = $attr + &count($noun, $sseg, $eseg);
             $nouns{$noun} = $sum;
             push(@seql, $sum, $noun);
         }
@@ -68,16 +71,45 @@ while ($k <= $n) { # fill b-file
     while ($inoun < $eseg) { # count the new attributes
         my $attr = $seql[$inoun + 0];
         if (! defined($nouns{$attr})) {
-            my $sum = &count($attr, $sseg, $eseg);
+            $sum = &count($attr, $sseg, $eseg);
             $nouns{$attr} = $sum;
             push(@seql, $sum, $attr);
         }
         $inoun += 2;
     } # while $inoun
+    
+    if (0) {
+    } elsif ($op eq "fa") {
+    } elsif ($op eq "io") {
+	   	$inoun = $eseg;
+        foreach $noun (sort {$a <=> $b} (keys(%nouns))) {
+            $seql[$inoun + 0] = $nouns{$noun};
+            $seql[$inoun + 1] = $noun;
+            $inoun += 2;
+        } # foreach
+    } elsif ($op eq "ic") { # increasing order (complete) - insert 0 counts
+	   	my $cnoun = $seql[$sseg + 1];
+	   	$inoun = $eseg;
+        foreach $noun (sort {$a <=> $b} (keys(%nouns))) {
+   	    	while ($cnoun < $noun) {
+   	    		$seql[$inoun + 0] = 0;
+   	    		$seql[$inoun + 1] = $cnoun;
+   	    		$cnoun ++;
+   	    		$inoun += 2;
+   			} # while $cnoun
+            $seql[$inoun + 0] = $nouns{$noun};
+            $seql[$inoun + 1] = $noun;
+            $inoun += 2;
+	        $cnoun = $noun + 1;
+        } # foreach
+    } else {
+        die "invalid paramter op=\"$op\"\n";
+    }
+
     if ($debug >= 1) {
         print "# segment $segno:";
         $inoun = $eseg;
-        while ($inoun < scalar(@seql)) { # count the present nouns
+        while ($inoun < scalar(@seql)) { # 
             my $attr = $seql[$inoun + 0];
             my $noun = $seql[$inoun + 1];
             print " $attr.$noun"; 
@@ -87,23 +119,15 @@ while ($k <= $n) { # fill b-file
     } # debug
     
     if (0) {
-    } elsif ($op eq "fa") { # first appearance
+    } else { # first appearance
         $inoun = $eseg;
-        while ($inoun < scalar(@seql)) { # count the present nouns
+        while ($inoun < scalar(@seql)) { # 
             my $attr = $seql[$inoun + 0];
             my $noun = $seql[$inoun + 1];
             print "$k $attr\n"; $k ++;
             print "$k $noun\n"; $k ++;
             $inoun += 2;
         } # while $inoun
-    } elsif ($op eq "io") { # increasing order
-        foreach $noun (sort {$a <=> $b} (keys(%nouns))) {
-            $attr = $nouns{$noun};
-            print "$k $attr\n"; $k ++;
-            print "$k $noun\n"; $k ++;
-        } # foreach
-    } else {
-        die "invalid paramter op=\"$op\"\n";
     }
     $sseg = $eseg;
     $eseg = scalar(@seql);  
