@@ -1,201 +1,258 @@
 #!make
 
-# Generate OEIS Sequence A055187 and its companions
-# as defined by Clark Kimberling
+# Generate OEIS A030707, A055187, A217760 and related 
+# "cumulative counting" sequences as defined by Clark Kimberling.
 # http://faculty.evansville.edu/ck6/integer/unsolved.html, Problem 4
 # @(#) $Id$
 # 2018-04-20, Georg Fischer
-# 
-# c.f. listing.tmp (produced by target "listing", below)
+#
+# C.f. listing.tmp (produced by target "listing", below)
+# Needs cumulcount.pl in current directory, and
+# Unix tools diff, echo, grep, head, make, perl, sed, tee, test, wget
 #---------------------------------
 TARGET=cumulcount
 LIMIT=100
 P2=0
 
-all: 0307nn 05516n 05518n 2177nn
+all: 0307io 0307do 05516n 05518n misc
+#----------
+misc:   051120 \
+		079668 079686 \
+		126027 174382 240508\
+		2177nn 
+051120: # A055187, but decreasing
+	make $(TARGET) RULE=A0 ROW=0 NOEIS=$@ LEN=$(LIMIT) ORD=do P1=1
+
+079668:
+	make $(TARGET) RULE=A  ROW=0 NOEIS=$@ LEN=$(LIMIT) ORD=iz P1=1
+079686:
+	make $(TARGET) RULE=A0 ROW=0 NOEIS=$@ LEN=$(LIMIT) ORD=dz P1=0
+
+126027: # row lengths of A030717; trick with OFFSET 2: 1st entry is missing
+	make $(TARGET) RULE=T2 ROW=5 NOEIS=$@ LEN=40       ORD=iz P1=1
+174382: # like 030717
+	make $(TARGET) RULE=A  ROW=5 NOEIS=$@ LEN=$(LIMIT) ORD=iz P1=0
+240508: # row lengths in A174382; 1st two lines wrong
+	make $(TARGET) RULE=T2 ROW=5 NOEIS=$@ LEN=24       ORD=iz P1=0
+
+2177_list:
+	grep -aE "^A2177" ../names
+2177nn: 217760 217780 #	ok
+217760: # c.f. 055186
+	make $(TARGET) RULE=A  ROW=0 NOEIS=$@ LEN=10000    ORD=fa P1=0
+217780: # c.f. 055187
+	make $(TARGET) RULE=A  ROW=0 NOEIS=$@ LEN=10000    ORD=fa P1=1
 #----------
 0307_list:
 	grep -aE "^A0307" ../names
-
-0307io: 03070n 03072n 03073n 03074n                      
+0307_compare:
+	diff -w -y --width=32 --suppress-common-lines b030709.txt b030759.txt || :  
+	diff -w -y --width=32 --suppress-common-lines b030729.txt b030779.txt || :  
+	diff -w -y --width=32 --suppress-common-lines b030739.txt b030769.txt || :  
+	diff -w -y --width=32 --suppress-common-lines b030749.txt b030799.txt || :  
+	diff -w -y --width=32 --suppress-common-lines b030711.txt b030761.txt || :  
+	
+0307io: 03070n 03071n 03072n 03073n 03074n
 03070n: 030707 030708 030709 030710 030711 030712 030713 030714 030715 030716
+03071n: 030717 030718 030719 030720 030721 030722 030723 030724 030725 030726
 03072n: 030727 030728 030729 030730 030731 030732 030733 030734 030735 030736
 03073n:	030737 030738 030739 030740 030741 030742 030743 030744 030745 030746
 03074n:	030747 030748 030749 030750 030751 030752 030753 030754 030755 030756
-0307do: 03075n 03076n 03077n 03078n 
+
+0307do:                                    03075n 03076n 03077n 03078n
 03075n:	030757 030758 030759 030760 030761 030762 030763 030764 030765 030766
 03076n:	030767 030768 030769 030770 030771 030772 030773 030774 030775 030776
 03077n:	030777 030778 030779 030780 030781 030782 030783 030784 030785 030786
 03078n:	030787 030788 030789 030790 030791 030792 030793 030794 030795 030796
 
 030707:
-	make $(TARGET) RULE=A  ROW=1 NOEIS=$@ LEN=$(LIMIT) OPER=io P1=1
-030708:                    
-	make $(TARGET) RULE=A  ROW=2 NOEIS=$@ LEN=$(LIMIT) OPER=io P1=1
-030709:                    
-	make $(TARGET) RULE=T  ROW=0 NOEIS=$@ LEN=$(LIMIT) OPER=io P1=1
-030710:                    
-	make $(TARGET) RULE=I  ROW=1 NOEIS=$@ LEN=2000     OPER=io P1=1
-030711:                    
-	make $(TARGET) RULE=J  ROW=1 NOEIS=$@ LEN=$(LIMIT) OPER=io P1=1
-030712:                    
-	make $(TARGET) RULE=K  ROW=1 NOEIS=$@ LEN=$(LIMIT) OPER=io P1=1
+	make $(TARGET) RULE=A  ROW=1 NOEIS=$@ LEN=$(LIMIT) ORD=io P1=1
+030708:
+	make $(TARGET) RULE=A  ROW=2 NOEIS=$@ LEN=$(LIMIT) ORD=io P1=1
+030709:
+	make $(TARGET) RULE=T  ROW=0 NOEIS=$@ LEN=$(LIMIT) ORD=io P1=1
+030710:
+	make $(TARGET) RULE=I  ROW=1 NOEIS=$@ LEN=2000     ORD=io P1=1
+030711:
+	make $(TARGET) RULE=J  ROW=1 NOEIS=$@ LEN=$(LIMIT) ORD=io P1=1
+030712:
+	make $(TARGET) RULE=K  ROW=1 NOEIS=$@ LEN=$(LIMIT) ORD=io P1=1
 030713:
-	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) OPER=io P1=1 P2=1
-030714:                   
-	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) OPER=io P1=1 P2=2
-030715:                   
-	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) OPER=io P1=1 P2=3
-030716:                   
-	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) OPER=io P1=1 P2=4
+	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) ORD=io P1=1 P2=1
+030714:
+	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) ORD=io P1=1 P2=2
+030715:
+	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) ORD=io P1=1 P2=3
+030716:
+	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) ORD=io P1=1 P2=4
+
+030717:
+	make $(TARGET) RULE=A  ROW=5 NOEIS=$@ LEN=$(LIMIT) ORD=iz P1=1
+030718:
+	make $(TARGET) RULE=A  ROW=6 NOEIS=$@ LEN=$(LIMIT) ORD=io P1=1
+030719:
+	make $(TARGET) RULE=T  ROW=5 NOEIS=$@ LEN=$(LIMIT) ORD=io P1=1
+030720:
+	make $(TARGET) RULE=I  ROW=5 NOEIS=$@ LEN=2000     ORD=io P1=1
+030721:
+	make $(TARGET) RULE=J  ROW=5 NOEIS=$@ LEN=$(LIMIT) ORD=io P1=1
+030722:
+	make $(TARGET) RULE=K  ROW=5 NOEIS=$@ LEN=$(LIMIT) ORD=io P1=1
+030723:
+	make $(TARGET) RULE=P  ROW=5 NOEIS=$@ LEN=$(LIMIT) ORD=io P1=1 P2=1
+030724:
+	make $(TARGET) RULE=P  ROW=5 NOEIS=$@ LEN=$(LIMIT) ORD=io P1=1 P2=2
+030725:
+	make $(TARGET) RULE=P  ROW=5 NOEIS=$@ LEN=$(LIMIT) ORD=io P1=1 P2=3
+030726:
+	make $(TARGET) RULE=P  ROW=5 NOEIS=$@ LEN=$(LIMIT) ORD=io P1=1 P2=4
 
 030727:
-	make $(TARGET) RULE=A  ROW=1 NOEIS=$@ LEN=$(LIMIT) OPER=io P1=3
-030728:                    
-	make $(TARGET) RULE=A  ROW=2 NOEIS=$@ LEN=$(LIMIT) OPER=io P1=3
-030729:                    
-	make $(TARGET) RULE=T  ROW=0 NOEIS=$@ LEN=$(LIMIT) OPER=io P1=3
-030730:                    
-	make $(TARGET) RULE=I  ROW=1 NOEIS=$@ LEN=2000     OPER=io P1=3
-030731:                    
-	make $(TARGET) RULE=J  ROW=1 NOEIS=$@ LEN=$(LIMIT) OPER=io P1=3
-030732:                    
-	make $(TARGET) RULE=K  ROW=1 NOEIS=$@ LEN=$(LIMIT) OPER=io P1=3
+	make $(TARGET) RULE=A  ROW=1 NOEIS=$@ LEN=$(LIMIT) ORD=io P1=3
+030728:
+	make $(TARGET) RULE=A  ROW=2 NOEIS=$@ LEN=$(LIMIT) ORD=io P1=3
+030729:
+	make $(TARGET) RULE=T  ROW=0 NOEIS=$@ LEN=$(LIMIT) ORD=io P1=3
+030730:
+	make $(TARGET) RULE=I  ROW=1 NOEIS=$@ LEN=2000     ORD=io P1=3
+030731:
+	make $(TARGET) RULE=J  ROW=1 NOEIS=$@ LEN=$(LIMIT) ORD=io P1=3
+030732:
+	make $(TARGET) RULE=K  ROW=1 NOEIS=$@ LEN=$(LIMIT) ORD=io P1=3
 030733:
-	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) OPER=io P1=3 P2=1
-030734:                                                                 
-	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) OPER=io P1=3 P2=2
-030735:                                                                 
-	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) OPER=io P1=3 P2=3
-030736:                                                                 
-	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) OPER=io P1=3 P2=4
+	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) ORD=io P1=3 P2=1
+030734:
+	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) ORD=io P1=3 P2=2
+030735:
+	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) ORD=io P1=3 P2=3
+030736:
+	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) ORD=io P1=3 P2=4
 
-030737:                    
-	make $(TARGET) RULE=A  ROW=1 NOEIS=$@ LEN=$(LIMIT) OPER=io P1=2
-030738:                    
-	make $(TARGET) RULE=A  ROW=2 NOEIS=$@ LEN=$(LIMIT) OPER=io P1=2
-030739:                    
-	make $(TARGET) RULE=T  ROW=0 NOEIS=$@ LEN=$(LIMIT) OPER=io P1=2
-030740:                    
-	make $(TARGET) RULE=I  ROW=1 NOEIS=$@ LEN=2000     OPER=io P1=2
-030741:                    
-	make $(TARGET) RULE=J  ROW=1 NOEIS=$@ LEN=$(LIMIT) OPER=io P1=2
-030742:                    
-	make $(TARGET) RULE=K  ROW=1 NOEIS=$@ LEN=$(LIMIT) OPER=io P1=2
+030737:
+	make $(TARGET) RULE=A  ROW=1 NOEIS=$@ LEN=$(LIMIT) ORD=io P1=2
+030738:
+	make $(TARGET) RULE=A  ROW=2 NOEIS=$@ LEN=$(LIMIT) ORD=io P1=2
+030739:
+	make $(TARGET) RULE=T  ROW=0 NOEIS=$@ LEN=$(LIMIT) ORD=io P1=2
+030740:
+	make $(TARGET) RULE=I  ROW=1 NOEIS=$@ LEN=2000     ORD=io P1=2
+030741:
+	make $(TARGET) RULE=J  ROW=1 NOEIS=$@ LEN=$(LIMIT) ORD=io P1=2
+030742:
+	make $(TARGET) RULE=K  ROW=1 NOEIS=$@ LEN=$(LIMIT) ORD=io P1=2
 030743:
-	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) OPER=io P1=2 P2=1
-030744:                                                                 
-	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) OPER=io P1=2 P2=2
-030745:                                                                 
-	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) OPER=io P1=2 P2=3
-030746:                                                                 
-	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) OPER=io P1=2 P2=4
+	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) ORD=io P1=2 P2=1
+030744:
+	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) ORD=io P1=2 P2=2
+030745:
+	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) ORD=io P1=2 P2=3
+030746:
+	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) ORD=io P1=2 P2=4
 
-030747:                    
-	make $(TARGET) RULE=A  ROW=1 NOEIS=$@ LEN=$(LIMIT) OPER=io P1=4
-030748:                    
-	make $(TARGET) RULE=A  ROW=2 NOEIS=$@ LEN=$(LIMIT) OPER=io P1=4
-030749:                    
-	make $(TARGET) RULE=T  ROW=0 NOEIS=$@ LEN=$(LIMIT) OPER=io P1=4
-030750:                    
-	make $(TARGET) RULE=I  ROW=1 NOEIS=$@ LEN=2000     OPER=io P1=4
-030751:                    
-	make $(TARGET) RULE=J  ROW=1 NOEIS=$@ LEN=$(LIMIT) OPER=io P1=4
-030752:                    
-	make $(TARGET) RULE=K  ROW=1 NOEIS=$@ LEN=$(LIMIT) OPER=io P1=4
+030747:
+	make $(TARGET) RULE=A  ROW=1 NOEIS=$@ LEN=$(LIMIT) ORD=io P1=4
+030748:
+	make $(TARGET) RULE=A  ROW=2 NOEIS=$@ LEN=$(LIMIT) ORD=io P1=4
+030749:
+	make $(TARGET) RULE=T  ROW=0 NOEIS=$@ LEN=$(LIMIT) ORD=io P1=4
+030750:
+	make $(TARGET) RULE=I  ROW=1 NOEIS=$@ LEN=2000     ORD=io P1=4
+030751:
+	make $(TARGET) RULE=J  ROW=1 NOEIS=$@ LEN=$(LIMIT) ORD=io P1=4
+030752:
+	make $(TARGET) RULE=K  ROW=1 NOEIS=$@ LEN=$(LIMIT) ORD=io P1=4
 030753:
-	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) OPER=io P1=4 P2=1
-030754:                                                                 
-	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) OPER=io P1=4 P2=2
-030755:                                                                 
-	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) OPER=io P1=4 P2=3
-030756:                                                                 
-	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) OPER=io P1=4 P2=4
+	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) ORD=io P1=4 P2=1
+030754:
+	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) ORD=io P1=4 P2=2
+030755:
+	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) ORD=io P1=4 P2=3
+030756:
+	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) ORD=io P1=4 P2=4
 
-030757:                    
-	make $(TARGET) RULE=A  ROW=1 NOEIS=$@ LEN=$(LIMIT) OPER=do P1=1
-030758:                    
-	make $(TARGET) RULE=A  ROW=2 NOEIS=$@ LEN=$(LIMIT) OPER=do P1=1
-030759:                    
-	make $(TARGET) RULE=T  ROW=0 NOEIS=$@ LEN=$(LIMIT) OPER=do P1=1
-030760:                    
-	make $(TARGET) RULE=I  ROW=1 NOEIS=$@ LEN=2000     OPER=do P1=1
-030761:                    
-	make $(TARGET) RULE=J  ROW=1 NOEIS=$@ LEN=$(LIMIT) OPER=do P1=1
-030762:                    
-	make $(TARGET) RULE=K  ROW=1 NOEIS=$@ LEN=$(LIMIT) OPER=do P1=1
+030757:
+	make $(TARGET) RULE=A  ROW=1 NOEIS=$@ LEN=$(LIMIT) ORD=do P1=1
+030758:
+	make $(TARGET) RULE=A  ROW=2 NOEIS=$@ LEN=$(LIMIT) ORD=do P1=1
+030759:
+	make $(TARGET) RULE=T  ROW=0 NOEIS=$@ LEN=$(LIMIT) ORD=do P1=1
+030760:
+	make $(TARGET) RULE=I  ROW=1 NOEIS=$@ LEN=2000     ORD=do P1=1
+030761:
+	make $(TARGET) RULE=J  ROW=1 NOEIS=$@ LEN=$(LIMIT) ORD=do P1=1
+030762:
+	make $(TARGET) RULE=K  ROW=1 NOEIS=$@ LEN=$(LIMIT) ORD=do P1=1
 030763:
-	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) OPER=do P1=1 P2=1
-030764:                                                                 
-	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) OPER=do P1=1 P2=2
-030765:                                                                 
-	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) OPER=do P1=1 P2=3
-030766:                                                                 
-	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) OPER=do P1=1 P2=4
+	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) ORD=do P1=1 P2=1
+030764:
+	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) ORD=do P1=1 P2=2
+030765:
+	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) ORD=do P1=1 P2=3
+030766:
+	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) ORD=do P1=1 P2=4
 
-030767:                    
-	make $(TARGET) RULE=A  ROW=1 NOEIS=$@ LEN=$(LIMIT) OPER=do P1=2
-030768:                    
-	make $(TARGET) RULE=A  ROW=2 NOEIS=$@ LEN=$(LIMIT) OPER=do P1=2
-030769:                    
-	make $(TARGET) RULE=T  ROW=0 NOEIS=$@ LEN=$(LIMIT) OPER=do P1=2
-030770:                    
-	make $(TARGET) RULE=I  ROW=1 NOEIS=$@ LEN=2000     OPER=do P1=2
-030771:                    
-	make $(TARGET) RULE=J  ROW=1 NOEIS=$@ LEN=$(LIMIT) OPER=do P1=2
-030772:                    
-	make $(TARGET) RULE=K  ROW=1 NOEIS=$@ LEN=$(LIMIT) OPER=do P1=2
+030767:
+	make $(TARGET) RULE=A  ROW=1 NOEIS=$@ LEN=$(LIMIT) ORD=do P1=2
+030768:
+	make $(TARGET) RULE=A  ROW=2 NOEIS=$@ LEN=$(LIMIT) ORD=do P1=2
+030769:
+	make $(TARGET) RULE=T  ROW=0 NOEIS=$@ LEN=$(LIMIT) ORD=do P1=2
+030770:
+	make $(TARGET) RULE=I  ROW=1 NOEIS=$@ LEN=2000     ORD=do P1=2
+030771:
+	make $(TARGET) RULE=J  ROW=1 NOEIS=$@ LEN=$(LIMIT) ORD=do P1=2
+030772:
+	make $(TARGET) RULE=K  ROW=1 NOEIS=$@ LEN=$(LIMIT) ORD=do P1=2
 030773:
-	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) OPER=do P1=2 P2=1
-030774:                                                                 
-	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) OPER=do P1=2 P2=2
-030775:                                                                 
-	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) OPER=do P1=2 P2=3
-030776:                                                                 
-	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) OPER=do P1=2 P2=4
+	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) ORD=do P1=2 P2=1
+030774:
+	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) ORD=do P1=2 P2=2
+030775:
+	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) ORD=do P1=2 P2=3
+030776:
+	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) ORD=do P1=2 P2=4
 
-030777:                    
-	make $(TARGET) RULE=A  ROW=1 NOEIS=$@ LEN=$(LIMIT) OPER=do P1=3
-030778:                    
-	make $(TARGET) RULE=A  ROW=2 NOEIS=$@ LEN=$(LIMIT) OPER=do P1=3
-030779:                    
-	make $(TARGET) RULE=T  ROW=0 NOEIS=$@ LEN=$(LIMIT) OPER=do P1=3
-030780:                    
-	make $(TARGET) RULE=I  ROW=1 NOEIS=$@ LEN=2000     OPER=do P1=3
-030781:                    
-	make $(TARGET) RULE=J  ROW=1 NOEIS=$@ LEN=$(LIMIT) OPER=do P1=3
-030782:                    
-	make $(TARGET) RULE=K  ROW=1 NOEIS=$@ LEN=$(LIMIT) OPER=do P1=3
+030777:
+	make $(TARGET) RULE=A  ROW=1 NOEIS=$@ LEN=$(LIMIT) ORD=do P1=3
+030778:
+	make $(TARGET) RULE=A  ROW=2 NOEIS=$@ LEN=$(LIMIT) ORD=do P1=3
+030779:
+	make $(TARGET) RULE=T  ROW=0 NOEIS=$@ LEN=$(LIMIT) ORD=do P1=3
+030780:
+	make $(TARGET) RULE=I  ROW=1 NOEIS=$@ LEN=2000     ORD=do P1=3
+030781:
+	make $(TARGET) RULE=J  ROW=1 NOEIS=$@ LEN=$(LIMIT) ORD=do P1=3
+030782:
+	make $(TARGET) RULE=K  ROW=1 NOEIS=$@ LEN=$(LIMIT) ORD=do P1=3
 030783:
-	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) OPER=do P1=3 P2=1
-030784:                                                                 
-	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) OPER=do P1=3 P2=2
-030785:                                                                 
-	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) OPER=do P1=3 P2=3
-030786:                                                                 
-	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) OPER=do P1=3 P2=4
+	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) ORD=do P1=3 P2=1
+030784:
+	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) ORD=do P1=3 P2=2
+030785:
+	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) ORD=do P1=3 P2=3
+030786:
+	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) ORD=do P1=3 P2=4
 
-030787:                    
-	make $(TARGET) RULE=A  ROW=1 NOEIS=$@ LEN=$(LIMIT) OPER=do P1=4
-030788:                    
-	make $(TARGET) RULE=A  ROW=2 NOEIS=$@ LEN=$(LIMIT) OPER=do P1=4
-030789:                    
-	make $(TARGET) RULE=T  ROW=0 NOEIS=$@ LEN=$(LIMIT) OPER=do P1=4
-030790:                    
-	make $(TARGET) RULE=I  ROW=1 NOEIS=$@ LEN=2000     OPER=do P1=4
-030791:                    
-	make $(TARGET) RULE=J  ROW=1 NOEIS=$@ LEN=$(LIMIT) OPER=do P1=4
-030792:                    
-	make $(TARGET) RULE=K  ROW=1 NOEIS=$@ LEN=$(LIMIT) OPER=do P1=4
+030787:
+	make $(TARGET) RULE=A  ROW=1 NOEIS=$@ LEN=$(LIMIT) ORD=do P1=4
+030788:
+	make $(TARGET) RULE=A  ROW=2 NOEIS=$@ LEN=$(LIMIT) ORD=do P1=4
+030789:
+	make $(TARGET) RULE=T  ROW=0 NOEIS=$@ LEN=$(LIMIT) ORD=do P1=4
+030790:
+	make $(TARGET) RULE=I  ROW=1 NOEIS=$@ LEN=2000     ORD=do P1=4
+030791:
+	make $(TARGET) RULE=J  ROW=1 NOEIS=$@ LEN=$(LIMIT) ORD=do P1=4
+030792:
+	make $(TARGET) RULE=K  ROW=1 NOEIS=$@ LEN=$(LIMIT) ORD=do P1=4
 030793:
-	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) OPER=do P1=4 P2=1
-030794:                                                                 
-	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) OPER=do P1=4 P2=2
-030795:                                                                 
-	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) OPER=do P1=4 P2=3
-030796:                                                                 
-	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) OPER=do P1=4 P2=4
-
+	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) ORD=do P1=4 P2=1
+030794:
+	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) ORD=do P1=4 P2=2
+030795:
+	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) ORD=do P1=4 P2=3
+030796:
+	make $(TARGET) RULE=P  ROW=1 NOEIS=$@ LEN=$(LIMIT) ORD=do P1=4 P2=4
 #----------
 0551_list:
 	grep -aE "^A0551" ../names
@@ -206,121 +263,77 @@ all: 0307nn 05516n 05518n 2177nn
 		055180 055181 055182\
 		055183 055184 055185
 055168:
-	make $(TARGET) RULE=B  ROW=0 NOEIS=$@ LEN=$(LIMIT) OPER=fa P1=0
-055169:                    
-	make $(TARGET) RULE=N  ROW=0 NOEIS=$@ LEN=$(LIMIT) OPER=fa P1=0
-055170:                    
-	make $(TARGET) RULE=D  ROW=0 NOEIS=$@ LEN=$(LIMIT) OPER=fa P1=0
-055171:                    
-	make $(TARGET) RULE=B  ROW=0 NOEIS=$@ LEN=$(LIMIT) OPER=fa P1=1
-055172:                    
-	make $(TARGET) RULE=N  ROW=0 NOEIS=$@ LEN=$(LIMIT) OPER=fa P1=1
-055173:                    
-	make $(TARGET) RULE=D  ROW=0 NOEIS=$@ LEN=$(LIMIT) OPER=fa P1=1
-055174:                    
-	make $(TARGET) RULE=B  ROW=0 NOEIS=$@ LEN=$(LIMIT) OPER=fa P1=2
-055175:                    
-	make $(TARGET) RULE=N  ROW=0 NOEIS=$@ LEN=$(LIMIT) OPER=fa P1=2
-055176:                    
-	make $(TARGET) RULE=D  ROW=0 NOEIS=$@ LEN=$(LIMIT) OPER=fa P1=2
-055177:                    
-	make $(TARGET) RULE=B  ROW=0 NOEIS=$@ LEN=$(LIMIT) OPER=fa P1=3
-055178:                    
-	make $(TARGET) RULE=N  ROW=0 NOEIS=$@ LEN=$(LIMIT) OPER=fa P1=3
-055179:                    
-	make $(TARGET) RULE=D  ROW=0 NOEIS=$@ LEN=$(LIMIT) OPER=fa P1=3
-055180:                    
-	make $(TARGET) RULE=B  ROW=0 NOEIS=$@ LEN=$(LIMIT) OPER=fa P1=4
-055181:                    
-	make $(TARGET) RULE=N  ROW=0 NOEIS=$@ LEN=$(LIMIT) OPER=fa P1=4
-055182:                    
-	make $(TARGET) RULE=D  ROW=0 NOEIS=$@ LEN=$(LIMIT) OPER=fa P1=4
-055183:                    
-	make $(TARGET) RULE=B  ROW=0 NOEIS=$@ LEN=$(LIMIT) OPER=fa P1=5
-055184:                    
-	make $(TARGET) RULE=N  ROW=0 NOEIS=$@ LEN=$(LIMIT) OPER=fa P1=5
-055185:                    
-	make $(TARGET) RULE=D  ROW=0 NOEIS=$@ LEN=$(LIMIT) OPER=fa P1=5
-#-----	
+	make $(TARGET) RULE=B  ROW=0 NOEIS=$@ LEN=$(LIMIT) ORD=fa P1=0
+055169:
+	make $(TARGET) RULE=N  ROW=0 NOEIS=$@ LEN=$(LIMIT) ORD=fa P1=0
+055170:
+	make $(TARGET) RULE=D  ROW=0 NOEIS=$@ LEN=$(LIMIT) ORD=fa P1=0
+055171:
+	make $(TARGET) RULE=B  ROW=0 NOEIS=$@ LEN=$(LIMIT) ORD=fa P1=1
+055172:
+	make $(TARGET) RULE=N  ROW=0 NOEIS=$@ LEN=$(LIMIT) ORD=fa P1=1
+055173:
+	make $(TARGET) RULE=D  ROW=0 NOEIS=$@ LEN=$(LIMIT) ORD=fa P1=1
+055174:
+	make $(TARGET) RULE=B  ROW=0 NOEIS=$@ LEN=$(LIMIT) ORD=fa P1=2
+055175:
+	make $(TARGET) RULE=N  ROW=0 NOEIS=$@ LEN=$(LIMIT) ORD=fa P1=2
+055176:
+	make $(TARGET) RULE=D  ROW=0 NOEIS=$@ LEN=$(LIMIT) ORD=fa P1=2
+055177:
+	make $(TARGET) RULE=B  ROW=0 NOEIS=$@ LEN=$(LIMIT) ORD=fa P1=3
+055178:
+	make $(TARGET) RULE=N  ROW=0 NOEIS=$@ LEN=$(LIMIT) ORD=fa P1=3
+055179:
+	make $(TARGET) RULE=D  ROW=0 NOEIS=$@ LEN=$(LIMIT) ORD=fa P1=3
+055180:
+	make $(TARGET) RULE=B  ROW=0 NOEIS=$@ LEN=$(LIMIT) ORD=fa P1=4
+055181:
+	make $(TARGET) RULE=N  ROW=0 NOEIS=$@ LEN=$(LIMIT) ORD=fa P1=4
+055182:
+	make $(TARGET) RULE=D  ROW=0 NOEIS=$@ LEN=$(LIMIT) ORD=fa P1=4
+055183:
+	make $(TARGET) RULE=B  ROW=0 NOEIS=$@ LEN=$(LIMIT) ORD=fa P1=5
+055184:
+	make $(TARGET) RULE=N  ROW=0 NOEIS=$@ LEN=$(LIMIT) ORD=fa P1=5
+055185:
+	make $(TARGET) RULE=D  ROW=0 NOEIS=$@ LEN=$(LIMIT) ORD=fa P1=5
+#-----
 05518n: 055186 055187 \
 		055188 055189 055190 055191
 055186:
-	make $(TARGET) RULE=A  ROW=0 NOEIS=$@ LEN=$(LIMIT) OPER=ic P1=0
-055187:                    
-	make $(TARGET) RULE=A  ROW=0 NOEIS=$@ LEN=$(LIMIT) OPER=io P1=1
-055188:                    
-	make $(TARGET) RULE=A  ROW=0 NOEIS=$@ LEN=$(LIMIT) OPER=fa P1=2
-055189:                    
-	make $(TARGET) RULE=A  ROW=0 NOEIS=$@ LEN=$(LIMIT) OPER=fa P1=3
-055190:                    
-	make $(TARGET) RULE=A  ROW=0 NOEIS=$@ LEN=$(LIMIT) OPER=fa P1=4
-055191:                    
-	make $(TARGET) RULE=A  ROW=0 NOEIS=$@ LEN=$(LIMIT) OPER=fa P1=5
-#----------
-2177_list:
-	grep -aE "^A2177" ../names
-2177nn: 217760 217780 #	ok
-217760: # c.f. 055186
-	make $(TARGET) RULE=A  ROW=0 NOEIS=$@ LEN=10000    OPER=fa P1=0
-217780: # c.f. 055187      
-	make $(TARGET) RULE=A  ROW=0 NOEIS=$@ LEN=10000    OPER=fa P1=1
+	make $(TARGET) RULE=A  ROW=0 NOEIS=$@ LEN=$(LIMIT) ORD=iz P1=0
+055187:
+	make $(TARGET) RULE=A  ROW=0 NOEIS=$@ LEN=$(LIMIT) ORD=io P1=1
+055188:
+	make $(TARGET) RULE=A  ROW=0 NOEIS=$@ LEN=$(LIMIT) ORD=fa P1=2
+055189:
+	make $(TARGET) RULE=A  ROW=0 NOEIS=$@ LEN=$(LIMIT) ORD=fa P1=3
+055190:
+	make $(TARGET) RULE=A  ROW=0 NOEIS=$@ LEN=$(LIMIT) ORD=fa P1=4
+055191:
+	make $(TARGET) RULE=A  ROW=0 NOEIS=$@ LEN=$(LIMIT) ORD=fa P1=5
 #---------------------------------------------------------------
 cumulcount:
 	# -------------------------------------------------------
-	echo perl $(TARGET).pl $(RULE) $(ROW) $(NOEIS) $(LEN) $(OPER) $(P1) $(P2)
 	test -s b$(NOEIS).txt || wget http://oeis.org/A$(NOEIS)/b$(NOEIS).txt
-	perl $(TARGET).pl $(RULE) $(ROW) $(NOEIS) $(LEN) $(OPER) $(P1) $(P2) > A$(NOEIS).pn.tmp
-	grep -E "^[0-9]" b$(NOEIS).txt | head -n $(LIMIT) > bf.tmp 
+	perl $(TARGET).pl $(RULE) $(ROW) $(NOEIS) $(LEN) $(ORD) $(P1) $(P2) > A$(NOEIS).pn.tmp
+	grep -E "^[0-9]" b$(NOEIS).txt    | head -n $(LEN)                           > bf.tmp
 	grep -E "^[0-9]" A$(NOEIS).pn.tmp | head -n `wc -l bf.tmp | cut -d " " -f 1` > pn.tmp
 #	diff -w -y                         --width=32  bf.tmp pn.tmp || :
 	diff -w -y --suppress-common-lines --width=32  bf.tmp pn.tmp || :
 #--------
-wgetall:
-	wget http://oeis.org/A131388/b131388.txt
-	wget http://oeis.org/A131389/b131389.txt
-	wget http://oeis.org/A131393/b131393.txt
-	wget http://oeis.org/A131394/b131394.txt
-#-------------------------------------------
-# get the list of relevant sequence numbers
-nplists: Anoeis npname npseqs
-Anoeis:
-	grep -E "^[0-9]" makefile | sed -e "s/^/A/" \
-	| cut -b 1-7 | sort | uniq | tee $@.tmp
-	wc $@.tmp
-#----
-# prepare the descriptions
-npname: Anoeis
-	grep -f Anoeis.tmp ../names    | sort \
-	| sed -e "s/generated by/ /" -e "s/(in Comments) with//" \
-	 -e "s/Sequence//i" \
-	 -e "s/Conjectured permutation of the //" \
-	 -e "s/conjectured permutation//" \
-	| cut -b 1-80 \
-	| tee $@.tmp
-	wc $@.tmp
-#----
-# compare the sequence lists to the b-files
-npseqs: Anoeis wgetrest
-	grep -f $@.tmp ../stripped | sort | tee npseqs.tmp
-	perl npseqs.pl < npseqs.tmp
-#----
-wgetrest: Anoeis
-	cut -b 2-7 Anoeis.tmp > noeis.tmp
-	cat noeis.tmp | xargs -l -i{} make wget1 NOEIS={}
-wget1:
-	test -s b$(NOEIS).txt || wget http://oeis.org/A$(NOEIS)/b$(NOEIS).txt
-#----
+list1:
+	echo " " [https://oeis.org/A$(NOEIS) A$(NOEIS)] Rule $(RULE).$(ROW) $(ORD) $(P1) $(P2) " "\
+	`wc -l b$(NOEIS).txt | cut -d " " -f 1`
 listing:
 	make -s all TARGET=list1 | sort \
-	| sed -e "s/ ak / a  /" -e "s/ dk / d  /"\
+	| sed -e "s/\.0/  /" -e "s/ 0 0/.0  /" -e "s/ 0/  /" -e "s/\.0/ 0/" \
 	| tee listing.tmp
-	wc listing.tmp
-list1: 
-	echo [https://oeis.org/A$(NOEIS) A$(NOEIS)]   Rule $(RULE).$(ROW)   $(OPER)   $(P1) $(P2)
-#----
+	wc -l listing.tmp
+#--------
 # e.g. https://oeis.org/search?q=id:A257908&fmt=text
-internal: Anoeis
-	cat Anoeis.tmp | xargs -l -i{} make intern1 ANOEIS={}
 intern1:
-	test -s $(ANOEIS).int || \
-	wget -O $(ANOEIS).int "http://oeis.org/search?q=id:$(ANOEIS)\&fmt=text" 
+	test -s A$(NOEIS).int || wget -O A$(NOEIS).int "http://oeis.org/search?q=id:A$(NOEIS)\&fmt=text" 
+internal: 
+	make -s all TARGET=intern1

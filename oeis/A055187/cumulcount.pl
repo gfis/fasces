@@ -1,54 +1,73 @@
 #!perl
 
-# Generate OEIS Sequence A055187 and its companions
-# as defined by Clark Kimberling
+# Generate OEIS A030707, A055187, A217760 and related 
+# "cumulative counting" sequences as defined by Clark Kimberling.
 # http://faculty.evansville.edu/ck6/integer/unsolved.html, Problem 4
 # @(#) $Id$
 # 2018-04-20, Georg Fischer
 #------------------------------------------------------
-# usage:
-#   perl cumulcount.pl rule row noeis n op a1 [debug]
-#       rule  = "A"  (attribute before noun) 
-#               "B"  (noun before attribute)
-#               "D"  (new, distinct elements)
-#               "I"  (inverse, first occurrence of a number)
-#               "J"  (next term which is greater than all previous)
-#               "K"  (next position where term is greater than all previous)
-#               "N"  (number of new elements)
-#               "Pi" (positions of small numbers i)
-#               "T"  (number of [new] terms in segment n)
-#       row   = 0 (both), 1 (first), 2 (second)
-#       noeis = "030707|055187|217760 ..." (without "A")
-#       n     = length of sequence to be generated
-#       op    = "io" (increasing order), 
-#               "do" (decreasing order), 
-#               "ic" (increasing order, complete with zero counts), 
-#               "fa" (first appearance) 
-#       p1    = starting value for a(1): 0,1, ... 5
-#       p2    = 2nd parameter (for rule "P")
-#       debug = 0 (none), 1 (with segments)
-#------------------------------------------------------
-# Formula:
+# Comment from A217760:
+#   Write 0 followed by segments defined inductively as follows: each segment
+#   tells how many times each previously written integer occurs, in the order
+#   of first occurrence.  This is Method A (adjective-before-noun pairs); for
+#   Method B (noun-before-adjective), see A055168. 
+# Example:
+#   Start with 0, followed by the adjective-noun pair 1,0; followed by
+#   adjective-noun pairs 2,0 then 1,1; etc. Writing the pairs vertically,
+#   the initial segments are
+#   0.|.1.|.2 1.|.3 3 1.|.4 5 2 2.|.5 6 5 3 1 1.|.6 9 6 5 2 4 1.|.7 11 8 6 4 6 4 1
+#   ..|.0.|.0 1.|.0 1 2.|.0 1 2 3.|.0 1 2 3 4 5.|.0 1 2 3 4 5 6.|.0 1  2 3 4 5 6 9
+#
+# Usage:
+#   perl cumulcount.pl rule row noeis len order p1 [p2 [debug]]
+#       rule  = "A" (attribute over noun)
+#               "A0" (like A, with b-file index starting at 0 (OFFSET 0,...))
+#               "B" (noun over attribute)
+#               "C" (noun behind attribute)
+#               "D" (new, distinct elements)
+#               "I" (inverse, first occurrence of a number)
+#               "J" (next term which is greater than all previous)
+#               "K" (next position where term is greater than all previous)
+#               "N" (number of new elements in segment)
+#               "P" (positions of small numbers (p2))
+#               "S" (sum of terms in segment n)
+#               "T" (number of terms in segment n)
+#       row   =  0 (count in both rows,    output both)  
+#                1 (count in both rows,    output 1st)  
+#                2 (count in both rows,    output 2nd)
+#                5 (count in 1st row only, output 1st)
+#                6 (count in 1st row only, output 2nd)
+#       noeis = "030707|055187|217760 ..." (OEIS number without "A")
+#       len   = length of sequence to be generated
+#       order = "io" (increasing order) 
+#               "do" (decreasing order) 
+#               "iz" (increasing order, complete with zero counts)
+#               "dz" (decreasing order, complete with zero counts)
+#               "fa" (order of first appearance)
+#       p1    = starting value for a(1): 0, 1, 3, 4, 5
+#       p2    = 2nd parameter (for rule "P"): 1, 2, 3, 4 
+#       debug = 0 (none)
+#               1 (with segments)
 #--------------------------------------------------------
 use strict;
 
-my $rule = "A"; if (scalar(@ARGV) > 0) { $rule  = shift(@ARGV); }
-my $row = 0;    if (scalar(@ARGV) > 0) { $row   = shift(@ARGV); }
-my $noeis = ""; if (scalar(@ARGV) > 0) { $noeis = shift(@ARGV); }
-my $n = 256;    if (scalar(@ARGV) > 0) { $n     = shift(@ARGV); }
-my $op = "io";  if (scalar(@ARGV) > 0) { $op    = shift(@ARGV); }
-my $p1 = 1;     if (scalar(@ARGV) > 0) { $p1    = shift(@ARGV); }
-my $p2 = 0;     if (scalar(@ARGV) > 0) { $p2    = shift(@ARGV); }
-my $debug = 0;  if (scalar(@ARGV) > 0) { $debug = shift(@ARGV); }
+my $rule   = "A"; if (scalar(@ARGV) > 0) { $rule  = shift(@ARGV); }
+my $row   = 0;    if (scalar(@ARGV) > 0) { $row   = shift(@ARGV); }
+my $noeis = "";   if (scalar(@ARGV) > 0) { $noeis = shift(@ARGV); }
+my $len   = 256;  if (scalar(@ARGV) > 0) { $len   = shift(@ARGV); }
+my $order = "io"; if (scalar(@ARGV) > 0) { $order = shift(@ARGV); }
+my $p1    = 1;    if (scalar(@ARGV) > 0) { $p1    = shift(@ARGV); }
+my $p2    = 0;    if (scalar(@ARGV) > 0) { $p2    = shift(@ARGV); }
+my $debug = 0;    if (scalar(@ARGV) > 0) { $debug = shift(@ARGV); }
 
-# segment have 2 rows:
+# segments have 2 rows:
 # row 1 = attrs
 # row 2 = nouns
 my $attr;
 my $noun;
 my %nouns;
 my %occrs = (); # first occurrences of attributes
-my @seql = (); # sequence list 
+my @seql  = (); # sequence list
 push(@seql, $p1, 1, $p1);
 #            0   1   2  3
 my $segno = 1;
@@ -58,70 +77,101 @@ my $inoun;
 my $sum;
 my $search = $p2; # for $rule =~ m{P}
 my $curmax = 0;
+my $start_new = 0;
+my ($sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst)
+    = localtime (time);
+my $timestamp = sprintf ("%04d-%02d-%02d %02d:%02d"
+    , $year + 1900, $mon + 1, $mday, $hour, $min);
 print <<"GFis";
-# http://oeis.org/A$noeis/b$noeis.txt: table n,a(n),n=1..$n
+# http://oeis.org/A$noeis/b$noeis.txt: table n,a(n)
+# Generated by cumulcount.pl on $timestamp 
 GFis
 my $k = 1;
-my $k2 = $k; # copy of k, running as if it were the A rule
+if ($rule =~ m{[A-Z](\d)}) { # extract the OFFSET
+	$k = $1;
+	$rule =~ s{\d}{};
+}
+my $k2 = $k; # copy of k, running as if it were rule A    
     if (0) {
-    } elsif ($rule =~ m{[ABPIJK]}i) {
-        if ($row <= 1) {
+    } elsif ($rule =~ m{[ABIJKP]}i) {
+        if ($row <= 1 or $row == 5) {
             &bfile($p1);
         }
+        &bfile(1, $p1);
+    } elsif ($rule =~ m{C}i) {
         &bfile(1, $p1);
     } elsif ($rule =~ m{D}i) {
         print "$k $p1\n"; $k ++;
     } elsif ($rule =~ m{N}i) {
         print "$k 1\n"  ; $k ++;
-    } elsif ($rule =~ m{T}i) {
+    } elsif ($rule =~ m{[ST]}i) {
         print "$k $p1\n"; $k ++;
     } else {
-        die "invalid rule \"$rule\"\n";
+        die "invalid rule \"$rule\" at bf(1)\n";
     }
 $segno ++;
-while ($k <= $n) { # fill b-file
+while ($k <= $len) { # fill b-file
     my %nouns = ();
-    $inoun = $sseg;
-    while ($inoun < $eseg) { # count the present nouns
-        my $attr = $seql[$inoun + 0];
-        my $noun = $seql[$inoun + 1];
-        if (1) {
-            $sum = $attr + &count($noun, $sseg, $eseg);
-            $nouns{$noun} = $sum;
-            push(@seql, $sum, $noun);
-        }
-        $inoun += 2;
-    } # while $inoun
-    $inoun = $sseg;
-    my $start_new = scalar(@seql);
-    while ($inoun < $eseg) { # count the new attributes
-        my $attr = $seql[$inoun + 0];
-        if (! defined($nouns{$attr})) {
-            $sum = &count($attr, $sseg, $eseg);
-            $nouns{$attr} = $sum;
-            push(@seql, $sum, $attr);
-        }
-        $inoun += 2;
-    } # while $inoun
-    
+    if ($rule !~ m{C}i) {
+	    $inoun = $sseg;
+	    while ($inoun < $eseg) { # count the present nouns (row 2)
+	        my $attr = $seql[$inoun + 0];
+	        my $noun = $seql[$inoun + 1];
+	        if (1) {
+	            $sum = $attr + &count("n", $noun, $sseg, $eseg);
+	            $nouns{$noun} = $sum;
+	            push(@seql, $sum, $noun);
+	        }
+	        $inoun += 2;
+	    } # while $inoun
+	    $inoun = $sseg;
+	    $start_new = scalar(@seql);
+	    while ($inoun < $eseg) { # count the new attributes (row 1)
+	        my $attr = $seql[$inoun + 0];
+	        if (! defined($nouns{$attr}) and ($attr > 0 or $row < 5)) {
+	            $sum =         &count("a", $attr, $sseg, $eseg);
+	            $nouns{$attr} = $sum;
+	            push(@seql, $sum, $attr);
+	        }
+	        $inoun += 2;
+	    } # while $inoun
+	} else { # rule C
+		
+	} # rule C
+
     if (0) {
-    } elsif ($op eq "fa") {
+    } elsif ($order eq "fa") { # order of first appearance
         # already stored in @seql
-    } elsif ($op eq "do") {
+    } elsif ($order eq "do") { # decreasing order
         $inoun = $eseg;
-        foreach $noun (reverse(sort {$a <=> $b} (keys(%nouns)))) {
+        foreach $noun (sort {$b <=> $a} (keys(%nouns))) { # reverse sort
             $seql[$inoun + 0] = $nouns{$noun};
             $seql[$inoun + 1] = $noun;
             $inoun += 2;
         } # foreach
-    } elsif ($op eq "io") {
+    } elsif ($order eq "io") { # increasing order
         $inoun = $eseg;
         foreach $noun (sort {$a <=> $b} (keys(%nouns))) {
             $seql[$inoun + 0] = $nouns{$noun};
             $seql[$inoun + 1] = $noun;
             $inoun += 2;
         } # foreach
-    } elsif ($op eq "ic") { # increasing order (complete) - insert 0 counts
+    } elsif ($order eq "dz") { # decreasing order (complete) - insert 0 counts
+        my $cnoun = 0; # avoids "while" in first "foreach"
+        $inoun = $eseg;
+        foreach $noun (sort {$b <=> $a} (keys(%nouns))) { # reverse sort
+            while ($cnoun > $noun) {
+                $seql[$inoun + 0] = 0;
+                $seql[$inoun + 1] = $cnoun;
+                $cnoun --;
+                $inoun += 2;
+            } # while $cnoun
+            $seql[$inoun + 0] = $nouns{$noun};
+            $seql[$inoun + 1] = $noun;
+            $inoun += 2;
+            $cnoun = $noun - 1;
+        } # foreach
+    } elsif ($order eq "iz") { # increasing order (complete) - insert 0 counts
         my $cnoun = $seql[$sseg + 1];
         $inoun = $eseg;
         foreach $noun (sort {$a <=> $b} (keys(%nouns))) {
@@ -137,25 +187,25 @@ while ($k <= $n) { # fill b-file
             $cnoun = $noun + 1;
         } # foreach
     } else {
-        die "invalid paramter op=\"$op\"\n";
+        die "invalid paramter op=\"$order\"\n";
     }
 
     if ($debug >= 1) {
         print "# segment $segno:";
         $inoun = $eseg;
-        while ($inoun < scalar(@seql)) { # 
+        while ($inoun < scalar(@seql)) { #
             my $attr = $seql[$inoun + 0];
             my $noun = $seql[$inoun + 1];
-            print " $attr.$noun"; 
+            print " $attr.$noun";
             $inoun += 2;
         } # while $inoun
         print "\n";
     } # debug
-    
+
     if (0) {
-    } elsif ($rule =~ m{[ABPIJK]}i) { # first or second row or both
+    } elsif ($rule =~ m{[ABIJKP]}i) { # first or second row or both
         $inoun = $eseg;
-        while ($inoun < scalar(@seql)) { 
+        while ($inoun < scalar(@seql)) {
             my $attr = $seql[$inoun + 0];
             my $noun = $seql[$inoun + 1];
             &bfile($attr, $noun);
@@ -163,13 +213,13 @@ while ($k <= $n) { # fill b-file
         } # while $inoun
     } elsif ($rule =~ m{D}i) { # new terms
         $inoun = $start_new;
-        while ($inoun < scalar(@seql)) { 
+        while ($inoun < scalar(@seql)) {
             my $attr = $seql[$inoun + 0];
             my $noun = $seql[$inoun + 1];
             &bfile($noun);
             $inoun += 2;
         } # while $inoun
-    } elsif ($rule =~ m{N}i) { # no. of new terms
+    } elsif ($rule =~ m{N}i) { # no. of new terms in segment
         my $no_new = (scalar(@seql) - $start_new) >> 1;
         &bfile($no_new);
     } elsif ($rule =~ m{T}i) { # no. of terms in segemnt
@@ -177,143 +227,144 @@ while ($k <= $n) { # fill b-file
         &bfile($no_new);
     }
     $sseg = $eseg;
-    $eseg = scalar(@seql);  
+    $eseg = scalar(@seql);
     $segno ++;
 } # while b-file
 
-if ($rule =~ m{I}i) { 
-	$k = 1;
-	foreach $attr (sort {$a <=> $b} (keys(%occrs))) {
-		# last if $attr > $k; # must be monotone
+if ($rule =~ m{I}i) { # special treatment of the inverse
+    $k = 1;
+    foreach $attr (sort {$a <=> $b} (keys(%occrs))) {
+        # last if $attr > $k; # must be monotone
         print "$k $occrs{$attr}\n"; $k ++;
-	} # foreach
+    } # foreach
 } # rule I
-
+#----------------
 sub bfile {
     my ($attr, $noun) = @_;
     if (0) {
     } elsif ($rule =~ m{P}i) {
-    	if ($attr == $search) {
-	        print "$k $k2\n"; $k ++;
-    	}
-    	$k2 ++;
-    } elsif ($rule =~ m{I}i) { 
-    	if (! defined($occrs{$attr})) { 
-    		# assume that rule "I" is called with row=1 only !
-    		$occrs{$attr} = $k;
-    		if ($debug >= 1) {
-    			print "# stored $k in occrs{$attr}\n";
-    		}
-    	}
-    	$k ++;
-    } elsif ($rule =~ m{J}i) { 
-    	if ($attr > $curmax) {
-	        print "$k $attr\n"; $k ++;
-	        $curmax = $attr;
-    	}
-    	$k2 ++;
-    } elsif ($rule =~ m{k}i) { 
-    	if ($attr > $curmax) {
-	        print "$k $k2\n"; $k ++;
-	        $curmax = $attr;
-    	}
-    	$k2 ++;
+        if ($attr == $search) {
+            print "$k $k2\n"; $k ++;
+        }
+        $k2 ++;
+    } elsif ($rule =~ m{I}i) {
+        if (! defined($occrs{$attr})) {
+            # assume that rule "I" is called with row=1 only !
+            $occrs{$attr} = $k;
+            if ($debug >= 1) {
+                print "# stored $k in occrs{$attr}\n";
+            }
+        }
+        $k ++;
+    } elsif ($rule =~ m{J}i) {
+        if ($attr > $curmax) {
+            print "$k $attr\n"; $k ++;
+            $curmax = $attr;
+        }
+        $k2 ++;
+    } elsif ($rule =~ m{k}i) {
+        if ($attr > $curmax) {
+            print "$k $k2\n"; $k ++;
+            $curmax = $attr;
+        }
+        $k2 ++;
     } elsif (scalar(@_) == 1) {
-        print "$k $attr\n"; $k ++;
+	        print "$k $attr\n"; $k ++;
+    } elsif ($rule =~ m{C}i) {
+            print "$k $attr\n"; $k ++;
+            print "$k $noun\n"; $k ++;
     } elsif ($rule =~ m{[DNT]}i) {
-    	# c.f. above
-    } elsif ($rule =~ m{A}i) {
+        # c.f. above
+    } elsif ($rule =~ m{[A]}i) { # attribute before noun
         if (0) {
-        } elsif ($row == 0) {
-            print "$k $attr\n"; $k ++; 
+        } elsif ($row == 0) { 
+            print "$k $attr\n"; $k ++;
             print "$k $noun\n"; $k ++;
         } elsif ($row == 1) {
             print "$k $attr\n"; $k ++;
         } elsif ($row == 2) {
             print "$k $noun\n"; $k ++;
+        } elsif ($row == 5) {
+            print "$k $attr\n"; $k ++;
+        } elsif ($row == 6) {
+            print "$k $noun\n"; $k ++;
         }
-    } elsif ($rule =~ m{B}i) {
-        print "$k $noun\n"; $k ++;
-        print "$k $attr\n"; $k ++;
+    } elsif ($rule =~ m{B}i) { # noun before attribute
+        if (0) {
+        } elsif ($row == 0) {
+            print "$k $noun\n"; $k ++;
+            print "$k $attr\n"; $k ++;
+        } elsif ($row == 1) {
+            print "$k $noun\n"; $k ++;
+        } elsif ($row == 2) {
+            print "$k $attr\n"; $k ++;
+        } elsif ($row == 5) {
+            print "$k $noun\n"; $k ++;
+        } elsif ($row == 6) {
+            print "$k $attr\n"; $k ++;
+        }
     } else {
-        die "invalid rule \"$rule\"\n";
+        die "invalid rule \"$rule\" in sub bfile\n";
     }
 } # bfile
-
+#----------------
 sub count {
-    my ($noun, $sseg, $eseg) = @_;
+    my ($mode, $value, $sseg, $eseg) = @_;
     my $sum = 0;
     my $iseg = $sseg;
     while ($iseg < $eseg) {
-        if ($seql[$iseg] == $noun) {
+        if ($row >= 7) { # skip over 1st, count in 2nd row only
+            $iseg ++;
+        } # if cond
+        if ($seql[$iseg] == $value) { # attr or noun
             $sum ++;
         }
         $iseg ++;
+        if ($row >= 5) { # skip over 2nd, count in 1st row only
+            $iseg ++;
+        }
     } # while $iseg
     return $sum;
 } # sub count
 __DATA__
-#--------
-60 4
-61 6
-62 1
-63 9
-# Attr   7  11   8   6   4   6   4   1 |
-# Noun   0   1   2   3   4   5   6   9 |
-# Appr   0   1   2   3   4   5   6   7 |
-64 8
-65 0
-66 13
-67 1
-68 9
-69 2
-70 7
-71 3
-72 7
-73 4
-74 7
-75 5
-76 7
-77 6
-78 1
-79 7
-80 1
-81 8
-82 2
-83 9
-84 1
-85 11
-# Attr   8  13   9   7   7   7   7   1   1   2   1 |
-# Noun   0   1   2   3   4   5   6   7   8   9  11 |
-# Appr   0   1   2   3   4   5   6   8  10   7   9 |
-86 9
-87 0
-88 17
-89 1
-90 11
-# https://oeis.org/wiki/User:Georg_Fischer Apr. 20, 2018
+Rule A, A055187:
+1 | 1 | 3 | 4  1 |  6  2  1 |  8  1  3  2  1 |
+  | 1 | 1 | 1  3 |  1  3  4 |  1  2  3  4  6 |
 
+  | 11  3  5  3  2  1  | 13  5  8  4  1  3  2  1 |
+  |  1  2  3  4  6  8  |  1  2  3  4  5  6  8 11 |
 
-1  1 | 3 | 4  1 |  6  2  1 |  8  1  3  2  1 |
-   1 | 1 | 1  3 |  1  3  4 |  1  2  3  4  6 |
-                  +1    +1   +1 +1       +1
+  | 16  7 10  6  3  4  4  2  1 |
+  |  1  2  3  4  5  6  8 11 13 |
 
- | 11  3  5  3  2  1  | 13  5  8  4  1  3  2  1 |
- |  1  2  3  4  6  8  |  1  2  3  4  5  6  8 11 |
-   +2 +1 +1       +1    +1 +1 +2    +1       +1
+  | 18  9 12  9  4  6  1  5  1  3  2  1 |
+  |  1  2  3  4  5  6  7  8 10 11 13 16 |
 
- | 16  7 10  6  3  4  4  2  1 |
- |  1  2  3  4  5  6  8 11 13 |
-   +2 +1 +1 +1 +1    +1    +1
+  | 22 11 14 11  6  8  2  6  2  2  4  1  3  2  1 |
+  |  1  2  3  4  5  6  7  8  9 10 11 12 13 16 18 |
 
- | 18  9 12  9  4  6  1  5  1  3  2  1 |
- |  1  2  3  4  5  6  7  8 10 11 13 16 |
-   +1 +1 +1 +2    +1 +1    +1       +1
+  | 25 16 16 14 ...
+  |  1  2  3  4 ...
 
- | 22 11 14 11  6  8  2  6  2  2  4  1  3  2  1 |
- |  1  2  3  4  5  6  7  8  9 10 11 12 13 16 18 |
-   +3 +1 +1 +1 +1 +1       +2       +1       +1
+--------------------
+A030717 (row 1), A030718 (row2) - zeroes are inconsistent
+1 | 1 | 2 | 2, 1 | 3, 2 | 3, 3, 1 | 4, 3, 3 | 4, 3, 5, 1 | 5, 3, 6, 2, 1
+  | 1 | 1 | 1, 2 | 1, 2 | 1, 2, 3 | 1, 2, 3 | 1, 2, 3, 4 | 1, 2, 3, 4, 5
 
- | 25 16 16 14
- |  1  2  3  4
-   +2 +4 +1 +1
+  | 6, 4, 7, 2, 2, 1 | 7, 6, 7, 3, 2, 2, 1| 8, 8, 8, 3, 2, 3, 3
+  | 1, 2, 3, 4, 5, 6 | 1, 2, 3, 4, 5, 6, 7| 1, 2, 3, 4, 5, 6, 7
+
+  | 8, 9, 11, 3, 2, 3, 3, 3 | 8, 10, 15, 3, 2, 3, 3, 4, 1,  0,  1
+  | 1, 2,  3, 4, 5, 6, 7, 8 | 1,  2,  3, 4, 5, 6, 7, 8, 9,     11
+
+  | 10, 11, 18, 4, 2, 3, 3, 5, 1,  1,  1, 0, 0, 0,  1
+  |  1,  2,  3, 4, 5, 6, 7, 8, 9, 10, 11,          15
+
+  | 14, 12, 20, 5, 3, 3, 3, 5, 1,  2,  2, 0, 0, 0,  1, 0, 0,  1
+  |  1,  2,  3, 4, 5, 6, 7, 8, 9, 10, 11,          15,       18
+
+  | 17, 14, 23, 5, 5
+  |  1,  2,  3  ...
+#----------------------------------------------
+A051120 ,1|1,1|3,1|1,3,4,1|1,4,2,3,6,1|1,6,2,4,3,3,1,2,8,1|1,8,2,6,3,4,5,3,3,2,11,1|1,11,2,8,3,6,1,5,4,4,8,3,5,2,13,1|1,13,2,11,4,8,4,6,3,5,6,4,10,3,7,2,16,1,1,16,2,13,3,11,1,10,5,8,1,7,6,6,4,5,9,4,12,3,9,2,18,1,
+A055187 ,1|1,1|3,1|4,1,1,3|6,1,2,3,1,4|8,1,1,2,3,3,2,4,1,6|11,1,3,2,5,3,3,4,2,6,1,8|13,1,5,2,8,3,4,4,1,5,3,6,2,8,1,11|16,1,7,2,10,3,6,4,3,5,4,6,4,8,2,11,1,13,18,1,9,2,12,3,9,4,4,5,6,6,1,7,5,8,1,10,3,11,2,13,1,16,22,1,
