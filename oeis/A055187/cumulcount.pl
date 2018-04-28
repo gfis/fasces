@@ -4,7 +4,7 @@
 # "cumulative counting" sequences as defined by Clark Kimberling.
 # http://faculty.evansville.edu/ck6/integer/unsolved.html, Problem 4
 # @(#) $Id$
-# 2018-04-20, Georg Fischer
+# 2018-04-20, Georg Fischer (previosu version in cumulcount2.pl)
 #------------------------------------------------------
 # Comment from A217760:
 #   Write 0 followed by segments defined inductively as follows: each segment
@@ -19,35 +19,36 @@
 #   ..|.0.|.0 1.|.0 1 2.|.0 1 2 3.|.0 1 2 3 4 5.|.0 1 2 3 4 5 6.|.0 1  2 3 4 5 6 9
 #
 # Usage:
-#   perl cumulcount.pl -m method -r row -n noeis -l len -o order -s start [-p parm [-d debug]]
-#       method= "A" (attribute over noun)
-#               "A0" (like A, with b-file index starting at 0 (OFFSET 0,...))
-#               "B" (noun over attribute)
-#               "C" (noun behind attribute)
-#               "D" (new, distinct elements)
-#               "I" (inverse, first occurrence of a number)
-#               "J" (next term which is greater than all previous)
-#               "K" (next position where term is greater than all previous)
-#               "N" (number of new elements in segment)
-#               "P" (positions of small numbers (p2))
-#               "S" (sum of terms in segment n)
-#               "T" (number of terms in segment n)
-#       row   =  0 (count in both rows,    output both)
-#                1 (count in both rows,    output 1st)
-#                2 (count in both rows,    output 2nd)
-#                5 (count in 1st row only, output 1st)
-#                6 (count in 1st row only, output 2nd)
-#       noeis = "030707|055187|217760 ..." (OEIS number without "A")
-#       len   = length of sequence to be generated
-#       order = "io" (increasing order)
-#               "do" (decreasing order)
-#               "iz" (increasing order, complete with zero counts)
-#               "dz" (decreasing order, complete with zero counts)
-#               "fa" (order of first appearance)
-#       start = starting value for a(1): 0, 1, 3, 4, 5
-#       parm  = 2nd parameter (for rule "P"): 1, 2, 3, 4
-#       debug = 0 (none)
-#               1 (with segments)
+#   perl cumulcount.pl -m method -r row -n noeis -l len -a appear -o offset -s start -p parm -d debug
+#       All parameters are optional and have a default value:
+#       method = "A" (attribute over noun; default)
+#                "B" (noun over attribute)
+#                "C" (noun behind attribute)
+#                "D" (new, distinct elements)
+#                "I" (inverse, first occurrence of a number)
+#                "J" (next term which is greater than all previous)
+#                "K" (next position where term is greater than all previous)
+#                "N" (number of new elements in segment)
+#                "P" (positions of small numbers (p2))
+#                "S" (sum of terms in segment n)
+#                "T" (number of terms in segment n)
+#       row    =  0 (count in both rows,    output both; default)
+#                 1 (count in both rows,    output 1st)
+#                 2 (count in both rows,    output 2nd)
+#                 5 (count in 1st row only, output 1st)
+#                 6 (count in 1st row only, output 2nd)
+#       noeis  = "030707|055187|217760 ..." (OEIS number without "A", default "030707")
+#       len    = length of sequence to be generated (default: 256)
+#       appear = "io" (increasing order; default)
+#                "do" (decreasing order)
+#                "iz" (increasing order, complete with zero counts)
+#                "dz" (decreasing order, complete with zero counts)
+#                "fa" (order of first appearance)
+#       offset = 0, 1 (index f 1st b-file entry, default: 1)
+#       start  = starting value for a(1): 0, 1 (default), 3, 4, 5
+#       parm   = 2nd parameter (for rule "P"): 1, 2, 3, 4
+#       debug  = 0 (none; default)
+#                1 (with segments)
 #--------------------------------------------------------
 use strict;
 
@@ -55,7 +56,7 @@ my $debug  = 0;
 my $len    = 256;
 my $method = "A";
 my $noeis  = "030707";
-my $order  = "io";
+my $appear = "io";
 my $parm   = 0;
 my $row    = 0;
 my $start  = 1;
@@ -65,12 +66,13 @@ my $offset = 1;
 while (scalar(@ARGV) > 0) {
     my $opt = shift(@ARGV);
     if (0) {
+    } elsif ($opt eq "-a") { $appear  = shift(@ARGV);
     } elsif ($opt eq "-d") { $debug   = shift(@ARGV);
     } elsif ($opt eq "-l") { $len     = shift(@ARGV);
     } elsif ($opt eq "-m") { $method  = shift(@ARGV);
     } elsif ($opt eq "-n") { $noeis   = shift(@ARGV);
+    } elsif ($opt eq "-o") { $offset  = shift(@ARGV);
     } elsif ($opt eq "-p") { $parm    = shift(@ARGV);
-    } elsif ($opt eq "-o") { $order   = shift(@ARGV);
     } elsif ($opt eq "-r") { $row     = shift(@ARGV);
     } elsif ($opt eq "-s") { $start   = shift(@ARGV);
     } else { die "invalid option \"$opt\"\n";
@@ -90,15 +92,16 @@ GFis
 
 my @seqlen = (1); # cumulative length of sequence so far, indexed with $segno
 my %occrs  = ();
-my $curmax = 1; # $start - 1;
+my $curmax = $start - 1;
 my $segno = 1;
 my @segment = ();
 # $segment[i+0] = attribute, how often (i = 1, 3, 5 ..)
 # $segment[i+1] = noun, which number is counted,
 #               always increasing, always complete with zero attributes
-my $attr; # attribute, count of nouns
-my $noun; # the numbers to be counted
-my $iseg; # index in @segment
+my @count; # temporary copy of the attributes
+my $attr;  # attribute, count of nouns
+my $noun;  # the numbers to be counted
+my $iseg;  # index in @segment
 
 $noun = 0;
 while ($noun < $start) { # fill before $start
@@ -112,7 +115,7 @@ my $k2 = $k; # copy of k, running as if it were rule A
     if (0) {
     } elsif ($method =~ m{[ABIJKP]}i) {
         if ($row <= 1 or $row == 5) {
-            &bfile(1, $start);
+            &bfile($start);
         }
     } elsif ($method =~ m{C}i) {
         &bfile(1, $start);
@@ -141,49 +144,6 @@ if ($method =~ m{I}i) { # special treatment of the inverse
 #----------------
 sub advance { # count between 0 and $nmax, and store in @counts
     my $amax = -1; # $nmax is the current segment length / 2
-    my @count = (0); # temporary copy of the attributes
-    $iseg = 0;
-    while ($iseg < scalar(@segment)) { # copy attr and determine maximums
-        $attr = $segment[$iseg + 0];
-        $noun = $segment[$iseg + 1];
-        $count[$noun] = $attr; # copy old attr
-        if ($attr > $amax) {
-            $amax = $attr;
-        }
-        $iseg += 2;
-    } # while copying
-    my $last_noun = $noun;
-
-    $noun = $last_noun + 1;
-    while ($noun <= $amax) { # fill with zeroes
-        $count[$noun ++] = 0;
-    } # while filling
-    my $ff_count = $noun;
-
-    # now add all (or row1, row2) to @count
-    $iseg = 0;
-    while ($iseg < scalar(@segment)) { # add
-        $attr = $segment[$iseg + 0];
-        $noun = $segment[$iseg + 1];
-        if ($incpre == 0) {
-            $count[$attr] ++;
-        }
-        if ($incpst == 0 and ($attr != 0 or $with_zero == 1)) {
-            $count[$noun] ++;
-        }
-        $iseg += 2;
-    } # while adding
-
-    # copy it back to the segment
-    $iseg = 0;
-    $noun = $offset;
-    while ($noun < $ff_count) { # add
-        $segment[$iseg + 0] = $count[$noun];
-        $segment[$iseg + 1] = $noun;
-        $iseg += 2;
-        $noun ++;
-    } # while copying back
-
 if ($debug >= 1) {
     print "seg#$segno:";
     $iseg = 0;
@@ -233,6 +193,50 @@ if ($debug >= 1) {
         &bfile($nelem);
         $seqlen[$segno] = $seqlen[$segno - 1] + $nelem;
     }
+	#--------
+	# compute following segment 
+    $iseg = 0;
+    while ($iseg < scalar(@segment)) { # copy attr and determine maximums
+        $attr = $segment[$iseg + 0];
+        $noun = $segment[$iseg + 1];
+        $count[$noun] = $attr; # copy old attr
+        if ($attr > $amax) {
+            $amax = $attr;
+        }
+        $iseg += 2;
+    } # while copying
+    my $last_noun = $noun;
+
+    $noun = $last_noun + 1;
+    while ($noun <= $amax) { # fill with zeroes
+        $count[$noun ++] = 0;
+    } # while filling
+    my $ff_count = $noun;
+
+    # now add all (or row1, row2) to @count
+    $iseg = 0;
+    while ($iseg < scalar(@segment)) { # add
+        $attr = $segment[$iseg + 0];
+        $noun = $segment[$iseg + 1];
+        if ($incpre == 0 and ($attr != 0 or $with_zero == 1)) {
+            $count[$attr] ++;
+        }
+        if ($incpst == 0 and (($noun != 0 and $attr != 0) or $with_zero == 1)) {
+            $count[$noun] ++;
+        }
+        $iseg += 2;
+    } # while adding
+
+    # copy it back to the segment
+    $iseg = 0;
+    $noun = 0;
+    while ($noun < $ff_count) { # add
+        $segment[$iseg + 0] = $count[$noun];
+        $segment[$iseg + 1] = $noun;
+        $iseg += 2;
+        $noun ++;
+    } # while copying back
+
 } # sub advance
 #----------------
 sub bfile {
@@ -351,23 +355,23 @@ A055187 ,1|1,1|3,1|4,1,1,3|6,1,2,3,1,4|8,1,1,2,3,3,2,4,1,6|11,1,3,2,5,3,3,4,2,6,
 
 
 #    if (0) {
-#    } elsif ($order eq "fa") { # order of first appearance
+#    } elsif ($appear eq "fa") { # order of first appearance
 #        # already stored in @segment
-#    } elsif ($order eq "do") { # decreasing order
+#    } elsif ($appear eq "do") { # decreasing order
 #        $inoun = $eseg;
 #        foreach $noun (sort {$b <=> $a} (keys(%nouns))) { # reverse sort
 #            $segment[$inoun + 0] = $nouns{$noun};
 #            $segment[$inoun + 1] = $noun;
 #            $inoun += 2;
 #        } # foreach
-#    } elsif ($order eq "io") { # increasing order
+#    } elsif ($appear eq "io") { # increasing order
 #        $inoun = $eseg;
 #        foreach $noun (sort {$a <=> $b} (keys(%nouns))) {
 #            $segment[$inoun + 0] = $nouns{$noun};
 #            $segment[$inoun + 1] = $noun;
 #            $inoun += 2;
 #        } # foreach
-#    } elsif ($order eq "dz") { # decreasing order (complete) - insert 0 counts
+#    } elsif ($appear eq "dz") { # decreasing order (complete) - insert 0 counts
 #        my $cnoun = 0; # avoids "while" in first "foreach"
 #        $inoun = $eseg;
 #        foreach $noun (sort {$b <=> $a} (keys(%nouns))) { # reverse sort
@@ -382,7 +386,7 @@ A055187 ,1|1,1|3,1|4,1,1,3|6,1,2,3,1,4|8,1,1,2,3,3,2,4,1,6|11,1,3,2,5,3,3,4,2,6,
 #            $inoun += 2;
 #            $cnoun = $noun - 1;
 #        } # foreach
-#    } elsif ($order eq "iz") { # increasing order (complete) - insert 0 counts
+#    } elsif ($appear eq "iz") { # increasing order (complete) - insert 0 counts
 #        my $cnoun = $segment[$sseg + 1];
 #        $inoun = $eseg;
 #        foreach $noun (sort {$a <=> $b} (keys(%nouns))) {
@@ -398,7 +402,7 @@ A055187 ,1|1,1|3,1|4,1,1,3|6,1,2,3,1,4|8,1,1,2,3,3,2,4,1,6|11,1,3,2,5,3,3,4,2,6,
 #            $cnoun = $noun + 1;
 #        } # foreach
 #    } else {
-#        die "invalid paramter op=\"$order\"\n";
+#        die "invalid paramter op=\"$appear\"\n";
 #    }
 #
 #    if (0) {
