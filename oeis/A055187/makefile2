@@ -11,9 +11,8 @@
 # Unix tools diff, echo, grep, head, make, perl, sed, tee, test, wget
 #---------------------------------
 TARGET=cumulcount
-LIMIT=32
+LIMIT=100
 P2=0
-DEBUG=0
 
 all: 0307io 0307do 05516n 05518n misc
 #----------
@@ -318,12 +317,11 @@ misc:   051120 \
 cumulcount:
 	# -------------------------------------------------------
 	test -s b$(NOEIS).txt || wget http://oeis.org/A$(NOEIS)/b$(NOEIS).txt
-	perl $(TARGET).pl -m $(RULE) -r $(ROW) -n $(NOEIS) -l $(LEN) \
-	-o $(ORD) -s $(P1) -p $(P2) -d $(DEBUG) > A$(NOEIS).pn.tmp
+	perl $(TARGET).pl $(RULE) $(ROW) $(NOEIS) $(LEN) $(ORD) $(P1) $(P2) > A$(NOEIS).pn.tmp
 	grep -E "^[0-9]" b$(NOEIS).txt    | head -n $(LEN)                           > bf.tmp
 	grep -E "^[0-9]" A$(NOEIS).pn.tmp | head -n `wc -l bf.tmp | cut -d " " -f 1` > pn.tmp
-	diff -w -y                         --width=32  bf.tmp pn.tmp || :
-#	diff -w -y --suppress-common-lines --width=32  bf.tmp pn.tmp || :
+#	diff -w -y                         --width=32  bf.tmp pn.tmp || :
+	diff -w -y --suppress-common-lines --width=32  bf.tmp pn.tmp || :
 #--------
 list1:
 	echo " " [https://oeis.org/A$(NOEIS) A$(NOEIS)] Rule $(RULE).$(ROW) $(ORD) $(P1) $(P2) " "\
