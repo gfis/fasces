@@ -10,7 +10,7 @@
 # Needs cumulcount.pl in current directory, and
 # Unix tools diff, echo, grep, head, make, perl, sed, tee, test, wget
 #---------------------------------
-TARGET=cumulcount
+TARGET=-f makefile2 cumulcount
 LIMIT=100
 P2=0
 
@@ -317,7 +317,7 @@ misc:   051120 \
 cumulcount:
 	# -------------------------------------------------------
 	test -s b$(NOEIS).txt || wget http://oeis.org/A$(NOEIS)/b$(NOEIS).txt
-	perl $(TARGET).pl $(RULE) $(ROW) $(NOEIS) $(LEN) $(ORD) $(P1) $(P2) > A$(NOEIS).pn.tmp
+	perl cumulcount2.pl $(RULE) $(ROW) $(NOEIS) $(LEN) $(ORD) $(P1) $(P2) > A$(NOEIS).pn.tmp
 	grep -E "^[0-9]" b$(NOEIS).txt    | head -n $(LEN)                           > bf.tmp
 	grep -E "^[0-9]" A$(NOEIS).pn.tmp | head -n `wc -l bf.tmp | cut -d " " -f 1` > pn.tmp
 #	diff -w -y                         --width=32  bf.tmp pn.tmp || :
