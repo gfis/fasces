@@ -124,12 +124,14 @@ if (0) {
     if (($row & 1) != 0) {
         &bfile($start);
     }
-} elsif ($method =~ m{D}i) {
+} elsif ($method =~ m{[D]}i) {
     print "$k $start\n"; $k ++;
-} elsif ($method =~ m{N}i) {
+} elsif ($method =~ m{[N]}i) {
     # print "$k 1\n"  ; $k ++;
-} elsif ($method =~ m{[ST]}i) {
-	if ($noeis = "240508") {
+    $seqlen[0] = 0;
+} elsif ($method =~ m{[S]}i) {
+} elsif ($method =~ m{[T]}i) {
+	if ($noeis eq "240508") {
     	print "$k 1\n"; $k ++;
 	}
 } else {
@@ -209,7 +211,7 @@ if ($debug >= 1) {
             die "invalid parameter op=\"$appear\"\n";
         }
 
-    } elsif ($method =~ m{D}i) { # new terms (for $appear eq "fa")
+    } elsif ($method =~ m{[D]}i) { # new terms (for $appear eq "fa")
             if ($debug >= 1) {
                 print "range " . ($seqlen[$segno - 1]) . ".." . ($seqlen[$segno] - 1) . "\n";
             }
@@ -222,10 +224,10 @@ if ($debug >= 1) {
                 }
             } # for
 
-    } elsif ($method =~ m{N}i) { # no. of new terms in segment
+    } elsif ($method =~ m{[N]}i) { # no. of new terms in segment
         &bfile($seqlen[$segno] - $seqlen[$segno - 1]);
 
-    } elsif ($method =~ m{T}i) { # no. of terms in segment
+    } elsif ($method =~ m{[T]}i) { # no. of terms in segment
         &bfile($seqlen[$segno]);
     }
     #--------
@@ -284,7 +286,7 @@ sub assemble {
             if (($attr != 0 or ($with0 & 1) != 0) and ($noun != 0 or ($with0 & 2) != 0) and ($row != 5)) {
                 $count[$noun] ++;
             }
-            if ($attr == 0 and $noeis = "079668") {
+            if ($attr == 0 and $noeis eq "079668") {
             	$first = 0;
             }
 } # assemble
@@ -321,20 +323,24 @@ sub bfile {
             $curmax = $attr;
         }
         $k2 ++;
-    } elsif (scalar(@_) == 1) { # N, T
+    } elsif (scalar(@_) == 1) {
+            print "$k $attr\n"; $k ++;
+    } elsif ($method =~ m{N}i) {
+            print "$k $attr\n"; $k ++;
+    } elsif ($method =~ m{T}i) {
             print "$k $attr\n"; $k ++;
     } elsif ($method =~ m{[AD]}i) { # attribute before noun
         if (($row & 1) != 0) { 
             print "$k $attr\n"; $k ++; 
         }
-        if (($row & 2) != 0) { 
+        if (($row & 2) != 0 and $k <= $len) { 
             print "$k $noun\n"; $k ++; 
         }
     } elsif ($method =~ m{[BD]}i) { # noun before attribute
         if (($row & 1) != 0) { 
             print "$k $noun\n"; $k ++; 
         }
-        if (($row & 2) != 0) { 
+        if (($row & 2) != 0 and $k <= $len) { 
             print "$k $attr\n"; $k ++; 
         }
     } else {
