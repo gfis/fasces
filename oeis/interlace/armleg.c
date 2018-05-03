@@ -6,9 +6,11 @@
 /* 2018-03-16, Georg Fischer: 8th attempt, copied from connect.c */
 /* time measurement taken from https://stackoverflow.com/questions/13156031/measuring-time-in-c */
 /*------------------------------------------------------ */
-/* usage: */
-/*   time ./armleg [max_row [debug]] */
-/*-------------------------------------------------------- */
+/* usage:                                                */
+/*   time ./armleg [max_row [debug]]                     */
+/* Only half of the triangles is computed.               */
+/* The numbers in the output must be doubled.            */
+/*------------------------------------------------------ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h>
@@ -48,14 +50,14 @@ PRIVATE int polleg[MAX_TRI];
 PRIVATE int porleg[MAX_TRI];
 /* */
 /* Naming of the neighbours of element focus: */
-/* */
-/*       larm   rarm */
-/*      /   \   /   \ */
-/*   lsib   FOCUS   rsib */
-/*      \   /   \   / */
-/*       lleg   rleg */
-/* */
-/*----------------------- */
+/*                         */
+/*       larm   rarm       */
+/*      /   \   /   \      */
+/*   lsib   FOCUS   rsib   */
+/*      \   /   \   /      */
+/*       lleg   rleg       */
+/*                         */
+/*-------------------------*/
 PRIVATE void test_lset(int elem);
 PRIVATE void test_rset(int elem);
 
@@ -91,14 +93,6 @@ PRIVATE void evaluate(int elem, int fpos, int arm) {
         case +1: /* take right arm */
             epos = porarm[fpos];
             break;
-#ifdef nomore
-        case -2: /* take left  leg */
-            epos = polleg[fpos];
-            break;
-        case +2: /* take right leg */
-            epos = porleg[fpos];
-            break;
-#endif
     } /* switch arm */
     int result = SUCC;
     if (trel[epos] == empty) { /* and therefore != nonex */
@@ -134,22 +128,6 @@ PRIVATE void evaluate(int elem, int fpos, int arm) {
                     leg1 < elem && elem < leg2 ||
                     leg1 > elem && elem > leg2    )) { result = FAIL; }
                 break;
-#ifdef nomore
-            case -2: /* elem / leg1 \ leg2 */
-                leg1 = trel[fpos]; /* != nonex, were we came from, == lelem */
-                leg2 = trel[porleg[fpos]];
-                if (leg2 < size && ! (
-                    elem < leg1 && leg1 < leg2 ||
-                    elem > leg1 && leg1 > leg2    )) { result = FAIL; }
-                break;
-            case +2: /* leg2 / leg1 \ elem */
-                leg1 = trel[fpos]; /* != nonex, were we came from, == lelem */
-                leg2 = trel[polleg[fpos]];
-                if (leg2 < size && ! (
-                    leg2 < leg1 && leg1 < elem ||
-                    leg2 > leg1 && leg1 > elem    )) { result = FAIL; }
-                break;
-#endif
         } /* switch arm */
         if (result == SUCC) { /* is possible */
             /* allocate(elem, epos); */
@@ -238,10 +216,6 @@ PRIVATE void test_lset0() {
 PUBLIC int main(int argc, char *argv[]) {
     cind = 0; /* current index */
     int iarg = 1;
-/*
-    prevc = 44000000000l;
-    printf("test: %lld\n", prevc);
-*/
     prevc = 0l;
     count = 0l; 
     sscanf(argv[iarg ++], "%d", & max_row); /* rowno runs from 0 to max_row - 1 */

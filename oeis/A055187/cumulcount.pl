@@ -83,7 +83,16 @@ while (scalar(@ARGV) > 0) {
     } else { die "invalid option \"$opt\"\n";
     }
 } # while ARGV
-# $first = $first << 1; # increment by 2 in @segment
+
+if ($debug == 99) {
+	print " [http://oeis.org/A$noeis A$noeis] $method $start $appear $row";
+	if ($offset != 1) { print " offset=$offset"; }
+	if ($first  != 0) { print " first=$first"; }
+	if ($parm   != 0) { print " parm=$parm"; }
+	if ($with0  != 0) { print " with0=$with0"; }
+	print "\n";
+	exit(0);
+}
 my ($sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst)
     = localtime (time);
 my $timestamp = sprintf ("%04d-%02d-%02d %02d:%02d"

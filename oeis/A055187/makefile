@@ -345,11 +345,11 @@ debug:
 	perl cumulcount.pl -m $(METHOD) -r $(ROW) -n $(NOEIS) -l $(LEN) -a $(APPEAR) -f $(FIRST) -o $(OFFSET) -s $(START) -p $(PARM) -w $(WITH0) -d 1 | less
 #--------
 list1:
-	echo " " [https://oeis.org/A$(NOEIS) A$(NOEIS)] Rule $(RULE).$(ROW) $(ORD) $(P1) $(P2) " "\
-	`wc -l b$(NOEIS).txt | cut -d " " -f 1`
+	perl cumulcount.pl -m $(METHOD) -r $(ROW) -n $(NOEIS) -l $(LEN) -a $(APPEAR) -f $(FIRST) -o $(OFFSET) -s $(START) -p $(PARM) -w $(WITH0) -d 99 
+#	echo " " [https://oeis.org/A$(NOEIS) A$(NOEIS)] Rule $(RULE).$(ROW) $(ORD) $(P1) $(P2) " "\
+#	`wc -l b$(NOEIS).txt | cut -d " " -f 1`
 listing:
-	make $(SIL) all TARGET=list1 | sort \
-	| sed -e "s/\.0/  /" -e "s/ 0 0/.0  /" -e "s/ 0/  /" -e "s/\.0/ 0/" \
+	make -s all TARGET=list1 | sort \
 	| tee listing.tmp
 	wc -l listing.tmp
 #--------
