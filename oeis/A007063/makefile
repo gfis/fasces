@@ -12,7 +12,7 @@ all: exp1
 exp1:
 	perl expell.pl 40 | tee expell.tmp
 exp2:
-	perl expell.pl 100 | tee expell.tmp
+	perl expell.pl 120 | tee expell.tmp
 #--------
 list1:
 	perl cumulcount.pl -m $(METHOD) -r $(ROW) -n $(NOEIS) -l $(LEN) -a $(APPEAR) -f $(FIRST) -o $(OFFSET) -s $(START) -p $(PARM) -w $(WITH0) -d 99 
