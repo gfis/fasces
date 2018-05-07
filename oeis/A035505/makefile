@@ -6,8 +6,11 @@
 # Unix tools diff, echo, grep, head, make, perl, sed, tee, test, 
 # wget, pdftohtml, gawk
 #---------------------------------
+N=10
 
-all: exp1
+all: kea
+kea:
+	perl kea_html.pl $(N) > kea.html
 #---------------------------------------------------------------
 exp1:
 	perl expell.pl 40 | tee expell.tmp
