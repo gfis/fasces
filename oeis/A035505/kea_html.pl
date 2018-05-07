@@ -24,7 +24,7 @@ my @nrow;       # new row for triangle
 my $bk = 0;      # b-file index
 my $elem;       # current element
 my $tail;       # element at the end of the row
-my $debug = 1;
+my $debug = 0;
 
 print <<"GFis";
 <?xml version="1.0" encoding="UTF-8"?>
@@ -35,13 +35,25 @@ print <<"GFis";
 <head>
 <style>
 body,table,p,td,th 
-	{ font-family: Courier; }
+	{ font-family: Arial; }
 tr,td,th,p
 	{ text-align: right; }
 .frame 
 	{ font-size:smaller; background-color: white}
 .arr
 	{ background-color: lightyellow;}
+.m1 /* diagonal */
+	{ background-color: tomato; color: white; font-weight: bold }
+.k0 /* known value - outside */
+	{ background-color: white; color: black; font-weight: bold; font-style: italic; }
+.k1 /* known value */
+	{ background-color: yellow; color: black; font-weight: bold; font-style: italic; }
+.d1 /* 1st derivative */
+	{ background-color: lightblue; color: black; }
+.d2 /* 2nd derivative */
+	{ background-color: lightgreen; color: black; }
+.bord
+	{ border-style: solid; border-width: thin; }
 </style>
 </head>
 <body>
@@ -52,7 +64,39 @@ while ($irow <= $maxrow) {
     &advance();
     $irow ++;
 } # while advancing
+#--------
+# set special attributes
+my $i;
+my $i3;
+my $start;
+my $delta;
+&line(1, 1, 1, 1, "m1"); # main diagonal
 
+# last 3 are known
+$start = 2;
+for ($i3 = 1; $i3 <= 3; $i3 ++) { # last 3
+	&line($start, $i3, 1, 2, "k0");
+} # last 3
+
+# known lanes
+$start = 3;
+$delta = 1;
+while ($start <= $maxrow) {
+	for ($i3 = 1; $i3 <= 3; $i3 ++) { # 
+		&line($start, 1, 1, 2, "k1");
+		$start += $delta;
+	} # last 3
+	$start -= $delta;
+	$delta *= 2;
+	$start += $delta;
+} # while $start
+
+&line(3, 1, 2, 1, "d1"); # 1st derivative left
+&line(4, 7, 2, 3, "d1"); # 1st derivative right
+&line(4, 3, 4, 3, "d2"); # 2nd derivative left
+&line(2, 3, 4, 5, "d2"); # 2nd derivative right
+#--------
+# print the whole array
 &print_head();
 &print_ruler();
 $irow = 1;
@@ -68,6 +112,17 @@ print <<"GFis";
 </body>
 </html>
 GFis
+#----------------
+sub line { # draw the styles for a line
+	my ($i1, $j1, $idelta, $jdelta, $style) = @_;
+	my $i = $i1;
+	my $j = $j1;
+	while ($i <= $maxrow) {
+		$c[$i][$j] .= " $style";
+		$i += $idelta;
+		$j += $jdelta;
+	} # while
+} # line
 #----------------
 sub advance { # compute next row
     # $orow[$irow] is the element to be expelled
@@ -140,7 +195,11 @@ sub print_row {
     <tr><td class=\"frame\">$irow</td>
 GFis
     while ($jcol < $irow * 2 ) {
-        print "<td class=\"" . substr($c[$irow][$jcol], 1) . "\">$k[$irow][$jcol]</td>";
+    	$c[$irow][$jcol] =~ s{\A\s+}{}; #  remove leading spaces
+    	if (($c[$irow][$jcol] =~ s{(\d)}{\1}g) >= 2) { # more than 1 attribute
+    		$c[$irow][$jcol] .= " bord";
+    	} # more than 1
+        print "<td class=\"$c[$irow][$jcol]\">$k[$irow][$jcol]</td>";
         $jcol ++;
     } # while $jcol
     print <<"GFis";

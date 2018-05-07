@@ -6,7 +6,7 @@
 # Unix tools diff, echo, grep, head, make, perl, sed, tee, test, 
 # wget, pdftohtml, gawk
 #---------------------------------
-N=10
+N=100
 
 all: kea
 kea:
