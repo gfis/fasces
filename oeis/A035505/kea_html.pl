@@ -25,6 +25,8 @@ my $bk = 0;      # b-file index
 my $elem;       # current element
 my $tail;       # element at the end of the row
 my $debug = 0;
+my $width =  4; # width of an element to be printed
+my $tbase = 10; # target base
 
 print <<"GFis";
 <?xml version="1.0" encoding="UTF-8"?>
@@ -35,25 +37,30 @@ print <<"GFis";
 <head>
 <style>
 body,table,p,td,th 
-	{ font-family: Arial; }
+    { font-family: Arial; }
 tr,td,th,p
-	{ text-align: right; }
+    { text-align: right; }
 .frame 
-	{ font-size:smaller; background-color: white}
+    { font-size:smaller; background-color: white}
 .arr
-	{ background-color: lightyellow;}
+    { background-color: lightyellow;}
 .m1 /* diagonal */
-	{ background-color: tomato; color: white; font-weight: bold }
+    { background-color: darkred; color: white; font-weight: bold }
 .k0 /* known value - outside */
-	{ background-color: white; color: black; font-weight: bold; font-style: italic; }
+    { background-color: white; color: black; font-weight: bold; font-style: italic; }
 .k1 /* known value */
-	{ background-color: yellow; color: black; font-weight: bold; font-style: italic; }
+    { background-color: lavender; color: black; font-weight: bold; font-style: italic; }
 .d1 /* 1st derivative */
-	{ background-color: lightblue; color: black; }
+    { background-color: crimson; color: white; }
 .d2 /* 2nd derivative */
-	{ background-color: lightgreen; color: black; }
+    { background-color: orangered; color: white; }
+.d3 /* 3rd derivative */
+    { background-color: orange; color: white; }
 .bord
-	{ border-style: solid; border-width: thin; }
+    { background-color: green; color: white; }
+/*
+    { border-style: solid; border-width: 2px; }
+*/
 </style>
 </head>
 <body>
@@ -70,31 +77,45 @@ my $i;
 my $i3;
 my $start;
 my $delta;
-&line(1, 1, 1, 1, "m1"); # main diagonal
+&line( 1, 1, 1, 1, "m1"); # main diagonal
 
 # last 3 are known
 $start = 2;
 for ($i3 = 1; $i3 <= 3; $i3 ++) { # last 3
-	&line($start, $i3, 1, 2, "k0");
+    &line($start, $i3, 1, 2, "k0");
 } # last 3
 
-# known lanes
+# known lanes, 3 x {2, 5, 11, 23, 47 ...} starting at delta i = 2^n
 $start = 3;
 $delta = 1;
 while ($start <= $maxrow) {
-	for ($i3 = 1; $i3 <= 3; $i3 ++) { # 
-		&line($start, 1, 1, 2, "k1");
-		$start += $delta;
-	} # last 3
-	$start -= $delta;
-	$delta *= 2;
-	$start += $delta;
+    for ($i3 = 1; $i3 <= 3; $i3 ++) { # 
+        &line($start, 1, 1, 2, "k1");
+        $start += $delta;
+    } # last 3
+    $start -= $delta;
+    $delta *= 2;
+    $start += $delta;
 } # while $start
 
-&line(3, 1, 2, 1, "d1"); # 1st derivative left
-&line(4, 7, 2, 3, "d1"); # 1st derivative right
-&line(4, 3, 4, 3, "d2"); # 2nd derivative left
-&line(2, 3, 4, 5, "d2"); # 2nd derivative right
+# |-> means: position in next row 
+&line(22, 1, 8, 1, "d3"); # d3,1  |-> d2,7 3rd derivative 
+&line( 5, 1, 8, 3, "d3"); # d3,3  |-> d2,5 3rd derivative 
+&line( 7, 4, 8, 5, "d3"); # d3,5  |-> d2,3 3rd derivative 
+&line( 4, 4, 8, 7, "d3"); # d3,7  |-> d2,1 3rd derivative 
+&line( 8, 9, 8, 9, "d3"); # d3,9  |-> d2,1 3rd derivative 
+&line(11,16, 8,11, "d3"); # d3,11 |-> d2,3 3rd derivative 
+&line( 9,16, 8,13, "d3"); # d3,13 |-> d2,5 3rd derivative 
+&line(26,51, 8,15, "d3"); # d3,15 |-> d2,7 3rd derivative 
+
+&line( 9, 1, 4, 1, "d2"); # d2,1  |-> d1,3 2nd derivative 
+&line( 4, 3, 4, 3, "d2"); # d2,3  |-> d1,1 2nd derivative 
+&line( 6, 8, 4, 5, "d2"); # d2,5  |-> d1,1 2nd derivative 
+&line(11,21, 4, 7, "d2"); # d2,7  |-> d1,3 2nd derivative 
+
+&line( 3, 1, 2, 1, "d1"); # d1,1  |-> d0,1 1st derivative 
+&line( 4, 7, 2, 3, "d1"); # d1,3  |-> d0,1 1st derivative 
+
 #--------
 # print the whole array
 &print_head();
@@ -114,14 +135,20 @@ print <<"GFis";
 GFis
 #----------------
 sub line { # draw the styles for a line
-	my ($i1, $j1, $idelta, $jdelta, $style) = @_;
-	my $i = $i1;
-	my $j = $j1;
-	while ($i <= $maxrow) {
-		$c[$i][$j] .= " $style";
-		$i += $idelta;
-		$j += $jdelta;
-	} # while
+    my ($i1, $j1, $idelta, $jdelta, $style) = @_;
+    my $i = $i1;
+    my $j = $j1;
+    while ($i <= $maxrow) {
+        $c[$i][$j] .= " $style";
+		if ($c[$i][$j]  =~ m{k|bord}) {
+			# $c[$i][$j] .= " bord";
+			my $jn = ($i > $j) ? ($i - $j) << 1 : (($j - $i) << 1) - 1; 
+			my $in = $i + 1;
+			$c[$in][$jn] .= " k1";
+		}
+        $i += $idelta;
+        $j += $jdelta;
+    } # while
 } # line
 #----------------
 sub advance { # compute next row
@@ -195,11 +222,13 @@ sub print_row {
     <tr><td class=\"frame\">$irow</td>
 GFis
     while ($jcol < $irow * 2 ) {
-    	$c[$irow][$jcol] =~ s{\A\s+}{}; #  remove leading spaces
-    	if (($c[$irow][$jcol] =~ s{(\d)}{\1}g) >= 2) { # more than 1 attribute
-    		$c[$irow][$jcol] .= " bord";
-    	} # more than 1
-        print "<td class=\"$c[$irow][$jcol]\">$k[$irow][$jcol]</td>";
+        $c[$irow][$jcol] =~ s{\A\s+}{}; #  remove leading spaces
+        if (($c[$irow][$jcol] =~ s{(\d)}{\1}g) >= 2) { # more than 1 attribute
+           $c[$irow][$jcol] .= " bord";
+        } # more than 1
+        print "<td class=\"$c[$irow][$jcol]\">" 
+            . &to_base($k[$irow][$jcol])
+            . "</td>";
         $jcol ++;
     } # while $jcol
     print <<"GFis";
@@ -212,5 +241,18 @@ sub bfile {
     print "$bk $elem\n";
     $bk ++;
 } # bfile
+#--------
+sub to_base {
+    # return a normal integer as number in base $tbase
+    my ($num)  = @_;
+    my $result = "";
+    while ($num > 0) {
+        my $digit = $num % $tbase;
+        $result =  $digit . $result;
+        $num /= $tbase;
+    } # while > 0
+    return $result eq "" ? "0" : $result; 
+} # to_base
+
 
 __DATA__
