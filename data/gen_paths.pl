@@ -1,14 +1,15 @@
 #!/usr/bin/perl
+# 2018-05-10: even bases 2, 4, ...; summary
 # 2017-08-23, Georg Fischer
 # Program in the public domain
 # c.f. https://oeis.org/A220952
 # Generate paths
 # C.f. Knuth's meander sequence, OEIS A220952
 # usage:
-#   perl gen_paths [[-b] base] [-s] [-dn] 
-#   -b  base (default 5)
-#   -s  symmetric (default: false)
-#   -dn debug level n (default: 0) 
+#   perl gen_paths [[-b] base] [-s] [-d n] 
+#       -b   base (default 5)
+#       -s   symmetric (default: false)
+#       -d n debug level n (default: 0) 
 #-------------------------
 use strict;
 use integer; # avoid division problems with reals
@@ -17,25 +18,22 @@ my $debug  = 0;
 my $base   = 5; 
 my $maxexp = 2;  # compute b-file up to $base**$maxexp
 my $symm   = 0;
-my $rule   = 0;  # for stronger condition
 my $vert   = "||";
 my $hori   = "==";
 my $blan   = "  ";
 my $letters = "abcdefghijklmnopqrstuvwxyz";
+my %attrs  = (); # path attributes: symmetrical, corner, ...
 
 while (scalar(@ARGV) > 0) {
     my $opt = shift(@ARGV);
     if ($opt =~ m{\A(\-b)?(\d+)\Z}) {
         $base  = $2;
     }
-    if ($opt =~ m{r}) {
-        $rule  = 1;
-    }
     if ($opt =~ m{s}) {
         $symm  = 1;
     }
-    if ($opt =~ m{d(\d+)}) {
-        $debug = $1;
+    if ($opt =~ m{d}) {
+        $debug = shift(@ARGV);
     }
 } # while opt
 
@@ -50,25 +48,23 @@ if ($symm == 1) {
     $last /= 2;
 }
 my @path = ();
-if (0) {
-    $base = 5;
-    @path =  (0,1,2,3,4,9,14,19,18,17,16);
-    &draw_path();
-    exit(0);
-}
 my 
 $ind = 0;
 while ($ind < $corner) { # preset filled
     $filled[$ind] = 0;
     $ind ++;
 } # preset filled
-
 my $sep = ",";
+
+print <<"GFis";
+<?xml version="1.0" encoding="UTF-8" ?>
+<paths base="$base">
+GFis
+
 my @queue = (); # entries are "path_index${sep}value"
-$ind = 0;
-&mark($ind); $ind ++;
-&mark($ind); $ind ++;
-# normalized start: 00->01
+&mark(0);
+&mark(1);
+# &mark($base % 2 == 1 ? 1 : $base); # upwards for odd, right for even bases
 &push_urdl();
 
 while (scalar(@queue) > 0) { # pop
@@ -76,32 +72,30 @@ while (scalar(@queue) > 0) { # pop
     while (scalar(@path) > $pind) {
         &unmark();
     } # while unmark
-    # @path = splice(@path, 0, $pind);
-    print "queue[" . sprintf("%3d", scalar(@queue)) . "]\@$pind $dir: " 
-            . join(",", map { &based0($_) } @path) . " ". &based0($pval) 
-            . "?\n" if $debug >= 2;
     if ($debug >= 2) {
+        print "queue[" . sprintf("%3d", scalar(@queue)) . "]\@$pind $dir: " 
+                . join(",", map { &based0($_) } @path) . " ". &based0($pval) 
+                . "?\n";
         my $ifil = 0;
-        # print "filled:";
         while ($ifil < scalar(@filled)) {
             print &based0($ifil) . ";$filled[$ifil] ";
             $ifil ++;
         } 
         print "\n";
     }
-    
     &mark($pval);
     my $plen = scalar(@path);
-    if (0) {
-    } elsif ($rule or $pval == $last) {
+    if ($plen == $last + 1) {
         print "pval=$pval, plen=$plen, last=$last, full=$full\n" if $debug >= 1;
-        if ($plen == $last + 1) { # really at the end or in the center
+        if ($plen >= $last) { # really at the end or in the center
             while ($plen < $corner) { # fill 2nd half in case of $symm
                 push(@path, $full - $path[$full - $plen]);
                 $plen ++;
             } # fill
-            print "scalar(path)=" . scalar(@path) . ", plen=$plen, last=$last, full=$full\n" if $debug >= 1;
-            print join("/", map { &based0($_) } @path) . "\n" if $debug >= 1;;
+            if ($debug >= 1) {
+                print "scalar(path)=" . scalar(@path) . ", plen=$plen, last=$last, full=$full\n";
+                print join("/", map { &based0($_) } @path) . "\n";
+            }
             &output_path();
             @path = splice(@path, 0, $last + 1);
         } else {
@@ -112,13 +106,19 @@ while (scalar(@queue) > 0) { # pop
     }
 } # while popping
 
+print "\n<summary count=\"$pathno\"";
+foreach my $attr(sort(keys(%attrs))) {
+	print " $attr=\"$attrs{$attr}\"";
+} # foreach
+print " />\n</paths>\n";
+
 exit(0);
 
 #--------
 sub mark {
     my ($val) = @_;
     push(@path, $val);
-    $filled[$val]                   = 1;
+    $filled[$val]             = 1;
     if ($symm == 1) {
         $filled[$full - $val] = 1;
     }
@@ -126,7 +126,7 @@ sub mark {
 #--------
 sub unmark {
     my $val = pop(@path);
-    $filled[$val]                   = 0;
+    $filled[$val]             = 0;
     if ($symm == 1) {
         $filled[$full - $val] = 0;
     }
@@ -168,45 +168,58 @@ sub push_urdl {
 sub output_path {
     $pathno ++;
     print "<!-- ========================== -->\n";
-	my $attrs = &get_attributes();
-    print "<matrix id=\"$pathno\" attrs=\"$attrs\" base\"$base\"\n";
-   	print "     path=\""  . join(",", map {         $_  } @path) . "\"\n"
-    	. "     bpath=\"" . join("/", map { &based0($_) } @path) . "/\"\n"
-    	. "     >\n";
+    my $attrs = &get_attributes();
+    print "<matrix id=\"$pathno\" attrs=\"$attrs\" base=\"$base\"\n";
+    print "     path=\""  . join(",", map {         $_  } @path) . "\"\n"
+        . "     bpath=\"" . join("/", map { &based0($_) } @path) . "/\"\n"
+        . "     >\n";
     if (1) {
-    	&draw_path(@path);
+        &draw_path(@path);
     }
     print "</matrix>\n";
 } # output_path
 #--------
 sub get_attributes {
-	# determine general properties of the path
+    # determine general properties of the path
     my $result = "";
     my $last = $path[scalar(@path) - 1];
-	#----
-	if ($last == $full) {
-		$result .=",diagonal";
-	}
-	#----
-	my $dig0 = $last % $base;
-	my $dig1 = ($last / $base) % $base;
-	if (($dig0 != 0 and $dig0 != $base - 1) or
-        ($dig1 != 0 and $dig1 != $base - 1)) {
-		$result .=",inside";
-	}
-	#----
-	my $ipa = 0;
-	my $half = $full / 2;
-	my $compl = 1;
-	while ($compl == 1 and $ipa <= $half) {
-		$compl = $path[$ipa] == $full - $path[$full - $ipa] ? 1 : 0;
-		$ipa ++;
-	}
-    if ($compl == 1) {
-    	$result .= ",symmetrical";
+    #----
+    my $dig0 = $last % $base;
+    my $dig1 = ($last / $base) % $base;
+    my $b4 = $base - 1;
+    if (0) {
+    } elsif ((              $dig0 == $b4) and (              $dig1 == $b4)) {
+    	$result .= ",diagonal";
+    } elsif (($dig0 == 0                ) and (              $dig1 == $b4)) {
+    	$result .= ",opposite";
+    } elsif (($dig0 == 0 or $dig0 == $b4) and ($dig1 == 0 or $dig1 == $b4)) {
+    	$result .= ",corner";
+    } elsif (($dig0 == 0 or $dig0 == $b4) or  ($dig1 == 0 or $dig1 == $b4)) {
+    	$result .= ",outside";
+    } else {
+        $result .= ",inside";
     }
-	#----
-    return substr($result, 1);
+    #----
+    my $ipa = 0;
+    my $half = $full / 2;
+    my $compl = 1;
+    while ($compl == 1 and $ipa <= $half) {
+        $compl = $path[$ipa] == $full - $path[$full - $ipa] ? 1 : 0;
+        $ipa ++;
+    }
+    if ($compl == 1) {
+        $result .= ",symmetrical";
+    }
+    #----
+    $result = substr($result, 1);
+    foreach my $attr (split(/\,/, $result)) {
+    	if (defined($attrs{$attr})) {
+    		$attrs{$attr} ++;
+    	} else {
+    		$attrs{$attr} = 1;
+    	}
+    } # foreach
+    return $result;
 } # get_attributes
 #--------
 sub draw_path {
@@ -238,7 +251,7 @@ sub draw_path {
         &connect($path[$ipa - 1], $path[$ipa]);
         $ipa ++;
     } # while $ipa 
-	print "<draw-path>\n\n";
+    print "<draw-path>\n\n";
     my $imp = 0;
     while ($imp < scalar(@matrix)) { # print
         print "$matrix[$imp]";
@@ -247,7 +260,7 @@ sub draw_path {
             print "\n";
         }
     } # printing
-	print "\n</draw-path>\n";
+    print "\n</draw-path>\n";
 } # draw_path
 #---------
 sub get_matrix_pos {

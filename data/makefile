@@ -2,8 +2,12 @@
 
 # in fasces/data
 # @(#) $Id$
+# 2018-05-10: even bases
 # 2018-02-19: parse path expressions
 # 2017-08-17
+#-------------------------------------
+B=5
+
 all:
 	# please use a specific makefile target: 
 	grep -E "^[a-zA-Z0-9]+\:" makefile | head -n 20
@@ -72,27 +76,39 @@ pls5a:
 pls5:
 	perl gen_meander.pl  -i Ls -f -l 3125 -b 5 -p ="0,1,2,3,4,9,8,7,6,5,10,15,20,21,16,11,12,17,22,23,18,13,14,19,24"\
 		> $@.gm.tmp
-paths:
-	perl gen_paths.pl | tee paths.5.txt
-paths3:
-	perl gen_paths.pl -b 3 | tee paths.3.txt
+#-------------------------------
+paths.2-6: paths.2 paths.3 paths.4 paths.5 paths.6
+paths: 
+	perl gen_paths.pl -b $(B) | tee paths.$(B).tmp
+paths.2:
+	perl gen_paths.pl -b 2    | tee $@.tmp
+paths.3:
+	perl gen_paths.pl -b 3    | tee $@.tmp
+paths.4:
+	perl gen_paths.pl -b 4    | tee $@.tmp
+paths.5:
+	perl gen_paths.pl -b 5    | tee $@.tmp
+paths.6:
+	perl gen_paths.pl -b 6    | tee $@.tmp
+paths.7:
+	perl gen_paths.pl -b 7 -s | tee $@.tmp
+paths.9:
+	perl gen_paths.pl -b 9 -s | tee $@.tmp
+#----
 meander: meander5
-meander5:
-	perl -w gen_paths.pl  | grep " path=" | sed -e "s/ *path=//" \
-	| xargs  -l -iqqq \
-	perl -w gen_meander.pl  -l 3125 -p qqq | tee meander.3125.tmp
-meander2:
-	perl -w gen_paths.pl -r -b 2 | grep " path=" | sed -e "s/ *path=//" \
-	| xargs  -l -iqqq \
-	perl -w gen_meander.pl  -b 2 -l 1024 -p qqq | tee meander.3.tmp
-meander3:
-	perl -w gen_paths.pl -r -b 3 | grep " path=" | sed -e "s/ *path=//" \
-	| xargs  -l -iqqq \
-	perl -w gen_meander.pl  -b 3 -l 59049 -p qqq | tee meander.3.tmp
-meander4:
-	perl -w gen_paths.pl -r -b 4 | grep " path=" | sed -e "s/ *path=//" \
-	| xargs  -l -iqqq \
-	perl -w gen_meander.pl  -b 4 -l 4096 -p qqq | tee meander.4.tmp
+meander.2:
+	perl -w gen_paths.pl    -b 2 | grep " path=" | sed -e "s/ *path=//" | xargs  -l -iqqq \
+	perl -w gen_meander.pl  -b 2 -l  1024 -p qqq | tee $@.tmp
+meander.3:
+	perl -w gen_paths.pl    -b 3 | grep " path=" | sed -e "s/ *path=//" | xargs  -l -iqqq \
+	perl -w gen_meander.pl  -b 3 -l   729 -p qqq | tee $@.tmp
+meander.4:
+	perl -w gen_paths.pl    -b 4 | grep " path=" | sed -e "s/ *path=//" | xargs  -l -iqqq \
+	perl -w gen_meander.pl  -b 4 -l  4096 -p qqq | tee $@.tmp
+meander.5:
+	perl -w gen_paths.pl    -b 5 | grep " path=" | sed -e "s/ *path=//" | xargs  -l -iqqq \
+	perl -w gen_meander.pl  -b 5 -l  3125 -p qqq | tee $@.tmp
+#----
 mea0:
 	perl gen_meander.pl -l 24 -b 5 -p "0,1,2,3,4,9,14,19,18,17,16,11,12,13,8,7,6,5,10,15,20,21,22,23,24"\
 	| tee meander.25.tmp

@@ -144,7 +144,7 @@ sub line { # draw the styles for a line
 			# $c[$i][$j] .= " bord";
 			my $jn = ($i > $j) ? ($i - $j) << 1 : (($j - $i) << 1) - 1; 
 			my $in = $i + 1;
-			$c[$in][$jn] .= " k1";
+			# $c[$in][$jn] .= " k1";
 		}
         $i += $idelta;
         $j += $jdelta;

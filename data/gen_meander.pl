@@ -36,6 +36,8 @@ while (scalar(@ARGV) > 0 and ($ARGV[0] =~ m{\A\-})) { # start with hyphen
         $base   = shift(@ARGV);
     } elsif ($opt eq "\-d") {
         $debug  = shift(@ARGV);
+    } elsif ($opt eq "\-e") {
+        $even   = shift(@ARGV);
     } elsif ($opt eq "\-f") {
         $bfile  = 1;
     } elsif ($opt eq "\-g") {
@@ -57,6 +59,7 @@ print "<meander id=\"$ident\" path=\"" . join(",", @path) . "\"\n"
     . "    >\n";
 my $ind = 1;
 
+&draw_path(@path);
 if (1) { # generate b-file
     print "<b$base-file>\n";
     $ind = 1;
@@ -85,12 +88,14 @@ if (1) { # generate b-file
     print "</b$base-file>\n";
 } # b-file
 
-&draw_path(@path);
 if ($fail == 0) { # success
     if ($graph > 0) {
         &draw_graph();
     }
-} # success
+    # success
+} else {
+	print "<failed />\n";
+}
 print "</meander>\n";
 #--------
 sub get_successor {
@@ -128,10 +133,14 @@ sub get_successor {
             while ($adjacent == 1 and $j > 0) {
                 my $i = $j - 1;
                 while ($adjacent == 1 and $i >= 0) {
-                    my $ppair = substr($bprev, $i, 1) . substr($bprev, $j, 1);
-                    my $cpair = substr($bcurr, $i, 1) . substr($bcurr, $j, 1);
-                    my $ppos  = index($bpath, $ppair);
-                    my $cpos  = index($bpath, $cpair);
+                    my  $ppair = substr($bprev, $i, 1) . substr($bprev, $j, 1);
+                    my  $cpair = substr($bcurr, $i, 1) . substr($bcurr, $j, 1);
+                    if (0 and $base % 2 == 0) {
+                        $ppair = substr($bprev, $j, 1) . substr($bprev, $i, 1);
+                        $cpair = substr($bcurr, $j, 1) . substr($bcurr, $i, 1);
+                    }
+                    my  $ppos  = index($bpath, $ppair);
+                    my  $cpos  = index($bpath, $cpair);
                     if ($ppair != $cpair and abs($cpos - $ppos) != 3) {
                         print "\n#   is_adjacent($bprev,$bcurr): ppair=$ppair, cpair=$cpair, ppos=$ppos, cpos=$cpos\n" if $debug >= 2;
                         $adjacent = 0;

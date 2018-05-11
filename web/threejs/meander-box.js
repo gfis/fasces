@@ -39,32 +39,18 @@
 					new THREE.MeshBasicMaterial( { color: 0xffffff, overdraw: 0.5 } ),
 					new THREE.MeshBasicMaterial( { color: 0xffffff, overdraw: 0.5 } )
 					];
-				var points = [];	
+				var points = [];
+				var dvals  = [];	
 				for ( i = 0; i < vec.length; i ++ ) {
-					var digx5 = parseInt(vec[i] /  10) % 10 ;
+					var digx5 = parseInt(vec[i] /  10) % 10;
 					var digy5 =          vec[i]        % 10;
-					var digz5 = parseInt(vec[i] / 100) % 10;   
+					var digz5 = parseInt(vec[i] / 100) % 10;
+					dvals.push(digz5 * 25 + digx5 * 5 + digy5); // decimal
 					// digits run from 0 to 4 or -2 to +2
 					var x = center.x + (digx5 - 2) * size5;
 					var y = center.y + (digy5 - 2) * size5;
 					var z = center.z + (digz5 - 2) * size5;
 					points.push(new THREE.Vector3(x, y, z));
-				/*
-					if (true) { // with annotation: node values
-						var geometry = new THREE.TextGeometry( vec[i], 
-							{ font: myfont
-							, size: 6
-							, height: 1
-							, curveSegments: 8
-							} );
-						var mesh2 = new THREE.Mesh( geometry, materials );
-						mesh2.position.x = x + width;
-						mesh2.position.y = y + width;
-						mesh2.position.z = z + width;
-						group.add( mesh2 );
-						scene.add( group );
-					} // node values
-				*/
 				} // for i
 				var shift = (size5 - width) * 0.5;
 				for ( i = 0; i < points.length - 1; i ++ ) {
@@ -116,10 +102,10 @@
 					group.add( mesh  );
 
 					if (true) { // with annotation: node values
-						var geometry2 = new THREE.TextGeometry( vec[i], 
+						var geometry2 = new THREE.TextGeometry( dvals[i], // vec[i], for base 5
 							{ font: myfont
-							, size: 6
-							, height: 1
+							, size:   8
+							, height: 2
 							, curveSegments: 8
 							} );
 						geometry2.translate
@@ -127,17 +113,29 @@
 								, points[i].y + width
 								, points[i].z + width
 								);
-					/*
-						mesh2.position.x = x + width;
-						mesh2.position.y = y + width;
-						mesh2.position.z = z + width;
-					*/
 						var mesh2 = new THREE.Mesh( geometry2, materials );
 						group.add( mesh2 );
 						scene.add( group );
 					} // node values
-
-
 					scene.add( group );
+
 				} // for i 
+				if (true) { // with label
+						var geometry2 = new THREE.TextGeometry( "OEIS A220952",
+							{ font: myfont
+							, size:   16
+							, height: 4
+							, curveSegments: 8
+							} );
+						var plab = points[108];
+						geometry2.translate
+								( plab.x - 2.7 * size5
+								, plab.y + 0.4 * size5
+								, plab.z - 0.0 * size5
+								);
+						var mesh2 = new THREE.Mesh( geometry2, materials );
+						group.add( mesh2 );
+						scene.add( group );
+				} // node values
+				scene.add( group );
 			} // world
