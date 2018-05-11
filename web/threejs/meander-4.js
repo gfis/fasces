@@ -4,9 +4,19 @@
 	2018-05-10, Georg Fischer
 	with THREE.BoxGeometry
 */
-			function world( scene, myfont ) {
+			//	     world( scene, myfont, urlbase, urldecim, urllabel, urltitle, urlvec );
+			function world( scene, myfont, urlbase, urldecim, urllabel, urltitle, urlvec ) {
+				var withlabel = urllabel == "on";
+				var withdecim = urldecim == "on";
 				// Default Vars
-				var base = 4;
+				var base = urlbase;
+				var last = base*base*base - 1;
+				while (urlvec.length <= last + 1) {
+					urlvec.push(urlvec[last]);
+				}
+				var dbase  = urlvec[last] > last ? 10 : base; // base for decoding
+				console.log("last " + last);
+				console.log("dbase " + dbase);
 				var group = new THREE.Group();
 				var pi2 = Math.PI / 2;
 				var center = new THREE.Vector3( 0, 0, 0 );
@@ -29,12 +39,12 @@
      ,103,102,101,100
      ,100];
 				var vec_4n 
-   = [0,1,2,3,13,12,11,10,20,21,22,23,33,32,31,30 // leading zeroes would mean octal
+   = [0,1,2,3,13,12,11,10,20,21,22,23,33,32,31,30 
      ,130,131,132,133,123,122,121,120,110,111,112,113,103,102,101,100
      ,200,201,202,203,213,212,211,210,220,221,222,223,233,232,231,230
      ,330,331,332,333,323,322,321,320,310,311,312,313,303,302,301,300
      ,300];
-				var vec = vec_4n;
+				var vec = urlvec;
 				var materials = [
 					new THREE.MeshBasicMaterial( { color: 0xffffff, overdraw: 0.5 } ),
 					new THREE.MeshBasicMaterial( { color: 0xffffff, overdraw: 0.5 } )
@@ -43,10 +53,10 @@
 				var dvals  = [];	
 				var sub5   = (base - 1) / 2;
 				for ( i = 0; i < vec.length; i ++ ) {
-					var digx5 = parseInt(vec[i] /  10) % 10;
-					var digy5 =          vec[i]        % 10;
-					var digz5 = parseInt(vec[i] / 100) % 10;
-					// dvals.push(digz5 * base * base + digx5 * base + digy5); // decimal
+					var digx5 = parseInt(vec[i] /         dbase) % dbase;
+					var digy5 =          vec[i]                  % dbase;
+					var digz5 = parseInt(vec[i] / (dbase*dbase)) % dbase;
+					dvals.push(digz5 * base * base + digx5 * base + digy5); // decimal
 					// digits run from 0 to 4 or -2 to +2
 					var x = center.x + (digx5 - sub5) * size5;
 					var y = center.y + (digy5 - sub5) * size5;
@@ -102,8 +112,8 @@
 					var mesh = new THREE.Mesh( geometry, material );
 					group.add( mesh  );
 
-					if (true) { // with annotation: node values
-						var geometry2 = new THREE.TextGeometry(vec[i], // for base 4
+					if (withlabel) { // with annotation: node values
+						var geometry2 = new THREE.TextGeometry(withdecim ? dvals[i] : vec[i],
 							{ font: myfont
 							, size:   8
 							, height: 2
@@ -121,14 +131,14 @@
 					scene.add( group );
 
 				} // for i 
-				if (false) { // with label
-						var geometry2 = new THREE.TextGeometry( "OEIS A220952",
+				if (urltitle.length > 0) { // with title
+						var geometry2 = new THREE.TextGeometry( urltitle,
 							{ font: myfont
 							, size:   16
 							, height: 4
 							, curveSegments: 8
 							} );
-						var plab = points[108];
+						var plab = points[base * (base - 1) + 8];
 						geometry2.translate
 								( plab.x - 2.7 * size5
 								, plab.y + 0.4 * size5

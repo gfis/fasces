@@ -44,9 +44,9 @@
 		<script src="js/controls/OrbitControls.js"></script>
 		<script src="js/Detector.js"></script>
 		<script src="js/libs/stats.min.js"></script>
-		<script src="meander-4.js"></script>
 		<script src="FileSaver.js"></script>
 		<script src="STLExporter.js"></script>
+		<script src="meander-4.js"></script>
 		<script>
 			// Use FileSaver.js 'saveAs' function to save the string
 			function saveSTL( scene, name ){  
@@ -59,6 +59,19 @@
 			if ( ! Detector.webgl ) {
 				Detector.addGetWebGLMessage();
 			}
+			var url      = new URL(window.location.href);
+			var urlbase  = url.searchParams.get("base");
+			var urldecim = url.searchParams.get("decim");
+			var urllabel = url.searchParams.get("label");
+			var urltitle = url.searchParams.get("title");
+			var urlvec   = JSON.parse("[" + url.searchParams.get("vec") + "]");
+			console.log("base "  + urlbase);
+			console.log("decim " + urldecim);
+			console.log("label " + urllabel);
+			console.log("title " + urltitle);
+			console.log(urlvec);
+			/*
+			*/
 			var stats;
 			var camera;
 			var controls;
@@ -91,7 +104,7 @@
 				controls.dampingFactor = 0.25;
 				controls.enableZoom = true;
 
-				world( scene, myfont );
+				world( scene, myfont, urlbase, urldecim, urllabel, urltitle, urlvec );
 
 				if (false) { // lights
 					var lights = [];

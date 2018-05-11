@@ -1,6 +1,7 @@
 <!--
     Entry page for the web application
     @(#) $Id: index.html 890 2012-02-22 17:55:03Z gfis $
+    2018-05-11: input form
     2018-02-18, Georg Fischer: copied from dbat
 -->
 <!--
@@ -36,6 +37,24 @@
         <li><a href="meander_Kn.html">Knuth's original OEIS sequence A220952</a> up to level 3</li>
         <li><a href="meander_Fs.html">Fs variation</a></li>
     </ul>
+    <form method="GET" action="meander-4.html">
+    <h4>Variable Meander</h4>
+    <table border="0">
+    <tr><td width="25">Base: </td><td width="100"><input name="base"  size="4" value="4" /></td><td width="10">&nbsp;</td>
+    	<td width="*"><input        name="label" type="checkbox" checked="checked" /> with labels</td></tr>
+    	<td>Title:</td><td><input name="title" size="16" maxsize="64" value="" />	</td><td>&nbsp;</td>
+    	<td><input        name="decim" type="checkbox" checked="checked" /> in decimal</td></tr>
+    	<td colspan="4">Vector (in <em>base</em> or decimal, no leading zeroes)<br />
+    	<textarea     name="vec"   rows="8" cols="128" wrap="soft" pattern="^.*$">
+0,1,2,3,13,12,11,10,20,21,22,23,33,32,31,30
+,130,131,132,133,123,122,121,120,110,111,112,113,103,102,101,100
+,200,201,202,203,213,212,211,210,220,221,222,223,233,232,231,230
+,330,331,332,333,323,322,321,320,310,311,312,313,303,302,301,300
+,300
+    	</textarea></td></tr>
+    <tr><td colspan="4"><input type="submit" value="Display" /></td></tr>
+    </table>
+    </form>
     <font size="-1">
     Questions, remarks to: <a href="mailto:punctum@punctum.com">Dr. Georg Fischer</a>
     </font>

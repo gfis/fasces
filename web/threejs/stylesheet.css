@@ -1,5 +1,6 @@
 /*	stylesheet.css - Cascaded Style Sheet
 	@(#) $Id: a5efe2f5de00576fa2631ef5fd11fa9b22f0ba42 $
+	2018-05-11: no table background
 	2012-12-10: table.sortable thead
 	2011-02-01: visibility styles
 	2010-09-15: more colors
@@ -34,12 +35,14 @@ table
 table.sortable thead {
 	cursor: pointer
 	}
+/*
 td,th
 	{ vertical-align:top; margin:0px; 
 	  padding-top:0px; padding-bottom: 0px;padding-left:4px; padding-right:4px; 
 	  border:1px solid #aaa; }
 tr
 	{ background:lightyellow } /* or lemonchiffon} */
+*/
 .visible   
 	{ color:black; 
 	  border-left: 1px solid #aaa;
