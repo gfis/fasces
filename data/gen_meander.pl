@@ -36,8 +36,8 @@ while (scalar(@ARGV) > 0 and ($ARGV[0] =~ m{\A\-})) { # start with hyphen
         $base   = shift(@ARGV);
     } elsif ($opt eq "\-d") {
         $debug  = shift(@ARGV);
-    } elsif ($opt eq "\-e") {
-        $even   = shift(@ARGV);
+#   } elsif ($opt eq "\-e") {
+#       $even   = shift(@ARGV);
     } elsif ($opt eq "\-f") {
         $bfile  = 1;
     } elsif ($opt eq "\-g") {
@@ -51,6 +51,7 @@ while (scalar(@ARGV) > 0 and ($ARGV[0] =~ m{\A\-})) { # start with hyphen
     }
 } # while opt
 my $tbase  = $base;
+$even = $tbase % 2 == 0 ? 1 : 0;
 
 print "<!-================================-_>\n";
 my $bpath  = join("", map { my $bnum = &to_base($_); (length($bnum) < 2 ? "0$bnum" : $bnum) . $sep} @path);
@@ -145,6 +146,9 @@ sub get_successor {
                         print "\n#   is_adjacent($bprev,$bcurr): ppair=$ppair, cpair=$cpair, ppos=$ppos, cpos=$cpos\n" if $debug >= 2;
                         $adjacent = 0;
                     }
+                    if ($even) {
+                    	$i = 0;
+                    }
                     $i --;
                 } # while $i
                 $j --;
@@ -201,7 +205,7 @@ sub get_successor {
             if ($cpos <  length($bpath) - 3) { # the node behind, if it exists
                 &add_candidate(substr($bpath, $cpos + 3, 2), $bprev, $bcurr, $i, $j);
             } # behind
-            if ($even > 0 and $cpos == length($bpath) - 3) { # the node in the next dimension
+            if (0 and $even > 0 and $cpos == length($bpath) - 3) { # the node in the next dimension
             	my $bcand = $bcurr;
             	$bcand =~ s{0}{1};
                 push(@cands, $bcand);
