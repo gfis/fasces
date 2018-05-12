@@ -2,6 +2,7 @@
 <html lang="en">
 <!--Meander cube with STL export 
 	@(#) $Id$
+	2018-05-12: remove leading zeroes
 	2018-02-18: three.min.js moved to js/
 	2017-09-09, Georg Fischer
 -->
@@ -64,14 +65,19 @@
 			var urldecim = url.searchParams.get("decim");
 			var urllabel = url.searchParams.get("label");
 			var urltitle = url.searchParams.get("title");
-			var urlvec   = JSON.parse("[" + url.searchParams.get("vec") + "]");
+			var vecStr = url.searchParams.get("vec")
+					.replace(new RegExp("\,0", "g"), "\,")
+					.replace(new RegExp("\,0", "g"), "\,")
+					.replace("000", "0") ;
+			/*
+			console.log("vecStr " + vecStr);
 			console.log("base "  + urlbase);
 			console.log("decim " + urldecim);
 			console.log("label " + urllabel);
 			console.log("title " + urltitle);
 			console.log(urlvec);
-			/*
 			*/
+			var urlvec   = JSON.parse("[" + vecStr + "]");
 			var stats;
 			var camera;
 			var controls;

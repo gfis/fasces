@@ -7,6 +7,7 @@
 # 2017-08-17
 #-------------------------------------
 B=5
+D=0
 
 all:
 	# please use a specific makefile target: 
@@ -94,6 +95,12 @@ paths.7:
 	perl gen_paths.pl -b 7 -s | tee $@.tmp
 paths.9:
 	perl gen_paths.pl -b 9 -s | tee $@.tmp
+#----
+rec_paths: rp1 rp2
+rp1:
+	perl gen_rec_paths.pl > rec_paths.tmp
+rp2:
+	perl rec_paths.tmp -b $(B) -d $(D) | tee rec_paths.$(B).tmp 
 #----
 meander: meander5
 meander.2:
