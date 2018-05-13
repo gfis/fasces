@@ -102,6 +102,10 @@ rp1:
 rp2:
 	perl rec_paths.tmp -b $(B) -d $(D) | tee rec_paths.$(B).tmp 
 #----
+3d_paths: 
+	perl gen_3d_paths.pl > 3d_paths.tmp
+	perl 3d_paths.tmp -b $(B) -d $(D) | tee 3d_paths.$(B).tmp 
+#----
 meander: meander5
 meander.2:
 	perl -w gen_paths.pl    -b 2 | grep " path=" | sed -e "s/ *path=//" | xargs  -l -iqqq \

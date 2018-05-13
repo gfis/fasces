@@ -99,8 +99,7 @@ $pattern = <<'GFis';
     #--------
     my $vazy = "$z$y";
     if ($debug >= 3) {
-        print sprintf("#   pre zy  "         )
-                . "\+$vazy lazy=$lazy,cuzy=$cuzy,tb=$tracks_bad\t";
+        print "#   pre zy  \+$vazy lazy=$lazy,cuzy=$cuzy,tb=$tracks_bad\t";
         foreach my $pzy (@pazy) {
             print " $pzy\(" . $fizy[substr($pzy, 0, 1)]
                                    [substr($pzy, 1, 1)] .  ")";
@@ -125,8 +124,7 @@ $pattern = <<'GFis';
         $tracks_bad ++;
     }
     if ($debug >= 2) {
-        print sprintf("#       zy  "         )
-                . "\+$z$y lazy=$lazy,cuzy=$cuzy,tb=$tracks_bad\t";
+        print "#       zy  \+$z$y lazy=$lazy,cuzy=$cuzy,tb=$tracks_bad\t";
         foreach my $pzy (@pazy) {
             print " $pzy\(" . $fizy[substr($pzy, 0, 1)]
                                    [substr($pzy, 1, 1)] .  ")";
@@ -147,7 +145,9 @@ print <<'GFis';
     if (0) {
     } elsif (scalar(@pazyx) >= $bpow3) {
         $pathno ++;
-        print sprintf("# path %3d:\n", $pathno) . join(",", @pazyx) . "\n";
+        my $count = 0;
+        print sprintf("# path %3d:\n", $pathno) 
+        		. join(",", map {$count ++; $count % 16 == 0 ? "$_\n" : $_ } @pazyx) . "\n";
         # do not recurse
     } elsif ($tracks_bad > 0) {
         # do not recurse
@@ -164,17 +164,20 @@ $pattern = <<'GFis';
     $vazy = "$z$y";
     $fizy[$z][$y] --;
     if (0) {
-#   } elsif ($pazy[$cuzy    ] == $vazy                   ) {
+    } elsif ($pazy[$cuzy    ] == $vazy                   ) {
     } elsif ($pazy[$cuzy - 1] == $vazy                   ) {
         $cuzy --;
     } elsif ($pazy[$cuzy + 1] == $vazy and $cuzy <  $lazy) {
         $cuzy ++;
+    }
+    
+    if (0) {
     } elsif (                              $cuzy == $lazy) {
         if ($fizy[$z][$y] <= 0) {
             pop(@pazy); # remove last
             $lazy = scalar(@pazy) - 1; $cuzy = $lazy;
         }
-    } elsif (                                  $cuzy == 0) {
+    } elsif (                              $cuzy == 0    ) {
         if ($fizy[$z][$y] <= 0) {
             shift(@pazy); # remove first
             $lazy = scalar(@pazy) - 1; # $cuzy remains 0
