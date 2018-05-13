@@ -10,21 +10,31 @@
 				var withdecim = urldecim == "on";
 				// Default Vars
 				var base = urlbase;
-				var last = base*base*base - 1;
-				while (urlvec.length <= last + 1) {
-					urlvec.push(urlvec[last]);
+				var maxvec = base * base * base;
+				var last = urlvec[urlvec.length - 1];
+				while (urlvec.length < maxvec) {
+					urlvec.push(last);
 				}
-				var dbase  = urlvec[last] > last ? 10 : base; // base for decoding
+				var dbase  = withdecim ? base : 10; // base for decoding
 				console.log("last " + last);
 				console.log("dbase " + dbase);
+				function digx(num) {
+					return parseInt(num /         dbase + 0.1) % dbase;
+				}
+				function digy(num) {
+					return          num % dbase;
+				}
+				function digz(num) {
+					return parseInt(num / (dbase*dbase) + 0.1) % dbase;
+				}
 				var group = new THREE.Group();
 				var pi2 = Math.PI / 2;
 				var center = new THREE.Vector3( 0, 0, 0 );
 				var size   = 300;
 				var size5  = parseInt(size / base );
 				var width  = parseInt(size5 / 2 / base); // thickness of the cylinders
-				var vec_4m 
-   = [0,1,2,3,13,12,11,10,20,21,22,23,33,32,31,30 // leading zeroes would mean octal
+				var vec_4m =
+ 	[0,1,2,3,13,12,11,10,20,21,22,23,33,32,31,30 
      ,130,131,132,133
      ,233,232,231,230
      ,330,331,332,333
@@ -36,14 +46,8 @@
      ,310,311,312,313
      ,303,302,301,300
      ,200,201,202,203
-     ,103,102,101,100
-     ,100];
-				var vec_4n 
-   = [0,1,2,3,13,12,11,10,20,21,22,23,33,32,31,30 
-     ,130,131,132,133,123,122,121,120,110,111,112,113,103,102,101,100
-     ,200,201,202,203,213,212,211,210,220,221,222,223,233,232,231,230
-     ,330,331,332,333,323,322,321,320,310,311,312,313,303,302,301,300
-     ,300];
+     ,103,102,101,100,100]
+     ;
 				var vec = urlvec;
 				var materials = [
 					new THREE.MeshBasicMaterial( { color: 0xffffff, overdraw: 0.5 } ),
@@ -52,10 +56,10 @@
 				var points = [];
 				var dvals  = [];	
 				var sub5   = (base - 1) / 2;
-				for ( i = 0; i < vec.length; i ++ ) {
-					var digx5 = parseInt(vec[i] /         dbase) % dbase;
-					var digy5 =          vec[i]                  % dbase;
-					var digz5 = parseInt(vec[i] / (dbase*dbase)) % dbase;
+				for (i = 0; i < vec.length; i ++) {
+					var digx5 = digx(vec[i]);
+					var digy5 = digy(vec[i]);
+					var digz5 = digz(vec[i]);
 					dvals.push(digz5 * base * base + digx5 * base + digy5); // decimal
 					// digits run from 0 to 4 or -2 to +2
 					var x = center.x + (digx5 - sub5) * size5;
@@ -66,31 +70,29 @@
 				var shift = (size5 - width) * 0.5;
 				for ( i = 0; i < points.length - 1; i ++ ) {
 					var geometry = new THREE.BoxGeometry( width, size5, width );
-					var diff = vec[i + 1] - vec[i]; // either +-1, +-10 or +-100
-					var adiff = diff;
-					if (adiff < 0) {
-						adiff = - adiff;
-					}
+					var diffx = digx(vec[i + 1]) - digx(vec[i]); 
+					var diffy = digy(vec[i + 1]) - digy(vec[i]); 
+					var diffz = digz(vec[i + 1]) - digz(vec[i]); 
 					if (false) {
-					} else if (diff ==  -10) { // move in +x
+					} else if (diffx == -1) { // move in +x
 						geometry.rotateZ(  pi2);
 						geometry.translate(- shift, 0, 0);
-					} else if (diff ==  +10) { // move in -x
+					} else if (diffx == +1) { // move in -x
 						geometry.rotateZ(- pi2);
 						geometry.translate(+ shift, 0, 0);
-					} else if (diff ==    1) { // move in +y
+					} else if (diffy == +1) { // move in +y
 						geometry.rotateZ(pi2 -  pi2);
 						geometry.translate(0, + shift, 0);
-					} else if (diff ==   -1) { // move in -y
+					} else if (diffy == -1) { // move in -y
 						geometry.rotateZ(pi2 + pi2);
 						geometry.translate(0, - shift, 0);
-					} else if (diff ==  100) { // move in +z
+					} else if (diffz == +1) { // move in +z
 						geometry.rotateX(+ pi2);
 						geometry.translate(0, 0, + shift);
-					} else if (diff == -100) { // move in -z
+					} else if (diffz == -1) { // move in -z
 						geometry.rotateX(- pi2);
 						geometry.translate(0, 0, - shift);
-					} else if (diff ==    0) { // last vertex - a small cube only
+					} else { // last vertex - a small cube only
 						geometry = new THREE.BoxGeometry( width, width, width );
 					}	
 					geometry.translate( points[i].x, points[i].y, points[i].z);

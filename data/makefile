@@ -117,7 +117,7 @@ meander.4:
 	perl -w gen_paths.pl    -b 4 | grep " path=" | sed -e "s/ *path=//" | xargs  -l -iqqq \
 	perl -w gen_meander.pl  -b 4 -l  4096 -p qqq | tee $@.tmp
 meander.5:
-	perl -w gen_paths.pl    -b 5 | grep " path=" | sed -e "s/ *path=//" | xargs  -l -iqqq \
+	perl -w gen_paths.pl    -b 5 -s | grep " path=" | sed -e "s/ *path=//" | xargs  -l -iqqq \
 	perl -w gen_meander.pl  -b 5 -l  3125 -p qqq | tee $@.tmp
 #----
 mea0:

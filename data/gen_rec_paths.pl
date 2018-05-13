@@ -44,15 +44,29 @@ my $bpow2 = $base * $base;
 my $bpow3 = $base * $bpow2;
 my $full =  $bpow3 - 1;
 my (@fizyx, @fizy, @fizx, @fiyx);
+my %prom2; # 2-dimensional proximity: maps to a list of orthogonal neighbours
+my $a;
 for (my $z = 0; $z < $base; $z ++) {
-for (my $y = 0; $y < $base; $y ++) {
-for (my $x = 0; $x < $base; $x ++) {
-    $fizyx[$z][$y][$x] = 0;
-    $fizy [$z][$y]     = 0;
-    $fizx [$z][$x]     = 0;
-    $fiyx [$y][$x]     = 0;
-} # for $x
-} # for $y
+    for (my $y = 0; $y < $base; $y ++) {
+        $prom2{"$z$y"} = "/";
+        $a = $z + 1;
+        if ($a < $base) { $prom2{"$z$y"} .= "$a$y/"; }
+        $a = $z - 1;
+        if ($a >= 0   ) { $prom2{"$z$y"} .= "$a$y/"; }
+        $a = $y + 1;
+        if ($a < $base) { $prom2{"$z$y"} .= "$z$a/"; }
+        $a = $y - 1;
+        if ($a >= 0   ) { $prom2{"$z$y"} .= "$z$a/"; }
+        if ($debug >= 2) {
+            print sprintf("%-20s", "$z$y:" . $prom2{"$z$y"});
+        }
+        for (my $x = 0; $x < $base; $x ++) {
+            $fizyx[$z][$y][$x] = 0;
+        } # for $x
+    } # for $y
+    if ($debug >= 2) {
+        print "\n";
+    }
 } # for $z
 $fizyx[0][0][0] = 1;
 $fizy [0][0]    = 1;
@@ -64,14 +78,14 @@ my @pazyx = ("000");
 my @pazy  = ("00");
 my @pazx  = ("00");
 my @payx  = ("00");
-my $lazy  = 0;
-my $lazx  = 0;
-my $layx  = 0;
+my $tbzy  = 0;
+my $tbzx  = 0;
+my $tbyx  = 0;
 my $cuzy  = 0;
 my $cuzx  = 0;
 my $cuyx  = 0;
 
-# my $tracks_bad;
+my $tracks_bad;
 &check(0,0,0);
 exit(0);
 #--------
@@ -88,46 +102,54 @@ sub check {
 sub alloc {
     my ($z, $y, $x) = @_;
     if ($debug >= 1) {
-        print sprintf("# enter ") . join(",", @pazyx) . " \+$z$y$x\n";
+        print sprintf("# add   ") . join(",", @pazyx) . " \+$z$y$x\n";
     }
     push(@pazyx, "$z$y$x");
-    my $tracks_bad = 0; # assume ok
+    $tracks_bad = 0; # assume ok
     $fizyx[$z][$y][$x] ++;
 GFis
 my $pattern;
 $pattern = <<'GFis';
     #--------
     my $vazy = "$z$y";
+    $tbzy = 0;
     if ($debug >= 3) {
-        print "#   pre zy  \+$vazy lazy=$lazy,cuzy=$cuzy,tb=$tracks_bad\t";
+        print "#   pre zy  \+$vazy cuzy=$cuzy,tb=$tracks_bad ";
         foreach my $pzy (@pazy) {
-            print " $pzy\(" . $fizy[substr($pzy, 0, 1)]
-                                   [substr($pzy, 1, 1)] .  ")";
+            print " $pzy\." . $fizy[substr($pzy, 0, 1)]
+                                   [substr($pzy, 1, 1)];
         } # foreach
         print "\n";
     }
     $fizy[$z][$y] ++;
     if (0) {
-    } elsif ($pazy[$cuzy    ] == $vazy                   ) {
-    } elsif ($pazy[$cuzy - 1] == $vazy and $cuzy >  0    ) {
+    } elsif (                   $pazy[$cuzy    ] == $vazy) {
+    } elsif ($cuzy >   0    and $pazy[$cuzy - 1] == $vazy) {
         $cuzy --;
-    } elsif ($pazy[$cuzy + 1] == $vazy and $cuzy <  $lazy) {
+    } elsif ($cuzy <  scalar(@pazy) - 1 and $pazy[$cuzy + 1] == $vazy) {
         $cuzy ++;
-    } elsif (                              $cuzy == $lazy) {
-        push(@pazy, $vazy); # append behind last
-        $lazy = scalar(@pazy) - 1; $cuzy = $lazy;
-    } elsif (                              $cuzy == 0    ) {
-        unshift(@pazy, $vazy);# prepend before first
-        $lazy = scalar(@pazy) - 1; # $cuzy remains 0
-
-    } else {
-        $tracks_bad ++;
+	} else { # elsewhere?
+		if ($fizy[$z][$y] > 1) { # already in $pazy
+			$tbzy ++;
+    	} elsif ($cuzy == scalar(@pazy) - 1                 ) { # current is last
+    		if (0 or ($prom2{$pazy[$cuzy]} =~ m{$vazy})) {
+    	    	push(@pazy, $vazy); # append behind last
+    	    	$cuzy = scalar(@pazy) - 1;
+    	    }
+    	} elsif ($cuzy == 0                                  ) {
+    		if (0 or ($prom2{$pazy[$cuzy]} =~ m{$vazy})) {
+		         unshift(@pazy, $vazy);# prepend before first
+    		     # $cuzy remains 0
+   			}
+    	} else {
+    	    $tbzy ++;
+    	}
     }
     if ($debug >= 2) {
-        print "#       zy  \+$z$y lazy=$lazy,cuzy=$cuzy,tb=$tracks_bad\t";
+        print "#       zy  \+$z$y cuzy=$cuzy,tb=$tracks_bad ";
         foreach my $pzy (@pazy) {
-            print " $pzy\(" . $fizy[substr($pzy, 0, 1)]
-                                   [substr($pzy, 1, 1)] .  ")";
+            print " $pzy\." . $fizy[substr($pzy, 0, 1)]
+                                   [substr($pzy, 1, 1)];
         } # foreach
         print "\n";
     }
@@ -146,49 +168,57 @@ print <<'GFis';
     } elsif (scalar(@pazyx) >= $bpow3) {
         $pathno ++;
         my $count = 0;
-        print sprintf("# path %3d:\n", $pathno) 
-        		. join(",", map {$count ++; $count % 16 == 0 ? "$_\n" : $_ } @pazyx) . "\n";
+        print sprintf("# path %3d:\n[", $pathno) 
+        		. join(",", map {$count ++; $count % 16 == 0 ? "$_\n" : $_ } @pazyx) . "]\n";
         # do not recurse
-    } elsif ($tracks_bad > 0) {
+    } elsif ($tbzy + $tbzx + $tbyx > 0) {
         # do not recurse
     } else { # recurs
         &check($z, $y, $x);
     }
     #--------
-    if ($debug >= 1) {
-        print sprintf("# leave ") . join(",", @pazyx) . " \-$z$y$x\n";
+    $fizyx[$z][$y][$x] --;
+    pop(@pazyx);
+    if ($debug >= 3) {
+        print sprintf("#   sub ") . join(",", @pazyx) . " \-$z$y$x\n";
     }
 GFis
 
 $pattern = <<'GFis';
     $vazy = "$z$y";
     $fizy[$z][$y] --;
-    if (0) {
+#   if ($tbzy == 0) {
+	if (0) {
     } elsif ($pazy[$cuzy    ] == $vazy                   ) {
+        if (0 and $fizy[$z][$y] <= 0) { # and $tracks_bad == 0) {
+            splice(@pazy, $cuzy, 1); 
+            # $cuzy on following?
+        }
     } elsif ($pazy[$cuzy - 1] == $vazy                   ) {
         $cuzy --;
-    } elsif ($pazy[$cuzy + 1] == $vazy and $cuzy <  $lazy) {
+    } elsif ($pazy[$cuzy + 1] == $vazy and $cuzy <  scalar(@pazy) - 1) {
         $cuzy ++;
     }
     
-    if (0) {
-    } elsif (                              $cuzy == $lazy) {
-        if ($fizy[$z][$y] <= 0) {
+#   if ($tbzy == 0) {
+	if (0) {
+    } elsif (                              $cuzy == scalar(@pazy) - 1) {
+        if ($fizy[$z][$y] <= 0) { # and $tracks_bad == 0) {
             pop(@pazy); # remove last
-            $lazy = scalar(@pazy) - 1; $cuzy = $lazy;
+            $cuzy = scalar(@pazy) - 1;
         }
     } elsif (                              $cuzy == 0    ) {
-        if ($fizy[$z][$y] <= 0) {
+        if ($fizy[$z][$y] <= 0) { # and $tracks_bad == 0) {
             shift(@pazy); # remove first
-            $lazy = scalar(@pazy) - 1; # $cuzy remains 0
+            # $cuzy remains 0
         }
     }
-    if ($debug >= 2) {
+    if ($debug >= 3) {
         print sprintf("#       zy  "         )
-                . "\-$vazy lazy=$lazy,cuzy=$cuzy,tb=$tracks_bad\t";
+                . "\-$vazy cuzy=$cuzy,tb=$tracks_bad ";
         foreach my $pzy (@pazy) {
-            print " $pzy\(" . $fizy[substr($pzy, 0, 1)]
-                                   [substr($pzy, 1, 1)] .  ")";
+            print " $pzy\." . $fizy[substr($pzy, 0, 1)]
+                                   [substr($pzy, 1, 1)];
         } # foreach
         print "\n";
     }
@@ -203,8 +233,6 @@ $pattern =~ s{zx}{yx}g;
 print $pattern;
 
 print <<'GFis';
-    $fizyx[$z][$y][$x] --;
-    pop(@pazyx);
 } # alloc
 __DATA__
 GFis

@@ -64,10 +64,9 @@
 	var urllabel = url.searchParams.get("label");
 	var urltitle = url.searchParams.get("title");
 	var vecStr   = url.searchParams.get("vec")
+			.replace(new RegExp("[^\,0-9]+", "g"), "") // remove non-digits or non-comma
 			.replace(new RegExp("\,0+", "g"), "\,") // remove leading zeroes
 			.replace("000", "0")
-			.replace("\[", "")
-			.replace("\]", "")
 			;
 	/*
 	console.log("vecStr " + vecStr);
