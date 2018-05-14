@@ -4,10 +4,11 @@
 	2018-05-10, Georg Fischer
 	with THREE.BoxGeometry
 */
-			//	     world( scene, myfont, urlbase, urldecim, urllabel, urltitle, urlvec );
-			function world( scene, myfont, urlbase, urldecim, urllabel, urltitle, urlvec ) {
-				var withlabel = urllabel == "on";
-				var withdecim = urldecim == "on";
+			//	     world( scene, myfont, urlbase, urldecin, urldecout, urllabel, urltitle, urlvec );
+			function world( scene, myfont, urlbase, urldecin, urldecout, urllabel, urltitle, urlvec ) {
+				var withlabel  = urllabel  == "on";
+				var withdecin  = urldecin  == "on";
+				var withdecout = urldecout == "on";
 				// Default Vars
 				var base = urlbase;
 				var maxvec = base * base * base;
@@ -15,7 +16,7 @@
 				while (urlvec.length < maxvec) {
 					urlvec.push(last);
 				}
-				var dbase  = withdecim ? base : 10; // base for decoding
+				var dbase  = withdecin ? base : 10; // base for decoding
 				console.log("last " + last);
 				console.log("dbase " + dbase);
 				function digx(num) {
@@ -115,7 +116,7 @@
 					group.add( mesh  );
 
 					if (withlabel) { // with annotation: node values
-						var geometry2 = new THREE.TextGeometry(withdecim ? dvals[i] : vec[i],
+						var geometry2 = new THREE.TextGeometry(withdecout ? dvals[i] : vec[i],
 							{ font: myfont
 							, size:   8
 							, height: 2

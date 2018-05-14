@@ -58,20 +58,22 @@
 	if ( ! Detector.webgl ) {
 		Detector.addGetWebGLMessage();
 	}
-	var url      = new URL(window.location.href);
-	var urlbase  = url.searchParams.get("base");
-	var urldecim = url.searchParams.get("decim");
-	var urllabel = url.searchParams.get("label");
-	var urltitle = url.searchParams.get("title");
-	var vecStr   = url.searchParams.get("vec")
-			.replace(new RegExp("[^\,0-9]+", "g"), "") // remove non-digits or non-comma
+	var url       = new URL(window.location.href);
+	var urlbase   = url.searchParams.get("base");
+	var urldecin  = url.searchParams.get("decin");
+	var urldecout = url.searchParams.get("decout");
+	var urllabel  = url.searchParams.get("label");
+	var urltitle  = url.searchParams.get("title");
+	var vecStr    = ("[" + url.searchParams.get("vec") + "]")
+			.replace(new RegExp("[^0-9]+", "g"), ",") // replace non-digits by commas
 			.replace(new RegExp("\,0+", "g"), "\,") // remove leading zeroes
-			.replace("000", "0")
-			;
-	/*
+			.replace("\,\,", "\,0\,") // restore a single 0
+			.replace("\,", "");
+	vecStr = vecStr.substring(0, vecStr.length - 1);
 	console.log("vecStr " + vecStr);
+	/*
 	console.log("base "  + urlbase);
-	console.log("decim " + urldecim);
+	console.log("decin " + urldecin);
 	console.log("label " + urllabel);
 	console.log("title " + urltitle);
 	console.log(urlvec);
@@ -86,7 +88,9 @@
 	loader.load( 'fonts/helvetiker_regular.typeface.json', function ( font ) {
 		// all remaining main code must be placed in this block
 		init( font );
-		// saveSTL( scene, "meander-box" );
+		if (url.searchParams.get("stl") == "on") {
+			saveSTL( scene, "meander-box" );
+		}
 		// render(); // remove when using next line for animation loop (requestAnimationFrame)
 		animate();
 	} ); // load
@@ -109,7 +113,7 @@
 		controls.dampingFactor = 0.25;
 		controls.enableZoom = true;
 
-		world(scene, myfont, urlbase, urldecim, urllabel, urltitle, urlvec);
+		world(scene, myfont, urlbase, urldecin, urldecout, urllabel, urltitle, urlvec);
 
 		var light = new THREE.DirectionalLight( 0xffffff );
 		light.position.set( 1, 1, 1 );

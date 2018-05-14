@@ -92,7 +92,7 @@ paths.5:
 paths.6:
 	perl gen_paths.pl -b 6    | tee $@.tmp
 paths.7:
-	perl gen_paths.pl -b 7 -s | tee $@.tmp
+	perl gen_paths.pl -b 7    | tee $@.tmp
 paths.9:
 	perl gen_paths.pl -b 9 -s | tee $@.tmp
 #----
@@ -117,8 +117,11 @@ meander.4:
 	perl -w gen_paths.pl    -b 4 | grep " path=" | sed -e "s/ *path=//" | xargs  -l -iqqq \
 	perl -w gen_meander.pl  -b 4 -l  4096 -p qqq | tee $@.tmp
 meander.5:
-	perl -w gen_paths.pl    -b 5 -s | grep " path=" | sed -e "s/ *path=//" | xargs  -l -iqqq \
+	perl -w gen_paths.pl    -b 5  | grep " path=" | sed -e "s/ *path=//" | xargs  -l -iqqq \
 	perl -w gen_meander.pl  -b 5 -l  3125 -p qqq | tee $@.tmp
+meander.7:
+	perl -w gen_paths.pl    -b 7 -s | grep " path=" | sed -e "s/ *path=//" | xargs  -l -iqqq \
+	perl -w gen_meander.pl  -b 7 -l  3125 -p qqq | tee $@.tmp
 #----
 mea0:
 	perl gen_meander.pl -l 24 -b 5 -p "0,1,2,3,4,9,14,19,18,17,16,11,12,13,8,7,6,5,10,15,20,21,22,23,24"\

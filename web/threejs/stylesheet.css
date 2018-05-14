@@ -35,6 +35,8 @@ table
 table.sortable thead {
 	cursor: pointer
 	}
+td,th
+	{ vertical-align:top; margin:0px;}
 /*
 td,th
 	{ vertical-align:top; margin:0px; 

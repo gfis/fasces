@@ -15,9 +15,11 @@ use strict;
 use integer; # avoid division problems with reals
 
 my $debug  = 0;
+my $ansi   = 0; # whether to use ANSI colors on console output
 my $base   = 5; 
 my $maxexp = 2;  # compute b-file up to $base**$maxexp
 my $symm   = 0;
+my $rule   = 0;  # for stronger condition
 my $vert   = "||";
 my $hori   = "==";
 my $blan   = "  ";
@@ -28,6 +30,12 @@ while (scalar(@ARGV) > 0) {
     my $opt = shift(@ARGV);
     if ($opt =~ m{\A(\-b)?(\d+)\Z}) {
         $base  = $2;
+    }
+    if ($opt eq "\-a") {
+        $ansi   = 1;
+    }
+    if ($opt =~ m{r}) {
+        $rule  = 1;
     }
     if ($opt =~ m{s}) {
         $symm  = 1;
@@ -61,10 +69,15 @@ print <<"GFis";
 <paths base="$base">
 GFis
 
+my $sep = ",";
 my @queue = (); # entries are "path_index${sep}value"
-&mark(0);
-&mark(1);
-# &mark($base % 2 == 1 ? 1 : $base); # upwards for odd, right for even bases
+$ind = 0;
+&mark($ind); $ind ++;
+&mark($ind); $ind ++;
+while ($ind < $base) { # this is questionable? assumes a vertical bar at the beginning
+	&mark($ind); $ind ++;
+} 
+# normalized start: 00->01
 &push_urdl();
 
 while (scalar(@queue) > 0) { # pop
@@ -85,9 +98,9 @@ while (scalar(@queue) > 0) { # pop
     }
     &mark($pval);
     my $plen = scalar(@path);
-    if ($plen == $last + 1) {
-        print "pval=$pval, plen=$plen, last=$last, full=$full\n" if $debug >= 1;
-        if ($plen >= $last) { # really at the end or in the center
+    if ($symm == 1 ? $pval == $last : $plen <= $last + 1) {
+	    print "pval=$pval, plen=$plen, last=$last, full=$full\n" if $debug >= 1;
+        if ($plen == $last + 1) { # really at the end or in the center
             while ($plen < $corner) { # fill 2nd half in case of $symm
                 push(@path, $full - $path[$full - $plen]);
                 $plen ++;
@@ -223,22 +236,57 @@ sub get_attributes {
 } # get_attributes
 #--------
 sub draw_path {
+    our $vert   = "||"; if ($ansi == 1) { $vert = "\x1b[103m$vert\x1b[0m"; }
+    our $hori   = "=="; if ($ansi == 1) { $hori = "\x1b[103m$hori\x1b[0m"; }
+    our @matrix = ();
+    our $blan   = "  ";
+    #----
+    sub get_matrix_pos {
+        my ($x, $y) = @_;
+        my $base2_1 = $base * 2 - 1; # 9  for base=5
+        return $x * 2 + ($base2_1 - 1) * $base2_1 - $y * 2 *$base2_1; 
+    } # get_matrix_pos
+    #----
+    sub connect {
+        my ($pa0, $pa1) = @_;
+        if ($pa0 > $pa1) { # exchange, make p1 smaller
+            my $temp = $pa0;
+            $pa0 = $pa1;
+            $pa1 = $temp;
+        } # pa0 <= pa1
+        my $ba0 = &based0($pa0);
+        my $ba1 = &based0($pa1);
+        print "ba0=$ba0, ba1=$ba1" if $debug >= 2;
+        my $x0 = &get_digit($pa0, 1);
+        my $y0 = &get_digit($pa0, 0);
+        my $x1 = &get_digit($pa1, 1);
+        my $y1 = &get_digit($pa1, 0);
+        print ", x0=$x0, y0=$y0, x1=$x1, y1=$y1" if $debug >= 2;
+        my $mp0 = &get_matrix_pos($x0, $y0);
+        if ($x0 eq $x1) { # up
+            $matrix[$mp0 - ($base * 2 - 1)] = $vert; # up
+            print " $vert\n" if $debug >= 2;
+        } else {
+            $matrix[$mp0 + 1]               = $hori; # right
+            print " $hori\n" if $debug >= 2;
+        }
+    } # connect
+    #----
     # initialize the matrix
-    my @path = @_;
     my $x = 0;
     my $y = 0;
     while ($x < $base) {
         $y = 0;
         while ($y < $base) {
             my $mp = &get_matrix_pos($x, $y);
-            $matrix[$mp] = "$x$y";
+            $matrix[$mp] = $ansi == 1 ? "\x1b[102m$x$y\x1b[0m" : "$x$y";
             if ($x < $base - 1) {
-                $matrix[$mp + 1] = $blan; # right
+                $matrix[$mp + 1] = $blan; # " "; # right
             }
             if ($y > 0) {
-                $matrix[$mp + $base * 2 - 1] = $blan; # down
+                $matrix[$mp + $base * 2 - 1] = $blan; # "  "; # down
                 if ($x < $base - 1) {
-                    $matrix[$mp + $base * 2 - 1 + 1] = $blan; # down
+                    $matrix[$mp + $base * 2 - 1 + 1] = $blan; # " "; # down
                 }                   
             }
             $y ++;
@@ -263,37 +311,6 @@ sub draw_path {
     print "\n</draw-path>\n";
 } # draw_path
 #---------
-sub get_matrix_pos {
-    my ($x, $y) = @_;
-    my $base2_1 = $base * 2 - 1; # 9  for base=5
-    return $x * 2 + ($base2_1 - 1) * $base2_1 - $y * 2 *$base2_1; 
-} # get_matrix_pos
-#----------
-sub connect {
-    my ($pa0, $pa1) = @_;
-    if ($pa0 > $pa1) { # exchange, make p1 smaller
-        my $temp = $pa0;
-        $pa0 = $pa1;
-        $pa1 = $temp;
-    } # pa0 <= pa1
-    my $ba0 = &based0($pa0);
-    my $ba1 = &based0($pa1);
-    print "ba0=$ba0, ba1=$ba1" if $debug >= 2;
-    my $x0 = &get_digit($pa0, 1);
-    my $y0 = &get_digit($pa0, 0);
-    my $x1 = &get_digit($pa1, 1);
-    my $y1 = &get_digit($pa1, 0);
-    print ", x0=$x0, y0=$y0, x1=$x1, y1=$y1" if $debug >= 2;
-    my $mp0 = &get_matrix_pos($x0, $y0);
-    if ($x0 eq $x1) { # up
-        $matrix[$mp0 - ($base * 2 - 1)] = $vert; # up
-        print " $vert\n" if $debug >= 2;
-    } else {
-        $matrix[$mp0 + 1]               = $hori; # right
-        print " $hori\n" if $debug >= 2;
-    }
-} # connect
-#---------
 sub get_digit {
     # return the value of a digit from a string in $base representation
     # $base <= 10 for the moment, but hex is prepared
@@ -317,3 +334,11 @@ sub based0 {
 } # based0
 #--------
 __DATA__
+with first vertical bar:
+C:\Users\gfis\work\gits\fasces\data>grep summary paths.*.tmp
+paths.2.tmp:<summary count="1" opposite="1" />
+paths.3.tmp:<summary count="3" diagonal="1" inside="1" opposite="1" symmetrical="1" />
+paths.4.tmp:<summary count="17" inside="6" opposite="4" outside="7" />
+paths.5.tmp:<summary count="160" diagonal="23" inside="80" opposite="20" outside="37" symmetrical="4" />
+paths.6.tmp:<summary count="3501" inside="1970" opposite="378" outside="1153" />
+paths.7.tmp:<summary count="144476" diagonal="11658" inside="89873" opposite="10204" outside="32741" symmetrical="66" />
