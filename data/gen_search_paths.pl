@@ -38,21 +38,24 @@ while (scalar(@ARGV) > 0) { # get commandline paramters
         $debug = shift(@ARGV);
     }
 } # while opt
-my $basep2 = $base   * $base;
-my $basep3 = $basep2 * $base;
+my $basep2   = $base   * $base;
+my $basep3   = $basep2 * $base;
+my $maxpath2 = $basep2 * 2; # because we store tuples (node,dir)
 
+my @dircode;
+$dircode[0] = "**"; # codes for the directions
 my $mexp3 = 0; # greater than all bit exponents: 6
 my $bit = 1;
 #  direction masks zzyyxx - caution, the order here is very important below
 #                  pmpmpm
-my $xm1   = $bit; $bit <<= 1; $mexp3 ++; # left
-my $xp1   = $bit; $bit <<= 1; $mexp3 ++; # right
-my $ym1   = $bit; $bit <<= 1; $mexp3 ++; # down
-my $yp1   = $bit; $bit <<= 1; $mexp3 ++; # up
-my $mbit2 = $bit;
-my $mexp2 = $mexp3;
-my $zm1   = $bit; $bit <<= 1; $mexp3 ++; # nearer
-my $zp1   = $bit; $bit <<= 1; $mexp3 ++; # farer
+my $xm1   = $bit;  $dircode[$bit] = "x-"; $bit <<= 1; $mexp3 ++;  # left
+my $xp1   = $bit;  $dircode[$bit] = "x+"; $bit <<= 1; $mexp3 ++;  # right
+my $ym1   = $bit;  $dircode[$bit] = "y-"; $bit <<= 1; $mexp3 ++;  # down
+my $yp1   = $bit;  $dircode[$bit] = "y+"; $bit <<= 1; $mexp3 ++;  # up
+my $mbit2 = $bit;                                               
+my $mexp2 = $mexp3;                                             
+my $zm1   = $bit;  $dircode[$bit] = "z-"; $bit <<= 1; $mexp3 ++;  # nearer
+my $zp1   = $bit;  $dircode[$bit] = "z+"; $bit <<= 1; $mexp3 ++;  # farer
 my $mbit3 = $bit; # greater than all bitmask values: 64
 my $mbit3m1 = $mbit3 - 1;
 
@@ -70,15 +73,15 @@ for ($num = 0; $num < $mbit3; $num ++) {
         $bit <<= 1;
     } # while $bit
     $crosum [$num] = $csum;
-	$invmask[$num] = 0;
-	$revdir [$num] = 0;
+    $invmask[$num] = 0;
+    $revdir [$num] = 0;
 } # for $num;
 $bit = 1;
 my $exp = 0;
 while ($bit <= $mbit3) {
-	$invmask[$bit] = $mbit3m1 ^ $bit;
-	$revdir [$bit] = ($exp & 1) == 0 ? $bit >> 1 : $bit < 1;
-	$exp ++;
+    $invmask[$bit] = $mbit3m1 ^ $bit;
+    $revdir [$bit] = ($exp & 1) != 0 ? $bit >> 1 : $bit << 1;
+    $exp ++;
     $bit <<= 1;
 } # while $bit
 
@@ -112,150 +115,208 @@ for ($z = 0; $z < $base; $z ++) { # set bit if move is possible
     } # for y
 } # for z
 
-if ($debug >= 2) { # show preset arrays
-print "# crosum, mexp3=$mexp3, mbit3=$mbit3";
-for ($num = 0; $num < $mbit3; $num ++) {
-    if ($num % 8 == 0) {
-        print "\n" . sprintf("%3d:  ", $num);
-    }
-    print sprintf("%3d ", $crosum[$num]);
-} # for
-print "\n";
-
-print "# masks\n";
-print sprintf("%06b %06b %06b %06b %06b %06b\n\n", $xm1, $xp1, $ym1, $yp1, $zm1, $zp1);
-$bit = 1;
-while ($bit < $mbit3) {
-	print sprintf("%06b %06b %06b\n", $bit, $invmask[$bit], $revdir[$bit]);
-    $bit <<= 1;
-} # while $bit
-
-print "# poss2, base=$base\n";
-    for ($y = 0; $y < $base; $y ++) { # set bit if move is possible
-        for ($x = 0; $x < $base; $x ++) {
-            print sprintf("%06b ", $poss2[$y][$x]);
-        } # for x
-        print "\n";
-    } # for y
-print "# poss3\n";
-for ($z = 0; $z < $base; $z ++) { # set bit if move is possible
-    for ($y = 0; $y < $base; $y ++) {
-        for (my $x = 0; $x < $base; $x ++) {
-            print sprintf("%06b ", $poss3[$z][$y][$x]);
-        } # for $x
-        print "\n";
-    } # for y
-    print "\n";
-} # for z
-print "# end prefilled\n";
+if ($debug >= 3) { # show preset arrays
+	print "# crosum, mexp3=$mexp3, mbit3=$mbit3";
+	for ($num = 0; $num < $mbit3; $num ++) {
+	    if ($num % 8 == 0) {
+	        print "\n" . sprintf("%3d:  ", $num);
+	    }
+	    print sprintf("%3d ", $crosum[$num]);
+	} # for
+	print "\n";
+	
+	print "# masks\n";
+	print sprintf("%06b %06b %06b %06b %06b %06b\n\n", $xm1, $xp1, $ym1, $yp1, $zm1, $zp1);
+	$bit = 1;
+	while ($bit < $mbit3) {
+	    print sprintf("%06b %06b %06b\n", $bit, $invmask[$bit], $revdir[$bit]);
+	    $bit <<= 1;
+	} # while $bit
+	
+	print "# poss2, base=$base\n";
+	    for ($y = 0; $y < $base; $y ++) { # set bit if move is possible
+	        for ($x = 0; $x < $base; $x ++) {
+	            print sprintf("%06b ", $poss2[$y][$x]);
+	        } # for x
+	        print "\n";
+	    } # for y
+	print "# poss3\n";
+	for ($z = 0; $z < $base; $z ++) { # set bit if move is possible
+	    for ($y = 0; $y < $base; $y ++) {
+	        for (my $x = 0; $x < $base; $x ++) {
+	            print sprintf("%06b ", $poss3[$z][$y][$x]);
+	        } # for $x
+	        print "\n";
+	    } # for y
+	    print "\n";
+	} # for z
+	print "# end prefilled\n";
 } # debug
 #-------------------------------
-# start with a $crosum bar upwards from 00 to 01 
-my $y = 0;
-my $x = 0;
-my @path2 = ("$y,$x", 0); # dir = 0 -> no predecessor
+# start with a bar upwards from 00 to 01
+$y = 0;
+$x = 0;
+my @path2 = ("$y,$x", "**"); # dir = 0 -> no predecessor
+my $pathno = 0;
+my $level = 0;
 &evaluate2($y, $x, $yp1, $y + 1, $x);
 #--------
 sub evaluate2 {
-# evaluate all possible continuations for @path2 
+# evaluate all possible continuations for @path2
 # and check whether corresponding nodes on @path3 have at most 2 connections to other nodes
-    my ($yp, $xp, $dirpn2, $yn, $xn) = @_; # old node, direction, new node
-	if (&alloc2($yp, $xp, $dirpn2, $yn, $xn) == 0) { # ($yn,$xn) is possible
-		# try all 4 directions
-		my $dirnp2 = $revdir[$dirpn2];
-		$bit = 1;
-		while ($bit < $mbit2) {
-			if ($bit != $dirnp2) { # not where we came from
-			}
-			$bit <<= 1;
-		} # while bit
-	} # if alloc
-	&free2($yp, $xp, $dirpn2, $yn, $xn);
+    my         ($yp, $xp, $dirpn2, $yn, $xn) = @_; # old node, direction, new node
+    my $dirnp2 = $revdir[$dirpn2];
+    $level ++;
+	if ($debug >= 1) {
+	    print sprintf("# %3d: evaluate(%d,%d) %s (%d,%d) "
+	    		, $level, $yp, $xp, $dircode[$dirpn2], $yn, $xn) 
+	    		. &pastr(0) . "\n";
+	}
+    if (&alloc2($yp, $xp, $dirpn2, $yn, $xn) == 0) { # ($yn,$xn) is possible
+        # try all 4 positions for next node
+        $bit = $yp1; if ($dirnp2 != $bit and ($poss2[$yn][$xn] & $bit) != 0) { &evaluate2($yn, $xn, $bit, $yn + 1, $xn    ); }
+        $bit = $ym1; if ($dirnp2 != $bit and ($poss2[$yn][$xn] & $bit) != 0) { &evaluate2($yn, $xn, $bit, $yn - 1, $xn    ); }
+        $bit = $xp1; if ($dirnp2 != $bit and ($poss2[$yn][$xn] & $bit) != 0) { &evaluate2($yn, $xn, $bit, $yn,     $xn + 1); }
+        $bit = $xm1; if ($dirnp2 != $bit and ($poss2[$yn][$xn] & $bit) != 0) { &evaluate2($yn, $xn, $bit, $yn,     $xn - 1); }
+    } # if alloc
+    &free2($yp, $xp, $dirpn2, $yn, $xn);
+	if ($debug >= 2) {
+	    print sprintf("# %3d:   return(%d,%d) %s (%d,%d) "
+	    		, $level, $yp, $xp, $dircode[$dirpn2], $yn, $xn) 
+	    		. &pastr(0) . "\n";
+	}
+    $level --;
 } # evaluate2
+#-------------------------------
+sub pastr { # return a string for @path2
+	my ($break) = @_;
+	my $result = "";
+	my $ind = 0;
+	while ($ind < scalar(@path2)) {
+		my $elem = $path2[$ind];
+		$elem =~ s{\D}{}g;
+		$result .= ",$elem";
+		$ind += 2;
+		if ($ind % 32 == 0 and $break > 0) {
+			$result .= "\n";
+		}
+	} # while
+	return $result;
+} # pastr
 #-------------------------------
 sub alloc2 {
     my ($yp, $xp, $dirpn2, $yn, $xn) = @_; # old node, direction, new node
     #              00yyxx
     my $fail = 0; # assume success
-    if ($poss2[$n][$xn] == 1 and $cube2[$yn][$xn] != 0) {
-        $fail = 1;
-    } else { # not yet occupied
-        $cube2[$yp][$xp] |= $dirpn2;          # connect prev to new
-        $cube2[$yn][$xn] |= $revdir[$dirpn2]; # connect new to prev, backwards
-        push(@path2, "$n,$xn", $dirpn); # tuples (node,dir)
-    }
-	if ($fail == 0) {
-		# if 00 ~ 01 then for n = 0..base-1:
-		#    n00 ~ n01
-		#    0n0 ~ 0n1
-		#    00n ~ 01n
-    	my $na = 0; 
-    	my $dir00yyxx = $dirpn2;
-    	my $diryy00xx = (($dirpn2 & 0b001100) << 2) | ($dirpn & 0b000011) ;
-    	my $diryyxx00 = $dirpn2 << 2;
-    	while ($fail == 0 and $na < $base) {
-    		# $dirpn remains 00yyxx
-    	    $fail = &alloc3($na, $yp, $xp, $dir00yyxx, $na, $yn, $xn);
-    	    if ($fail == 0) {
-    	    $fail = &alloc3($yp, $na, $xp, $diryy00xx, $yn, $na, $xn);
-    	    if ($fail == 0) {
-    	    $fail = &alloc3($yp, $xp, $na, $diryxx00, $yn, $xn, $na);
-    	    }}
-    	    $na ++;
-    	} # while
-	} # if 
+    if (($poss2[$yp][$xp] & $dirpn2) != 0) { # node exists
+	    if ($cube2[$yn][$xn] != 0) {
+	        $fail = 2; # already occupied
+	    } else { # not yet occupied
+	        $cube2[$yp][$xp] |= $dirpn2;          # connect prev to new
+	        $cube2[$yn][$xn] |= $revdir[$dirpn2]; # connect new to prev, backwards
+	        push(@path2, "$yn,$xn", $dircode[$dirpn2]); # tuples (node,dir)
+	        if (scalar(@path2) >= $maxpath2) {
+	            $pathno ++;
+	            my $count = 0;
+	            print "# path $pathno:\n" . &pastr(1) . "\n";
+	            $fail = 3; # end reached
+	        }
+	    	if (0) { # check in 3d for speed and adjacency rule
+	    	    # if 00 ~ 01 then for n = 0..base-1:
+	    	    #    n00 ~ n01
+	    	    #    0n0 ~ 0n1
+	    	    #    00n ~ 01n
+	    	    my $na = 0;
+	    	    my $dir00yyxx = $dirpn2;
+	    	    my $diryy00xx = (($dirpn2 & 0b001100) << 2) | ($dirpn2 & 0b000011) ;
+	    	    my $diryyxx00 = $dirpn2 << 2;
+	    	    while ($fail == 0 and $na < $base) {
+	    	        # $dirpn remains 00yyxx
+	    	        $fail = &alloc3($na, $yp, $xp, $dir00yyxx, $na, $yn, $xn);
+	    	        if ($fail == 0) {
+	    	        $fail = &alloc3($yp, $na, $xp, $diryy00xx, $yn, $na, $xn);
+	    	        if ($fail == 0) {
+	    	        $fail = &alloc3($yp, $xp, $na, $diryyxx00, $yn, $xn, $na);
+	    	        }}
+	    	        $na ++;
+	    	    } # while
+	    	}
+	    } # if not yet occupied
+	} else {
+		$fail = 1;
+	    if ($debug >= 2) {
+    	    print sprintf("#      not poss2: %06b %06b\n", $poss2[$yp][$xp], $dirpn2);
+		}
+	}
+    if ($debug >= 2) {
+        print sprintf("#      alloc2  (%d,%d) -> (%d,%d) ", $yp, $xp, $yn, $xn) . &pastr(0);
+		print $fail != 0 ? " failure $fail\n" : " ok\n";
+	}
     return $fail;
 } # alloc2
-#--------
-sub free2 {
-    my ($yp, $xp, $dirpn2, $yn, $xn) = @_; # old node, direction, new node
-    #              00yyxx
-    {
-        $cube2[$yp][$xp] |= $invmask[$dirpn2];          # disconnect prev to new
-        $cube2[$yn][$xn] |= $invmask[$revdir[$dirpn2]]; # disconnect new to prev, backwards
-        pop(@path2); # dir
-        pop(@path2); # node
-    }
-    my $na = 0; 
-    my $dir00yyxx = $dirpn2;
-    my $diryy00xx = (($dirpn2 & 0b001100) << 2) | ($dirpn & 0b000011) ;
-    my $diryyxx00 = $dirpn2 << 2;
-    while ($na < $base) {
-    	# $dirpn remains 00yyxx
-        &free3 ($na, $yp, $xp, $dir00yyxx, $na, $yn, $xn);
-        &free3 ($yp, $na, $xp, $diryy00xx, $yn, $na, $xn);
-        &free3 ($yp, $xp, $na, $diryyxx00, $yn, $xn, $na);
-        $na ++;
-    } # if 
-} # free2
 #--------
 sub alloc3 {
     my ($zp, $yp, $xp, $dirpn3, $zn, $yn, $xn) = @_; # old node, direction, new node
     #                   zzyyxx
     my $fail = 0; # assume success
-    if ($cube3[$zn][$yn][$xn] != 0) {
-        $fail = 1;
-    } else { # not yet occupied
+	if (($poss3[$zp][$yp][$xp] & $dirpn3) != 0) {
         $cube3[$zp][$yp][$xp] |= $dirpn3;          # connect prev to new
         $cube3[$zn][$yn][$xn] |= $revdir[$dirpn3]; # connect new to prev, backwards
-    }
+	    if ($crosum[$cube3[$zp][$yp][$xp]] <= 2 and 
+		    $crosum[$cube3[$zn][$yn][$xn]] <= 2) {
+	    } else { # not yet occupied
+	        $fail = 3; # more than 2 connections
+	    }
+	} else {
+		$fail = 1;
+	    if ($debug >= 3) {
+    	    print sprintf("#      not poss3: %06b %06b\n", $poss3[$zp][$yp][$xp], $dirpn3);
+		}
+	}
+    if ($debug >= 3) {
+        print sprintf("#      alloc3  (%d,%d,%d) -> (%d,%d,%d) ", $zp, $yp, $xp, $zn, $yn, $xn) 
+        	. &pastr(0);
+		print $fail != 0 ? " failure $fail\n" : " ok\n";
+	}
     return $fail;
 } # alloc3
+#--------
+sub free2 {
+    my ($yp, $xp, $dirpn2, $yn, $xn) = @_; # old node, direction, new node
+    #              00yyxx
+    if ($debug >= 3) {
+        print sprintf("#      free 2  (%d,%d) -> (%d,%d) ", $yp, $xp, $yn, $xn) . &pastr(0) . "\n";
+    }
+    {
+        $cube2[$yp][$xp]      &= $invmask[$dirpn2];          # disconnect prev to new
+        $cube2[$yn][$xn]      &= $invmask[$revdir[$dirpn2]]; # disconnect new to prev, backwards
+        pop(@path2); # dir
+        pop(@path2); # node
+    }
+    my $na = 0;
+    my $dir00yyxx = $dirpn2;
+    my $diryy00xx = (($dirpn2 & 0b001100) << 2) | ($dirpn2 & 0b000011) ;
+    my $diryyxx00 = $dirpn2 << 2;
+    while ($na < $base) {
+        # $dirpn remains 00yyxx
+        &free3 ($na, $yp, $xp, $dir00yyxx, $na, $yn, $xn);
+        &free3 ($yp, $na, $xp, $diryy00xx, $yn, $na, $xn);
+        &free3 ($yp, $xp, $na, $diryyxx00, $yn, $xn, $na);
+        $na ++;
+    } # if
+} # free2
 #--------
 sub free3 {
     my ($zp, $yp, $xp, $dirpn3, $zn, $yn, $xn) = @_; # old node, direction, new node
     #                   zzyyxx
-	{
+    if ($debug >= 3) {
+        print sprintf("#      free 3  (%d,%d) -> (%d,%d) ", $yp, $xp, $yn, $xn) . &pastr(0) . "\n";
+    }
+    {
         $cube3[$zp][$yp][$xp] &= $invmask[$dirpn3];          # disconnect prev to new
         $cube3[$zn][$yn][$xn] &= $invmask[$revdir[$dirpn3]]; # disconnect new to prev, backwards
     }
 } # free3
-#--------
-sub evaluate2 { # recursive
-    my ($y, $x) = @_;
-
-} # evaluate2
-
 __DATA__
 
 $filled[0][0][0] = 1;
@@ -350,8 +411,8 @@ print $pattern;
 
 print <<'GFis';
     #--------
-    if (0    
-        and ($pozy !~ m{\A$pozx}) 
+    if (0
+        and ($pozy !~ m{\A$pozx})
         and ($pozx !~ m{\A$poyx})
         and ($poyx !~ m{\A$pozy})) {
         $snail = 0;
