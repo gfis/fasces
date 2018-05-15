@@ -44,6 +44,7 @@ my $program = <<'GFis';
 use strict;
 use integer; # avoid division problems with reals
 
+my $connect_back = 0; # more connections???
 my $debug  = 0;
 my $ccode  = 0; # output Perl program
 my $base   = 5;
@@ -79,14 +80,14 @@ my $mexp3 = 0; # greater than all bit exponents: 6
 my $bit = 1;
 #  direction masks zzyyxx - caution, the order here is very important below
 #                  pmpmpm
-my $xm1   = $bit;  $dircode[$bit] = "x-"; $bit <<= 1; $mexp3 ++;  # left
-my $xp1   = $bit;  $dircode[$bit] = "x+"; $bit <<= 1; $mexp3 ++;  # right
-my $ym1   = $bit;  $dircode[$bit] = "y-"; $bit <<= 1; $mexp3 ++;  # down
-my $yp1   = $bit;  $dircode[$bit] = "y+"; $bit <<= 1; $mexp3 ++;  # up
+my $xm1   = $bit;  $dircode[$bit] = "-x"; $bit <<= 1; $mexp3 ++;  # left
+my $xp1   = $bit;  $dircode[$bit] = "+x"; $bit <<= 1; $mexp3 ++;  # right
+my $ym1   = $bit;  $dircode[$bit] = "-y"; $bit <<= 1; $mexp3 ++;  # down
+my $yp1   = $bit;  $dircode[$bit] = "+y"; $bit <<= 1; $mexp3 ++;  # up
 my $mbit2 = $bit;
 my $mexp2 = $mexp3;
-my $zm1   = $bit;  $dircode[$bit] = "z-"; $bit <<= 1; $mexp3 ++;  # nearer
-my $zp1   = $bit;  $dircode[$bit] = "z+"; $bit <<= 1; $mexp3 ++;  # farer
+my $zm1   = $bit;  $dircode[$bit] = "-z"; $bit <<= 1; $mexp3 ++;  # nearer
+my $zp1   = $bit;  $dircode[$bit] = "+z"; $bit <<= 1; $mexp3 ++;  # farer
 my $mbit3 = $bit; # greater than all bitmask values: 64
 my $mbit3m1 = $mbit3 - 1;
 
@@ -124,7 +125,7 @@ my ($x, $y, $z);
 
 for ($z = 0; $z < $base; $z ++) { # preset with 0
     for ($y = 0; $y < $base; $y ++) {
-        for (my $x = 0; $x < $base; $x ++) {
+        for ($x = 0; $x < $base; $x ++) {
             $poss2    [$y][$x] = 0;
             $cube2    [$y][$x] = 0;
             $poss3[$z][$y][$x] = 0;
@@ -135,7 +136,7 @@ for ($z = 0; $z < $base; $z ++) { # preset with 0
 
 for ($z = 0; $z < $base; $z ++) { # set bit if move is possible
     for ($y = 0; $y < $base; $y ++) {
-        for (my $x = 0; $x < $base; $x ++) {
+        for ($x = 0; $x < $base; $x ++) {
             if ($z - 1 >= 0   ) {                         $poss3[$z][$y][$x] |= $zm1; }
             if ($z + 1 < $base) {                         $poss3[$z][$y][$x] |= $zp1; }
             if ($y - 1 >= 0   ) { $poss2[$y][$x] |= $ym1; $poss3[$z][$y][$x] |= $ym1; }
@@ -174,7 +175,7 @@ if ($debug >= 5) { # show preset arrays
     print "# poss3\n";
     for ($z = 0; $z < $base; $z ++) { # set bit if move is possible
         for ($y = 0; $y < $base; $y ++) {
-            for (my $x = 0; $x < $base; $x ++) {
+            for ($x = 0; $x < $base; $x ++) {
                 print sprintf("%06b ", $poss3[$z][$y][$x]);
             } # for $x
             print "\n";
@@ -185,12 +186,14 @@ if ($debug >= 5) { # show preset arrays
 } # debug
 #-------------------------------
 # start with a single bar
+my @path2 = ();
 $y = 0;
 $x = 0;
-my @path2  = (0, "$y,$x"); # stack for current path; tuples (dir, node2); dir = 0 -> no predecessor
 my $pathno = 0; # counts the paths found so far
 my $level  = 1;
-&evaluate2($y, $x, $xp1, $y, $x + 1);
+push(@path2, 0, "$y,$x"); # stack for current path; tuples (dir, node2); dir = 0 -> no predecessor
+&evaluate2($y, $x, $yp1, $y + 1, $x);
+exit();
 #--------
 sub evaluate2 {
     # evaluate all possible continuations for @path2
@@ -263,24 +266,33 @@ sub alloc2 {
             my $na = 0;
             while ($fail == 0 and $na < $base) {
                 # $dirpn remains 00yyxx
-                if (0) {
+                if (1) {
                     if ($fail == 0) { $fail = &alloc3($na, $yp, $xp, $dir00yyxx, $na, $yn, $xn);
                     if ($fail == 0) { $fail = &alloc3($yp, $na, $xp, $diryy00xx, $yn, $na, $xn);
                     if ($fail == 0) { $fail = &alloc3($yp, $xp, $na, $diryyxx00, $yn, $xn, $na);
+                  if ($connect_back == 1) {
+                    if ($fail == 0) { $fail = &alloc3($na, $yn, $xn, $dir00yyxx, $na, $yp, $xp);
+                    if ($fail == 0) { $fail = &alloc3($yn, $na, $xn, $diryy00xx, $yp, $na, $xp);
+                    if ($fail == 0) { $fail = &alloc3($yn, $xn, $na, $diryyxx00, $yp, $xp, $na);
+                    }}}
+                  }
                     }}}
                 } else { # NT
-                    $fail += &alloc3($na, $yp, $xp, $dir00yyxx, $na, $yn, $xn); 
-                    $fail += &alloc3($yp, $na, $xp, $diryy00xx, $yn, $na, $xn); 
-                    $fail += &alloc3($yp, $xp, $na, $diryyxx00, $yn, $xn, $na); 
-                }   
+                    $fail += &alloc3($na, $yp, $xp, $dir00yyxx, $na, $yn, $xn);
+                    $fail += &alloc3($yp, $na, $xp, $diryy00xx, $yn, $na, $xn);
+                    $fail += &alloc3($yp, $xp, $na, $diryyxx00, $yn, $xn, $na);
+                }
                 $na ++;
             } # while
-            if ($fail != 0) {
-			    $cube2[$yp][$xp]      &= $invmask[        $dirpn2 ]; # disconnect prev to new
-    			$cube2[$yn][$xn]      &= $invmask[$revdir[$dirpn2]]; # disconnect new  to prev, backwards
+            if (0 and $fail != 0) {
+                $cube2[$yp][$xp]      &= $invmask[        $dirpn2 ]; # disconnect prev to new
+                $cube2[$yn][$xn]      &= $invmask[$revdir[$dirpn2]]; # disconnect new  to prev, backwards
+            }
+            if ($debug >= 2) {
+                &dump_cube3();
             }
         } # mode >= 3
-        if ($fail == 0 and scalar(@path2) >= $maxpath2) {
+        if ($fail == 0 and scalar(@path2) >= $maxpath2) { # path found
             $pathno ++;
             my $count = 0;
             print "# path $pathno:\n" . &pastr(1) . "\n";
@@ -289,7 +301,7 @@ sub alloc2 {
             my $sum = 0;
             for ($z = 0; $z < $base; $z ++) { # preset with 0
                 for ($y = 0; $y < $base; $y ++) {
-                    for (my $x = 0; $x < $base; $x ++) {
+                    for ($x = 0; $x < $base; $x ++) {
                         $sum = $crosum[$cube3[$z][$y][$x]];
                         if (defined($conn{$sum})) {
                             $conn{$sum} ++;
@@ -299,12 +311,15 @@ sub alloc2 {
                    } # for $x
                 } # for y
             } # for z
-            print "#       connections:";
-            foreach $sum (sort(keys(%conn))) {
-                print " $conn{$sum}*$sum";
+            if ($debug >= 2) {
+                print "#       connections:";
+                foreach $sum (sort(keys(%conn))) {
+                    print " $conn{$sum}*$sum";
+                }
+                print "\n";
+                &dump_cube3();
             }
-            print "\n";
-    	}
+        } # path found
     } # if not yet occupied
     if ($debug >= 2) {
             print sprintf("#    alloc2(%d,%d) %s (%d,%d) ", $yp, $xp, $dircode[$dirpn2], $yn, $xn) . &pastr(0);
@@ -318,15 +333,15 @@ sub alloc3 {
     #                   zzyyxx
     my $fail = 0; # assume success
     $cube3[$zp][$yp][$xp] |=         $dirpn3 ; # connect prev to new
-    $cube3[$zn][$yn][$xn] |= $revdir[$dirpn3]; # connect new  to prev, backwards
-    if (    $crosum[$cube3[$zp][$yp][$xp]] <= 4 
+    # $cube3[$zn][$yn][$xn] |= $revdir[$dirpn3]; # connect new  to prev, backwards
+    if (    $crosum[$cube3[$zp][$yp][$xp]] <= 4
         and $crosum[$cube3[$zn][$yn][$xn]] <= 4
         ) {
     } else { # not yet occupied
         $fail = 3; # more than 2 connections
     }
-    if ($fail != 0) {
-    	&free3($zp, $yp, $xp, $dirpn3, $zn, $yn, $xn);
+    if (0 and $fail != 0) {
+        &free3($zp, $yp, $xp, $dirpn3, $zn, $yn, $xn);
     }
     if ($debug >= 3) {
             print sprintf("#    alloc3(%d,%d,%d) %s (%d,%d,%d) ", $zp, $yp, $xp, $dircode[$dirpn3], $zn, $yn, $xn)
@@ -345,17 +360,22 @@ sub free2 {
     $cube2[$yp][$xp]      &= $invmask[        $dirpn2 ]; # disconnect prev to new
     $cube2[$yn][$xn]      &= $invmask[$revdir[$dirpn2]]; # disconnect new  to prev, backwards
     if ($mode >= 3) { # free in 3d
-    	my $dir00yyxx = $dirpn2;
-    	my $diryy00xx = (($dirpn2 & 0b001100) << 2) | ($dirpn2 & 0b000011) ;
-    	my $diryyxx00 = $dirpn2 << 2;
-    	my $na = 0;
-    	while ($na < $base) {
-    	    # $dirpn remains 00yyxx
-    	    &free3 ($na, $yp, $xp, $dir00yyxx, $na, $yn, $xn);
-    	    &free3 ($yp, $na, $xp, $diryy00xx, $yn, $na, $xn);
-    	    &free3 ($yp, $xp, $na, $diryyxx00, $yn, $xn, $na);
-    	    $na ++;
-    	} # while
+        my $dir00yyxx = $dirpn2;
+        my $diryy00xx = (($dirpn2 & 0b001100) << 2) | ($dirpn2 & 0b000011) ;
+        my $diryyxx00 = $dirpn2 << 2;
+        my $na = 0;
+        while ($na < $base) {
+            # $dirpn remains 00yyxx
+            &free3 ($na, $yp, $xp, $dir00yyxx, $na, $yn, $xn);
+            &free3 ($yp, $na, $xp, $diryy00xx, $yn, $na, $xn);
+            &free3 ($yp, $xp, $na, $diryyxx00, $yn, $xn, $na);
+          if ($connect_back) {
+            &free3 ($na, $yn, $xn, $dir00yyxx, $na, $yp, $xp);
+            &free3 ($yn, $na, $xn, $diryy00xx, $yp, $na, $xp);
+            &free3 ($yn, $xn, $na, $diryyxx00, $yp, $xp, $na);
+          }
+            $na ++;
+        } # while
     } # mode 3
     if ($debug >= 3) {
         print sprintf("#    free 2(%d,%d) %s (%d,%d) ", $yp, $xp, $dircode[$dirpn2], $yn, $xn) . &pastr(0) . "\n";
@@ -375,6 +395,31 @@ sub free3 {
         print "\n";
     }
 } # free3
+#--------
+sub dump_cube3 {
+    for ($z = $base - 1; $z >= 0; $z --) { # set bit if move is possible
+        for ($y = $base - 1; $y >= 0; $y --) {
+            print "# ";
+            for ($x = 0; $x < $base; $x ++) {
+                my $code = "";
+                my $num = $cube3[$z][$y][$x];
+                my $bit = $mbit3 >> 1;
+                while ($bit > 0) {
+                    if (($num & $bit) != 0) {
+                        $code .= $dircode[$bit];
+                    } else {
+                        $code .= "..";
+                    }
+                    $bit >>= 1;
+                } # while $bit
+                print "|($z,$y,$x) " . sprintf("%-8s", $code);
+            } # for $x
+            print "|\n";
+        } # for y
+        print "#-----------------------------------------------------------------\n";
+    } # for z
+} # dump_cube3
+#--------
 __DATA__
 GFis
 if ($ccode == 1) {
