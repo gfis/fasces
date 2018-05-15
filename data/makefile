@@ -8,6 +8,7 @@
 #-------------------------------------
 B=5
 D=0
+M=3
 
 all:
 	# please use a specific makefile target: 
@@ -108,7 +109,7 @@ rp2:
 #----
 search_paths: 
 	perl -w gen_search_paths.pl > search_paths.tmp
-	perl -w search_paths.tmp -b $(B) -d $(D) | tee search_paths.$(B).tmp 
+	perl -w search_paths.tmp -b $(B) -d $(D) -m $(M) | tee search_paths.$(B).tmp 
 #----
 meander: meander5
 meander.2:

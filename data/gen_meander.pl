@@ -1,6 +1,7 @@
 #!/usr/bin/perl
 
 # Generate a meander sequence
+# 2018-05-15: option -pb
 # 2017-08-31, Georg Fischer
 # Program in the public domain
 # c.f. <http://www.teherba.org/index.php/OEIS/A220952>
@@ -15,7 +16,6 @@ my $graph  = 0; # whether to plot y,x behind the b-file entries
 my $fail   = 0;
 my $sep    = "/";
 my $base   = 5; 
-my $fbase  = 10;
 my $ident  = "xx";
 my $limit  = 125;
 my @path   = (0,1,2,3,4,9,14,19,18,17,16,11,12,13,8,7,6,5,10,15,20,21,22,23,24);
@@ -26,7 +26,7 @@ my @path   = (0,1,2,3,4,9,14,19,18,17,16,11,12,13,8,7,6,5,10,15,20,21,22,23,24);
 #<meander id="xx" path="0,1,2,3,4,9,14,19,18,13,8,7,12,17,16,11,6,5,10,15,20,21,22,23,24"
 # Fs:  bpath="00/01/02/03/04/14/24/34/33/23/13/12/22/32/31/21/11/10/20/30/40/41/42/43/44/"
 
-
+my $bpath;
 while (scalar(@ARGV) > 0 and ($ARGV[0] =~ m{\A\-})) { # start with hyphen
     my $opt = shift(@ARGV);
     if (0) {
@@ -46,15 +46,18 @@ while (scalar(@ARGV) > 0 and ($ARGV[0] =~ m{\A\-})) { # start with hyphen
         $ident  = shift(@ARGV);
     } elsif ($opt eq "\-l") {
         $limit  = shift(@ARGV);
-    } elsif ($opt eq "\-p") {
-        @path   = split(/\,/, shift(@ARGV));
+    } elsif ($opt =~ m{\-pb?}) {
+        if ($opt =~ m{\-pb}) { 
+	        @path   = map { $_ = &from_base($_); $_ } split(/\,/, shift(@ARGV));
+		} else {
+	        @path   =                        split(/\,/, shift(@ARGV));
+        }
     }
 } # while opt
-my $tbase  = $base;
-$even = $tbase % 2 == 0 ? 1 : 0;
+$even = $base % 2 == 0 ? 1 : 0;
 
 print "<!-================================-_>\n";
-my $bpath  = join("", map { my $bnum = &to_base($_); (length($bnum) < 2 ? "0$bnum" : $bnum) . $sep} @path);
+$bpath  = join("", map { my $bnum = &to_base($_); (length($bnum) < 2 ? "0$bnum" : $bnum) . $sep} @path);
 print "<meander id=\"$ident\" path=\"" . join(",", @path) . "\"\n"
     . "    bpath=\"$bpath\"\n"
     . "    >\n";
@@ -241,20 +244,18 @@ sub get_successor {
     return $cand;
 } # get_successor
 #--------
-sub to_base {
-    # return a normal integer as number in base $tbase
+sub to_base { # convert from decimal to base
     my ($num)  = @_;
     my $result = "";
     while ($num > 0) {
-        my $digit = $num % $tbase;
+        my $digit = $num % $base;
         $result =  $digit . $result;
-        $num /= $tbase;
+        $num /= $base;
     } # while > 0
     return $result eq "" ? "0" : $result; 
 } # to_base
 #--------
-sub from_base {
-    # return a number in base $fbase (string, maybe with letters) as normal integer
+sub from_base { # convert a string (maybe with letters) from base to decimal
     my ($num)  = @_;
     my $bpow   = 1;
     my $result = 0;
@@ -265,7 +266,7 @@ sub from_base {
             print STDERR "invalid digit in number $num\n";
         }
         $result += $digit * $bpow;
-        $bpow   *= $fbase;
+        $bpow   *= $base;
         $pos --;
     } # positive
     return $result; 
