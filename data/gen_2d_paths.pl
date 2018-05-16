@@ -1,13 +1,13 @@
 #!/usr/bin/perl
 #
-# 2018-05-15: 4th attempt, search for paths
+# 2018-05-15: 5th attempt, search for paths
 # Program in the public domain
 # c.f. https://oeis.org/A220952
 # C.f. Knuth's meander sequence, OEIS A220952
 # usage:
-#   perl gen_search_paths.pl [-c] > search_paths.tmp
+#   perl gen_2d_paths.pl [-c] > 2d_paths.tmp
 #       -c   generate C code
-#   perl search_paths.tmp -b 5
+#   perl 2d_paths.tmp -b 5
 # c.f. header comment below
 #-------------------------
 use strict;
@@ -32,14 +32,14 @@ my $program = <<'GFis';
 # c.f. https://oeis.org/A220952
 # C.f. Knuth's meander sequence, OEIS A220952
 # usage:
-#   perl gen_search_paths.pl > search_paths.tmp
-#   perl search_paths.tmp [-b n] [-d n] [-f] [-g] [-l n}> search_paths.tmp
+#   perl gen_2d_paths.pl > 2d_paths.tmp
+#   perl 2d_paths.tmp [-b n] [-d n] [-f] [-g] [-l n}> 2d_paths.tmp
 #       -b n base (default 5)
 #       -d n debug level n (default: 0)
 #       -f   output bfile
 #       -g   output graph of path
 #       -l n limit expansion to n nodes (default 10000)
-#       -m n mode: 2 (straight-forward 2d, default), 3 (with 3d check), 4 ... (up to dimension n)
+#       -m x mode: "diag"
 #-------------------------
 use strict;
 use integer; # avoid division problems with reals
@@ -74,6 +74,7 @@ while (scalar(@ARGV) > 0 and ($ARGV[0] =~ m{\A\-})) { # start with hyphen
 my $basep2   = $base   * $base;
 my $basep3   = $basep2 * $base;
 my $maxpath2 = $basep2 * 2; # because we store tuples (node,dir)
+my $diag     = ($mode =~ m{diag}) ? 1 : 0;
 
 my @dircode = ("**"); # codes for the directions
 my $mexp3 = 0; # greater than all bit exponents: 6
@@ -217,9 +218,7 @@ sub evaluate2 {
         $bit = $xm1; if ($dirnp2 != $bit and ($poss2[$yn][$xn] & $bit) != 0) { &evaluate2($yn, $xn, $bit, $yn,     $xn - 1); }
     } # if alloc
 
-    if (1 or $fail == 0) {
-        &free2($yp, $xp, $dirpn2, $yn, $xn);
-    }
+    &free2($yp, $xp, $dirpn2, $yn, $xn);
     my $node = pop(@path2); # node
     $bit     = pop(@path2); # dir
     if ($debug >= 2) {
@@ -252,73 +251,16 @@ sub alloc2 {
     my $fail = 0; # assume success
     if ($cube2[$yn][$xn] != 0) {
         $fail = 2; # already occupied
+    } elsif ($yn == $base - 1 and $xn == $base - 1 and scalar(@path2) < $maxpath2 and $diag == 1) {
+    	$fail = 4; # not diagonal
     } else { # not yet occupied
         $cube2[$yp][$xp] |=         $dirpn2 ; # connect prev to new
         $cube2[$yn][$xn] |= $revdir[$dirpn2]; # connect new  to prev, backwards
-        if ($mode >= 3) { # check in 3d for speed and adjacency rule
-            # if 00  ~ 01 then for n = 0..base-1:
-            #    n00 ~ n01
-            #    0n0 ~ 0n1
-            #    00n ~ 01n
-            my $dir00yyxx = $dirpn2;
-            my $diryy00xx = (($dirpn2 & 0b001100) << 2) | ($dirpn2 & 0b000011) ;
-            my $diryyxx00 = $dirpn2 << 2;
-            my $na = 0;
-            while ($fail == 0 and $na < $base) {
-                # $dirpn remains 00yyxx
-                if (1) {
-                    if ($fail == 0) { $fail = &alloc3($na, $yp, $xp, $dir00yyxx, $na, $yn, $xn);
-                    if ($fail == 0) { $fail = &alloc3($yp, $na, $xp, $diryy00xx, $yn, $na, $xn);
-                    if ($fail == 0) { $fail = &alloc3($yp, $xp, $na, $diryyxx00, $yn, $xn, $na);
-                  if ($connect_back == 1) {
-                    if ($fail == 0) { $fail = &alloc3($na, $yn, $xn, $dir00yyxx, $na, $yp, $xp);
-                    if ($fail == 0) { $fail = &alloc3($yn, $na, $xn, $diryy00xx, $yp, $na, $xp);
-                    if ($fail == 0) { $fail = &alloc3($yn, $xn, $na, $diryyxx00, $yp, $xp, $na);
-                    }}}
-                  }
-                    }}}
-                } else { # NT
-                    $fail += &alloc3($na, $yp, $xp, $dir00yyxx, $na, $yn, $xn);
-                    $fail += &alloc3($yp, $na, $xp, $diryy00xx, $yn, $na, $xn);
-                    $fail += &alloc3($yp, $xp, $na, $diryyxx00, $yn, $xn, $na);
-                }
-                $na ++;
-            } # while
-            if (0 and $fail != 0) {
-                $cube2[$yp][$xp]      &= $invmask[        $dirpn2 ]; # disconnect prev to new
-                $cube2[$yn][$xn]      &= $invmask[$revdir[$dirpn2]]; # disconnect new  to prev, backwards
-            }
-            if ($debug >= 2) {
-                &dump_cube3();
-            }
-        } # mode >= 3
-        if ($fail == 0 and scalar(@path2) >= $maxpath2) { # path found
+        if (scalar(@path2) >= $maxpath2) { # path found
             $pathno ++;
             my $count = 0;
             print "# path $pathno:\n" . &pastr(1) . "\n";
             $fail = 99; # end reached
-            if ($debug >= 2) {
-                my %conn = ();
-                my $sum = 0;
-                for ($z = 0; $z < $base; $z ++) { # preset with 0
-                    for ($y = 0; $y < $base; $y ++) {
-                        for ($x = 0; $x < $base; $x ++) {
-                            $sum = $crosum[$cube3[$z][$y][$x]];
-                            if (defined($conn{$sum})) {
-                                $conn{$sum} ++;
-                            } else {
-                                $conn{$sum} = 1;
-                            }
-                       } # for $x
-                    } # for y
-                } # for z
-                print "#       connections:";
-                foreach $sum (sort(keys(%conn))) {
-                    print " $conn{$sum}*$sum";
-                }
-                print "\n";
-                &dump_cube3();
-            } # debug
         } # path found
     } # if not yet occupied
     if ($debug >= 2) {
@@ -328,97 +270,15 @@ sub alloc2 {
     return $fail;
 } # alloc2
 #--------
-sub alloc3 {
-    my ($zp, $yp, $xp, $dirpn3, $zn, $yn, $xn) = @_; # old node, direction, new node
-    #                   zzyyxx
-    my $fail = 0; # assume success
-    $cube3[$zp][$yp][$xp] |=         $dirpn3 ; # connect prev to new
-    # $cube3[$zn][$yn][$xn] |= $revdir[$dirpn3]; # connect new  to prev, backwards
-    if (    $crosum[$cube3[$zp][$yp][$xp]] <= 4
-        and $crosum[$cube3[$zn][$yn][$xn]] <= 4
-        ) {
-    } else { # not yet occupied
-        $fail = 3; # more than 2 connections
-    }
-    if (0 and $fail != 0) {
-        &free3($zp, $yp, $xp, $dirpn3, $zn, $yn, $xn);
-    }
-    if ($debug >= 3) {
-            print sprintf("#    alloc3(%d,%d,%d) %s (%d,%d,%d) ", $zp, $yp, $xp, $dircode[$dirpn3], $zn, $yn, $xn)
-                    . &pastr(0);
-        if ($debug >= 4) {
-            print sprintf(" %06b %06b %06b", $cube3[$zp][$yp][$xp], $cube3[$zn][$yn][$xn], $dirpn3);
-        }
-        print $fail != 0 ? " failure $fail\n" : " ok\n";
-    }
-    return $fail;
-} # alloc3
-#--------
 sub free2 {
     my ($yp, $xp, $dirpn2, $yn, $xn) = @_; # old node, direction, new node
     #              00yyxx
     $cube2[$yp][$xp]      &= $invmask[        $dirpn2 ]; # disconnect prev to new
     $cube2[$yn][$xn]      &= $invmask[$revdir[$dirpn2]]; # disconnect new  to prev, backwards
-    if ($mode >= 3) { # free in 3d
-        my $dir00yyxx = $dirpn2;
-        my $diryy00xx = (($dirpn2 & 0b001100) << 2) | ($dirpn2 & 0b000011) ;
-        my $diryyxx00 = $dirpn2 << 2;
-        my $na = 0;
-        while ($na < $base) {
-            # $dirpn remains 00yyxx
-            &free3 ($na, $yp, $xp, $dir00yyxx, $na, $yn, $xn);
-            &free3 ($yp, $na, $xp, $diryy00xx, $yn, $na, $xn);
-            &free3 ($yp, $xp, $na, $diryyxx00, $yn, $xn, $na);
-          if ($connect_back) {
-            &free3 ($na, $yn, $xn, $dir00yyxx, $na, $yp, $xp);
-            &free3 ($yn, $na, $xn, $diryy00xx, $yp, $na, $xp);
-            &free3 ($yn, $xn, $na, $diryyxx00, $yp, $xp, $na);
-          }
-            $na ++;
-        } # while
-    } # mode 3
     if ($debug >= 3) {
         print sprintf("#    free 2(%d,%d) %s (%d,%d) ", $yp, $xp, $dircode[$dirpn2], $yn, $xn) . &pastr(0) . "\n";
     }
 } # free2
-#--------
-sub free3 {
-    my ($zp, $yp, $xp, $dirpn3, $zn, $yn, $xn) = @_; # old node, direction, new node
-    #                   zzyyxx
-    $cube3[$zp][$yp][$xp] &= $invmask[        $dirpn3 ]; # disconnect prev to new
-    $cube3[$zn][$yn][$xn] &= $invmask[$revdir[$dirpn3]]; # disconnect new  to prev, backwards
-    if ($debug >= 3) {
-        print sprintf("#    free 3(%d,%d) %s (%d,%d) ", $yp, $xp, $dircode[$dirpn3], $yn, $xn) . &pastr(0);
-        if ($debug >= 4) {
-            print sprintf(" %06b %06b %06b", $cube3[$zp][$yp][$xp], $cube3[$zn][$yn][$xn], $dirpn3);
-        }
-        print "\n";
-    }
-} # free3
-#--------
-sub dump_cube3 {
-    for ($z = $base - 1; $z >= 0; $z --) { # set bit if move is possible
-        for ($y = $base - 1; $y >= 0; $y --) {
-            print "# ";
-            for ($x = 0; $x < $base; $x ++) {
-                my $code = "";
-                my $num = $cube3[$z][$y][$x];
-                my $bit = $mbit3 >> 1;
-                while ($bit > 0) {
-                    if (($num & $bit) != 0) {
-                        $code .= $dircode[$bit];
-                    } else {
-                        $code .= "..";
-                    }
-                    $bit >>= 1;
-                } # while $bit
-                print "|($z,$y,$x) " . sprintf("%-8s", $code);
-            } # for $x
-            print "|\n";
-        } # for y
-        print "#-----------------------------------------------------------------\n";
-    } # for z
-} # dump_cube3
 #--------
 __DATA__
 GFis

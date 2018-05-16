@@ -111,6 +111,10 @@ search_paths:
 	perl -w gen_search_paths.pl > search_paths.tmp
 	perl -w search_paths.tmp -b $(B) -d $(D) -m $(M) | tee search_paths.$(B).tmp 
 #----
+2d_paths: 
+	perl -w gen_2d_paths.pl > 2d_paths.tmp
+	perl -w 2d_paths.tmp -b $(B) -d $(D) -m $(M) | tee 2d_paths.$(B).tmp 
+#----
 meander: meander5
 meander.2:
 	perl -w gen_paths.pl    -b 2 | grep " path=" | sed -e "s/ *path=//" | xargs  -l -iqqq \
@@ -123,7 +127,7 @@ meander.4:
 	perl -w gen_meander.pl  -b 4 -l  4096 -p qqq | tee $@.tmp
 meander.5:
 	perl -w gen_paths.pl    -b 5  | grep " path=" | sed -e "s/ *path=//" | xargs  -l -iqqq \
-	perl -w gen_meander.pl  -b 5 -l  3125 -p qqq | tee $@.tmp
+	perl -w gen_meander.pl  -b 5 -l  15625 -p qqq | tee $@.tmp
 meander.7:
 	perl -w gen_paths.pl    -b 7 -s | grep " path=" | sed -e "s/ *path=//" | xargs  -l -iqqq \
 	perl -w gen_meander.pl  -b 7 -l  3125 -p qqq | tee $@.tmp
