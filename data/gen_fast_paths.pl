@@ -76,8 +76,10 @@ my $basep3   = $basep2 * $base;
 my $maxpath2 = $basep2 * 2; # because we store tuples (node,dir)
 my $diag     = ($mode =~ m{diag}) ? 1 : 0;
 
-my @dircode = ("**"); # codes for the directions
+my @dircode; # codes for the directions
 my $mexp3 = 0; # greater than all bit exponents: 6
+my $dr0 = 0;
+$dircode[$dr0] = "**";
 my $bit = 1;
 #  direction masks zzyyxx - caution, the order here is very important below
 #                  pmpmpm
@@ -91,7 +93,11 @@ my $zm1   = $bit;  $dircode[$bit] = "-z"; $bit <<= 1; $mexp3 ++;  # nearer
 my $zp1   = $bit;  $dircode[$bit] = "+z"; $bit <<= 1; $mexp3 ++;  # farer
 my $mbit3 = $bit; # greater than all bitmask values: 64
 my $mbit3m1 = $mbit3 - 1;
-
+my (@addx, @addy); # increments for directions
+$addx[$xm1] = -1; $addy[$xm1] =  0;
+$addx[$xp1] = +1; $addy[$xp1] =  0;
+$addx[$ym1] =  0; $addy[$ym1] = -1;
+$addx[$yp1] =  0; $addy[$yp1] = +1;
 my @crosum  = (); # $cross[n] = number of bits set in n
 my @invmask = (); # inverse masks (^= xor - clear bit)
 my @revdir  = (); # reverse directions
@@ -188,89 +194,112 @@ if ($debug >= 5) { # show preset arrays
 #-------------------------------
 # start with a single bar
 my @path2 = ();
-$y = 0;
-$x = 0;
+my $yp = 0;
+my $xp = 0;
 my $pathno = 0; # counts the paths found so far
 my $level  = 1;
-push(@path2, 0, "$y,$x"); # stack for current path; tuples (dir, node2); dir = 0 -> no predecessor
-&evaluate2($y, $x, $yp1, $y + 1, $x);
-exit();
-#--------
-sub evaluate2 {
-    # evaluate all possible continuations for @path2
-    # and check whether corresponding nodes on @path3 have at most 2 connections to other nodes
-    return if $level == 0; # do not change 1st bar
-    my         ($yp, $xp, $dirpn2, $yn, $xn) = @_; # old node, direction, new node
-    $level ++;
-    push(@path2, $dirpn2, "$yn,$xn"); # tuples (dir,node)
-    if ($debug >= 1) {
-        print sprintf("#%3d eval  (%d,%d) %s (%d,%d) "
-                , $level, $yp, $xp, $dircode[$dirpn2], $yn, $xn)
-                . &pastr(0) . "\n";
-    }
-    my $fail = &alloc2($yp, $xp, $dirpn2, $yn, $xn);
-    if ($fail == 0) { # ($yn,$xn) is possible
-        my $dirnp2 = $revdir[$dirpn2];
-        # recurse: try all 4 positions for next node
-        $bit = $yp1; if ($dirnp2 != $bit and ($poss2[$yn][$xn] & $bit) != 0) { &evaluate2($yn, $xn, $bit, $yn + 1, $xn    ); }
-        $bit = $ym1; if ($dirnp2 != $bit and ($poss2[$yn][$xn] & $bit) != 0) { &evaluate2($yn, $xn, $bit, $yn - 1, $xn    ); }
-        $bit = $xp1; if ($dirnp2 != $bit and ($poss2[$yn][$xn] & $bit) != 0) { &evaluate2($yn, $xn, $bit, $yn,     $xn + 1); }
-        $bit = $xm1; if ($dirnp2 != $bit and ($poss2[$yn][$xn] & $bit) != 0) { &evaluate2($yn, $xn, $bit, $yn,     $xn - 1); }
-    } # if alloc
+push(@path2, $dr0, $yp, $xp); # stack for current path; tuples (dir, node2); dir = 0 -> no predecessor
+my $top = scalar(@path2) - 1; # stack index for @path2
+my $yn = $yp + 1;
+my $xn = $xp;
+my $dirpn2 = $yp1;
+my $dir;
 
-    $cube2[$yp][$xp] = 0; #     &= $invmask[        $dirpn2 ]; # disconnect prev to new
-    # $cube2[$yp][$xp]      &= $invmask[        $dirpn2 ]; # disconnect prev to new
-    # $cube2[$yn][$xn]      &= $invmask[$revdir[$dirpn2]]; # disconnect new  to prev, backwards
-    pop(@path2); # node
-    pop(@path2); # dir
-    if ($debug >= 2) {
-        print sprintf("#%3d return(%d,%d) %s (%d,%d) "
-                , $level, $yp, $xp, $dircode[$bit], $yn, $xn)
-                . &pastr(0) . "\n";
+$yn = 0;
+$xn = 1;
+@path2 = (0, 0, $ym1, 1, 0, $dr0);
+#                -3  -2 -1    0
+$top = scalar(@path2) - 1; #--^
+$level = 2;
+
+while ($top > 0) {
+    $yp  = $path2[$top - 2]; # (yn,xn) was possible
+    $xp  = $path2[$top - 1];
+    $dir = $path2[$top - 0]; # previous direction
+    $dir = $dir == 0 ? 1 : $dir << 1; # now try the next direction
+	$path2[$top - 0] = $dir;
+    if ($debug >= 1) {
+        print sprintf("#%3d eval  (%d,%d) %s "
+            , $level, $yp, $xp, $dircode[$dir]) . &pastr(0);
     }
-    $level --;
-} # evaluate2
-#-------------------------------
-sub alloc2 {
-    my ($yp, $xp, $dirpn2, $yn, $xn) = @_; # old node, direction, new node
-    #              00yyxx
-    my $fail = 0; # assume success
-    if ($cube2[$yn][$xn] != 0) {
-        $fail = 2; # already occupied
-    } elsif ($yn == $base - 1 and $xn == $base - 1 and scalar(@path2) < $maxpath2 and $diag == 1) {
-    	$fail = 4; # not diagonal
-    } else { # not yet occupied
-        $cube2[$yp][$xp] = 1; # |=         $dirpn2 ; # connect prev to new
-    #    $cube2[$yp][$xp] |=         $dirpn2 ; # connect prev to new
-    #    $cube2[$yn][$xn] |= $revdir[$dirpn2]; # connect new  to prev, backwards
-        if (scalar(@path2) >= $maxpath2) { # path found
-            $pathno ++;
-            my $count = 0;
-            print "# path $pathno:\n" . &pastr(1) . "\n";
-            $fail = 99; # end reached
-        } # path found
-    } # if not yet occupied
-    if ($debug >= 2) {
-            print sprintf("#    alloc2(%d,%d) %s (%d,%d) ", $yp, $xp, $dircode[$dirpn2], $yn, $xn) . &pastr(0);
-            print $fail != 0 ? " failure $fail\n" : " ok\n";
-    }
-    return $fail;
-} # alloc2
+    if ($dir >= $mbit2) { # all directions exhausted, pop
+        $level --;
+        $cube2[$yp][$xp] = 0; # free
+        $top -= 3; # pop
+        if ($debug >= 1) {
+            print sprintf("#%3d   pop (%d,%d) %s "
+                , $level, $yp, $xp, $dircode[$dir]) . &pastr(0) . "\n";
+        }
+    } else { # try next dir
+        # determine next node
+        if (($poss2[$yp][$xp] & $dir) != 0) { # next node exists
+            $yn = $yp + $addy[$dir];
+            $xn = $xp + $addx[$dir];
+            if ($cube2[$yn][$xn] == 0) { # it is not occupied
+                $cube2[$yn][$xn] = 1; # occupy it
+                if ($top + 4 >= $basep3) { # path found
+                    $pathno ++;
+                    my $count = 0;
+                    print "# path $pathno:\n" . &path_output(1);
+                    # $top -= 3;
+                } else {
+                    $cube2[$yp][$xp] = $dir; # go to it - push
+                    $path2[++ $top]  = $yn;
+                    $path2[++ $top]  = $xn;
+                    $path2[++ $top]  = $dr0; # start with 1st direction
+                    $level ++;
+                    if ($debug >= 2) {
+                        print sprintf("#%3d   push(%d,%d) %s "
+                            , $level, $yn, $xn, $dircode[$dr0]) . &pastr(0);
+                    }
+                }
+            } else { # occupied
+                $path2[$top] = $dir;
+                if ($debug >= 2) {
+                    print sprintf("#%3d   occ (%d,%d) %s "
+                        , $level, $yn, $xn, $dircode[$dir]) . &pastr(0);
+                }
+            }
+        } else { # not possible
+            $path2[$top] = $dir;
+                if ($debug >= 2) {
+                    print sprintf("#%3d   npos(%d,%d) %s "
+                        , $level, $yn, $xn, $dircode[$dir]) . &pastr(0);
+                }
+        }
+    } # try next dir
+} # while popping
 #-------------------------------
 sub pastr { # return a string for @path2
+    my ($mode) = @_;
+    my $result = "";
+    my $ind = 0;
+    while ($ind <= $top) {
+        my $elem = "$path2[$ind+0]$path2[$ind+1]" . $dircode[$path2[$ind+2]];
+        $ind += 3;
+        $elem =~ s{\D}{}g;
+        $result .= ",$elem";
+        if ($ind % 96 == 0) {
+            $result .= "\n";
+        }
+    } # while
+    return substr($result, 0) . "\n";
+} # pastr
+#-------------------------------
+sub path_output { # return a string for @path2
     my ($break) = @_;
     my $result = "";
     my $ind = 0;
-    while ($ind < scalar(@path2)) {
-        my $elem = $path2[$ind + 1];
+    while ($ind <= $top) {
+        my $elem = "$path2[$ind+0]$path2[$ind+1]";
+        $ind += 3;
         $elem =~ s{\D}{}g;
         $result .= ",$elem";
-        $ind += 2;
         if ($ind % 32 == 0 and $break > 0) {
             $result .= "\n";
         }
     } # while
-    return "[" . substr($result, 1) . "]";
+    return "[" . substr($result, 1) . "]\n";
 } # pastr
 #--------
 __DATA__

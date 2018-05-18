@@ -114,24 +114,33 @@ search_paths:
 2d_paths: 
 	perl -w gen_2d_paths.pl > 2d_paths.tmp
 	perl -w 2d_paths.tmp -b $(B) -d $(D) -m $(M) | tee 2d_paths.$(B).tmp 
+fast_paths: 
+	perl -w gen_fast_paths.pl > fast_paths.tmp
+	perl -w fast_paths.tmp -b $(B) -d $(D) -m $(M) | tee fast_paths.$(B).tmp 
 #----
 meander: meander5
 meander.2:
-	perl -w gen_paths.pl    -b 2 | grep " path=" | sed -e "s/ *path=//" | xargs  -l -iqqq \
-	perl -w gen_meander.pl  -b 2 -l  1024 -p qqq | tee $@.tmp
+	perl -w gen_paths.pl    -b 2 | grep " path="    | sed -e "s/ *path=//" | xargs  -l -iqqq \
+	perl -w gen_meander.pl  -b 2 -l  1024 -p qqq -g | tee $@.tmp
 meander.3:
-	perl -w gen_paths.pl    -b 3 | grep " path=" | sed -e "s/ *path=//" | xargs  -l -iqqq \
-	perl -w gen_meander.pl  -b 3 -l   729 -p qqq -f | tee $@.tmp
+	perl -w gen_paths.pl    -b 3 | grep " path="    | sed -e "s/ *path=//" | xargs  -l -iqqq \
+	perl -w gen_meander.pl  -b 3 -l   243 -p qqq -g | tee $@.tmp
+	grep " 122222" $@.tmp
 meander.4:
-	perl -w gen_paths.pl    -b 4 | grep " path=" | sed -e "s/ *path=//" | xargs  -l -iqqq \
-	perl -w gen_meander.pl  -b 4 -l  4096 -p qqq | tee $@.tmp
+	perl -w gen_paths.pl    -b 4 | grep " path="    | sed -e "s/ *path=//" | xargs  -l -iqqq \
+	perl -w gen_meander.pl  -b 4 -l  4096 -p qqq -g | tee $@.tmp
 meander.5:
-	perl -w gen_paths.pl    -b 5  | grep " path=" | sed -e "s/ *path=//" | xargs  -l -iqqq \
-	perl -w gen_meander.pl  -b 5 -l  15625 -p qqq | tee $@.tmp
+	perl -w gen_paths.pl    -b 5  | grep " path="   | sed -e "s/ *path=//" | xargs  -l -iqqq \
+	perl -w gen_meander.pl  -b 5 -l  3125 -p qqq -g | tee $@.tmp
+	grep " 144444"  $@.tmp
+	grep " 144444"  $@.tmp | wc -l
 meander.7:
-	perl -w gen_paths.pl    -b 7 -s | grep " path=" | sed -e "s/ *path=//" | xargs  -l -iqqq \
-	perl -w gen_meander.pl  -b 7 -l  3125 -p qqq | tee $@.tmp
-#----
+	# perl -w gen_paths.pl  -b 7 -s | grep " path=" | sed -e "s/ *path=//" | xargs  -l -iqqq 
+	# cat paths.7.tmp                 | grep " path=" | sed -e "s/ *path=//" | xargs  -l -iqqq \
+	# perl -w gen_meander.pl  -b 7 -l  3125 -p qqq -g | tee $@.tmp
+	perl -w gen_meander.pl  -b 7 -l  2401 -r paths.7.tmp -g | tee $@.tmp
+	grep " 16666" $@.tmp
+	grep " 16666" $@.tmp | wc -l
 mea0:
 	perl gen_meander.pl -l 24 -b 5 -p "0,1,2,3,4,9,14,19,18,17,16,11,12,13,8,7,6,5,10,15,20,21,22,23,24"\
 	| tee meander.25.tmp
