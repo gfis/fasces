@@ -13,7 +13,7 @@ use integer; # avoid division problems with reals
 my $even   = 0; # experimental conditions for even base
 my $debug  = 0;
 my $ansi   = 0; # whether to use ANSI colors on console output
-my $base   = 5; 
+my $base   = 5;
 my $bfile  = 0; # whether to print b-file
 my $bpath;
 my $graph  = 0; # whether to plot y,x behind the b-file entries
@@ -48,7 +48,7 @@ while (scalar(@ARGV) > 0 and ($ARGV[0] =~ m{\A\-})) { # start with hyphen
     } elsif ($opt eq "\-l") {
         $limit  = shift(@ARGV);
     } elsif ($opt =~ m{\-pb?}) {
-        if ($opt =~ m{\-pb}) { 
+        if ($opt =~ m{\-pb}) {
             @path   = map { $_ = &from_base($_); $_ } split(/\,/, shift(@ARGV));
         } else {
             @path   =                        split(/\,/, shift(@ARGV));
@@ -66,7 +66,7 @@ print <<"GFis";
 <?xml version="1.0" encoding="UTF-8" ?>
 <meanders base="$base">
 GFis
-if (length($rfile) > 0) { # read generated matrices 
+if (length($rfile) > 0) { # read generated matrices
     open(RIN, "<", $rfile) or die "cannot read \"$rfile\"\n";
     while (<RIN>) {
         s{\s*\z}{}; # chompr
@@ -92,7 +92,7 @@ sub meander {
     $bpath  = join("", map { my $bnum = &to_base($_); (length($bnum) < 2 ? "0$bnum" : $bnum) . $sep} @path);
     my $content = "";
     if (1) { # generate b-file
-    	$content .= "<b$base-file limit=\"$limit\">\n";
+        $content .= "<b$base-file limit=\"$limit\">\n";
         $ind = 1;
         $fail = 0;
         my $ind_1 = $ind - 1;
@@ -109,7 +109,7 @@ sub meander {
                 } else {
                     if (length($bcurr) != length($bnext)) {
                         $ind_1 = $ind - 1;
-                        $content .="$ind_1 $bcurr\n$ind $bnext\n"; 
+                        $content .="$ind_1 $bcurr\n$ind $bnext\n";
                     }
                 }
             } # not yet failed
@@ -119,18 +119,18 @@ sub meander {
         } # while $ind
         $content .="</b$base-file>\n";
     } # b-file
-    
+
     if ($fail == 0) { # success
-		print "<!-================================-_>\n";
-	    print "<meander id=\"$ident\" path=\"" . join(",", @path) . "\"\n"
-    	    . "    bpath=\"$bpath\"\n"
-        	. "    >\n";
-    	&draw_path(@path);
-    	print "$content";
+        print "<!-================================-_>\n";
+        print "<meander id=\"$ident\" path=\"" . join(",", @path) . "\"\n"
+            . "    bpath=\"$bpath\"\n"
+            . "    >\n";
+        &draw_path(@path);
+        print "$content";
         if ($graph > 0) {
             &draw_graph();
         }
-	    print "</meander>\n";
+        print "</meander>\n";
         # success
     } else {
         # print "<failed />\n";
@@ -149,11 +149,11 @@ sub get_successor {
             my ($bnum1, $bnum2) = @_;
             while (length($bnum1) < length($bnum2)) {
                 $bnum1 = "0$bnum1";
-            } 
+            }
             while (length($bnum2) < length($bnum1)) {
                 $bnum2 = "0$bnum2";
-            } 
-            if (substr($bnum1, 0, 1) != "0"  or 
+            }
+            if (substr($bnum1, 0, 1) != "0"  or
                 substr($bnum2, 0, 1) != "0") {
                 $bnum1 = "0$bnum1";
                 $bnum2 = "0$bnum2";
@@ -218,7 +218,7 @@ sub get_successor {
             } # while icand
             if ($busy == 1) { # not yet stored
                 # $bcand =~ s{\A0}{};
-                push(@cands, $bcand); 
+                push(@cands, $bcand);
             } # not yet stored
             print " -> bcand=$bcand" if $debug >= 1;
         }
@@ -248,7 +248,7 @@ sub get_successor {
                 $bcand =~ s{0}{1};
                 push(@cands, $bcand);
             } # behind
-            
+
             $i --;
         } # while $i
         $j --;
@@ -259,7 +259,7 @@ sub get_successor {
     if (0) {
     } elsif ($lcand >  1) {
         print "# id $ident: >1 candidate for $bcurr @ $ind" . ", cands=" . join(",", @cands) . "\n";
-        if ($even > 0) { 
+        if ($even > 0) {
             $cand = $cands[0];
         } else {
             $fail = 1;
@@ -287,7 +287,7 @@ sub to_base { # convert from decimal to base
         $result =  $digit . $result;
         $num /= $base;
     } # while > 0
-    return $result eq "" ? "0" : $result; 
+    return $result eq "" ? "0" : $result;
 } # to_base
 #--------
 sub from_base { # convert a string (maybe with letters) from base to decimal
@@ -304,7 +304,7 @@ sub from_base { # convert a string (maybe with letters) from base to decimal
         $bpow   *= $base;
         $pos --;
     } # positive
-    return $result; 
+    return $result;
 } # from_base
 #--------
 sub draw_graph {
@@ -325,7 +325,7 @@ sub draw_graph {
         $ind ++;
     } # while $ind
     print "]\n</draw-graph>\n";
-} # draw_graph  
+} # draw_graph
 #--------
 sub draw_path {
     our $vert   = "||"; if ($ansi == 1) { $vert = "\x1b[103m$vert\x1b[0m"; }
@@ -336,7 +336,7 @@ sub draw_path {
     sub get_matrix_pos {
         my ($x, $y) = @_;
         my $base2_1 = $base * 2 - 1; # 9  for base=5
-        return $x * 2 + ($base2_1 - 1) * $base2_1 - $y * 2 *$base2_1; 
+        return $x * 2 + ($base2_1 - 1) * $base2_1 - $y * 2 *$base2_1;
     } # get_matrix_pos
     #----
     sub get_digit {
@@ -348,7 +348,7 @@ sub draw_path {
     } # get_digit
     #----
     sub based0 {
-        # return a number in base $base, 
+        # return a number in base $base,
         # filled to $maxexp - 1 with leading zeroes
         my $maxexp = 2; # for drawing the start path only!
         my ($num) = @_;
@@ -359,7 +359,7 @@ sub draw_path {
            $num    /= $base;
            $ind ++;
         } # while $idig
-        return $result; 
+        return $result;
     } # based0
     #----
     sub connect {
@@ -402,7 +402,7 @@ sub draw_path {
                 $matrix[$mp + $base * 2 - 1] = $blan; # "  "; # down
                 if ($x < $base - 1) {
                     $matrix[$mp + $base * 2 - 1 + 1] = $blan; # " "; # down
-                }                   
+                }
             }
             $y ++;
         } # while y
@@ -413,7 +413,7 @@ sub draw_path {
     while ($ipa < scalar(@path)) {
         &connect($path[$ipa - 1], $path[$ipa]);
         $ipa ++;
-    } # while $ipa 
+    } # while $ipa
     print "<draw-path>\n\n";
     my $imp = 0;
     while ($imp < scalar(@matrix)) { # print
@@ -441,7 +441,7 @@ NN [0,1,2,3,4,14,13,12,11,10,20,21,22,23,24,34,33,32,31,30,40,41,42,43,44,144
     ,344,343,342,341,340,330,331,332,333,334,324,323,322,321,320,310,311,312
     ,313,314,304,303,302,301,300,400,401,402,403,404,414,413
     ,412,411,410,420,421,422,423,424,434,433,432,431,430,440,441,442,443,444]
-    
+
 N [0,1,2,12,11,10,20,21,22,122,121,120,110,111,112,102,101,100,200,201,202,212,211,210,220,221,222]
 
 u 00,01,11,10,110,111,101,100,100

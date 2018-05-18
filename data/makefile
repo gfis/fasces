@@ -141,6 +141,10 @@ meander.7:
 	perl -w gen_meander.pl  -b 7 -l  2401 -r paths.7.tmp -g | tee $@.tmp
 	grep " 16666" $@.tmp
 	grep " 16666" $@.tmp | wc -l
+	grep -ve "^#" meander.7.tmp | grep -vE "\," | tee meander.7c.tmp
+mea7d:
+	perl -w gen_meander.pl  -b 7 -l 2401 -r paths.7d.tmp -g | tee $@.tmp
+
 mea0:
 	perl gen_meander.pl -l 24 -b 5 -p "0,1,2,3,4,9,14,19,18,17,16,11,12,13,8,7,6,5,10,15,20,21,22,23,24"\
 	| tee meander.25.tmp

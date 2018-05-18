@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 # FASS: generate all noncrossing paths which fill a square of defined size completely
-# 2018-05-18: if the path hits a border, the two neighbours on the border may not be both free
+# 2018-05-18: if the path marks a border element, the two neighbours on the border may not be both unmarked
 # 2018-05-10: even bases 2, 4, ...; summary
 # 2017-08-23, Georg Fischer
 # Program in the public domain
@@ -10,18 +10,19 @@
 # usage:
 #   perl gen_paths [[-b] base] [-s] [-d n]
 #       -b   base (default 5)
-#       -s   symmetric (default: false)
+#       -m x mode, x=symm(etric), diag(onal)
 #       -d n debug level n (default: 0)
 #-------------------------
 use strict;
 use integer; # avoid division problems with reals
 
 my $debug  = 0;
-my $ansi   = 0; # whether to use ANSI colors on console output
+my $ansi   = 0;  # whether to use ANSI colors on console output
 my $base   = 5;
+my $diag   = 0;
 my $maxexp = 2;  # compute b-file up to $base**$maxexp
+my $mode   = ""; # no special conditions
 my $symm   = 0;
-my $rule   = 0;  # for stronger condition
 my $vert   = "||";
 my $hori   = "==";
 my $blan   = "  ";
@@ -36,26 +37,24 @@ while (scalar(@ARGV) > 0) {
     if ($opt eq "\-a") {
         $ansi   = 1;
     }
-    if ($opt =~ m{r}) {
-        $rule  = 1;
-    }
-    if ($opt =~ m{s}) {
-        $symm  = 1;
+    if ($opt =~ m{m}) {
+        $mode = shift(@ARGV);
     }
     if ($opt =~ m{d}) {
         $debug = shift(@ARGV);
     }
 } # while opt
-
+$symm = ($mode =~ m{sy}) ? 1 : 0;
+$diag = ($mode =~ m{di}) ? 1 : 0;
 my $pathno = 0;
 
 my @matrix = ();
 my @filled = ();
 my $corner = $base * $base;
 my $full = $corner - 1;
-my $last = $full;
+my $last = $corner - 1;
 if ($symm == 1) {
-    $last /= 2;
+    $last /= 2; # in the center
 }
 my $base_1 = $base - 1;
 my @path = ();
@@ -76,8 +75,10 @@ my @queue = (); # entries are "path_index${sep}value"
 $ind = 0;
 &mark($ind); $ind ++;
 &mark($ind); $ind ++;
-while ($ind < $base) { # this is questionable? assumes a vertical bar at the beginning
-    &mark($ind); $ind ++;
+$ind = $base; # comment this out to assume  vertical bar at the beginning
+while ($ind < $base) {
+    &mark($ind);
+    $ind ++;
 }
 # normalized start: 00->01
 &push_urdl();
@@ -100,7 +101,7 @@ while (scalar(@queue) > 0) { # pop
     }
     &mark($pval);
     my $plen = scalar(@path);
-    if ($symm == 1 ? $pval == $last : $plen <= $last + 1) {
+    if ($symm == 1 ? ($pval == $last) : ($plen <= $last + 1)) {
         print "pval=$pval, plen=$plen, last=$last, full=$full\n" if $debug >= 1;
         if ($plen == $last + 1) { # really at the end or in the center
             while ($plen < $corner) { # fill 2nd half in case of $symm
@@ -113,6 +114,8 @@ while (scalar(@queue) > 0) { # pop
             }
             &output_path();
             @path = splice(@path, 0, $last + 1);
+        } elsif ($diag == 1 and $pval == $last) {
+            print "# skipped because of diag, plen=$plen\n" if $debug >= 1;
         } else {
             &push_urdl();
         }
@@ -155,13 +158,13 @@ sub is_free {
 sub push_urdl {
     # determine and push possible followers of last vertex
     # if the path hits a border, the two neighbours on the border may not be both free
-    my $len = scalar(@path);
+    my $len   = scalar(@path);
     my $vlast = $path[$len - 1];
     my $vprev = $path[$len - 2];
     my $xlast = &get_digit($vlast, 1);
     my $ylast = &get_digit($vlast, 0);
     my ($vnext, $xnext, $ynext, $vnei1, $vnei2, $fail);
-    
+
     if ($ylast < $base_1) { $fail = 0; # may go up
         $vnext = $vlast + 1    ;       # go up
         if (&is_free($vnext) == 1) {
@@ -204,7 +207,7 @@ sub push_urdl {
                 if (&is_free($vnei2)) { $fail = 1; }
                 }
             }
-            if ($fail == 0) { push(@queue, "r$sep$len$sep$vnext"); }          # push right  
+            if ($fail == 0) { push(@queue, "r$sep$len$sep$vnext"); }          # push right
         }
     }
     if ($xlast > 0      ) { $fail = 0; # may go left
@@ -292,7 +295,7 @@ sub draw_path {
     sub get_matrix_pos {
         my ($x, $y) = @_;
         my $base2_1 = $base * 2 - 1; # 9  for base=5
-        return $x * 2 + ($base2_1 - 1) * $base2_1 - $y * 2 *$base2_1; 
+        return $x * 2 + ($base2_1 - 1) * $base2_1 - $y * 2 *$base2_1;
     } # get_matrix_pos
     #----
     sub connect {
@@ -335,7 +338,7 @@ sub draw_path {
                 $matrix[$mp + $base * 2 - 1] = $blan; # "  "; # down
                 if ($x < $base_1) {
                     $matrix[$mp + $base * 2 - 1 + 1] = $blan; # " "; # down
-                }                   
+                }
             }
             $y ++;
         } # while y
@@ -346,7 +349,7 @@ sub draw_path {
     while ($ipa < scalar(@path)) {
         &connect($path[$ipa - 1], $path[$ipa]);
         $ipa ++;
-    } # while $ipa 
+    } # while $ipa
     print "<draw-path>\n\n";
     my $imp = 0;
     while ($imp < scalar(@matrix)) { # print
@@ -368,7 +371,7 @@ sub get_digit {
 } # get_digit
 #--------
 sub based0 {
-    # return a number in base $base, 
+    # return a number in base $base,
     # filled to $maxexp - 1 with leading zeroes
     my ($num) = @_;
     my $result = "";
@@ -378,7 +381,7 @@ sub based0 {
        $num    /= $base;
        $ind ++;
     } # while $idig
-    return $result; 
+    return $result;
 } # based0
 #--------
 __DATA__
