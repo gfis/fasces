@@ -1,6 +1,7 @@
 #!/usr/bin/perl
 
 # FASS: generate all noncrossing paths which fill a square of defined size completely
+# 2018-05-21: obe some adjacency conditions
 # 2018-05-18: if the path marks a border element, the two neighbours on the border may not be both unmarked
 # 2018-05-10: even bases 2, 4, ...; summary
 # 2017-08-23, Georg Fischer
@@ -75,12 +76,12 @@ my @queue = (); # entries are "path_index${sep}value"
 $ind = 0;
 &mark($ind); $ind ++;
 &mark($ind); $ind ++;
-$ind = $base; # comment this out to assume  vertical bar at the beginning
-while ($ind < $base) {
+# normalized start: 00->01
+$ind = $base; # comment this out to assume a vertical bar at the beginning
+while ($ind < $base) { # start with 00->01->02->...->0b
     &mark($ind);
     $ind ++;
-}
-# normalized start: 00->01
+} # vertical bar
 &push_urdl();
 
 while (scalar(@queue) > 0) { # pop
@@ -124,7 +125,7 @@ while (scalar(@queue) > 0) { # pop
     }
 } # while popping
 
-print "\n<summary count=\"$pathno\"";
+print "\n<summary base=\"$base\" count=\"$pathno\"";
 foreach my $attr(sort(keys(%attrs))) {
     print " $attr=\"$attrs{$attr}\"";
 } # foreach
@@ -232,10 +233,10 @@ sub push_urdl {
 sub output_path {
     $pathno ++;
     print "<!-- ========================== -->\n";
-    my $attrs = &get_attributes();
+    my $attrs = &get_final_attributes();
     print "<matrix id=\"$pathno\" attrs=\"$attrs\" base=\"$base\"\n";
     print "     path=\""  . join(",", map {         $_  } @path) . "\"\n"
-        . "     bpath=\"" . join("/", map { &based0($_) } @path) . "/\"\n"
+        . "     bpath=\"" . join(",", map { &based0($_) } @path) . "/\"\n"
         . "     >\n";
     if (1) {
         &draw_path(@path);
@@ -243,22 +244,31 @@ sub output_path {
     print "</matrix>\n";
 } # output_path
 #--------
-sub get_attributes {
-    # determine general properties of the path
+sub add_attr { # add an attribute
+	my ($attr) = @_;
+    if (defined($attrs{$attr})) {
+        $attrs{$attr} ++;
+    } else {
+        $attrs{$attr} = 1;
+    } 
+    return $attrs{$attr};
+} # add_attr
+#--------
+sub get_final_attributes {
+    # determine general properties of the finished path
     my $result = "";
     my $last = $path[scalar(@path) - 1];
     #----
-    my $dig0 = $last % $base;
+    my $dig0 =  $last          % $base;
     my $dig1 = ($last / $base) % $base;
-    my $b4 = $base_1;
     if (0) {
-    } elsif ((              $dig0 == $b4) and (              $dig1 == $b4)) {
+    } elsif ((              $dig0 == $base_1) and (              $dig1 == $base_1)) {
         $result .= ",diagonal";
-    } elsif (($dig0 == 0                ) and (              $dig1 == $b4)) {
+    } elsif (($dig0 == 0                    ) and (              $dig1 == $base_1)) {
         $result .= ",opposite";
-    } elsif (($dig0 == 0 or $dig0 == $b4) and ($dig1 == 0 or $dig1 == $b4)) {
+    } elsif (($dig0 == 0 or $dig0 == $base_1) and ($dig1 == 0 or $dig1 == $base_1)) {
         $result .= ",corner";
-    } elsif (($dig0 == 0 or $dig0 == $b4) or  ($dig1 == 0 or $dig1 == $b4)) {
+    } elsif (($dig0 == 0 or $dig0 == $base_1) or  ($dig1 == 0 or $dig1 == $base_1)) {
         $result .= ",outside";
     } else {
         $result .= ",inside";
@@ -277,16 +287,12 @@ sub get_attributes {
     #----
     $result = substr($result, 1);
     foreach my $attr (split(/\,/, $result)) {
-        if (defined($attrs{$attr})) {
-            $attrs{$attr} ++;
-        } else {
-            $attrs{$attr} = 1;
-        }
+    	&add_attr($attr);
     } # foreach
     return $result;
-} # get_attributes
+} # get_final_attributes
 #--------
-sub draw_path {
+sub draw_path {		
     our $vert   = "||"; if ($ansi == 1) { $vert = "\x1b[103m$vert\x1b[0m"; }
     our $hori   = "=="; if ($ansi == 1) { $hori = "\x1b[103m$hori\x1b[0m"; }
     our @matrix = ();
@@ -399,3 +405,7 @@ paths.7.tmp:<summary count="144476" diagonal="11658" inside="89873" opposite="10
 real    24m21.520s
 user    24m3.357s
 sys     2m4.309s
+
+
+with 00->01 only:
+<summary count="412" corner="45" diagonal="52" inside="182" opposite="41" outside="92" symmetrical="8" />

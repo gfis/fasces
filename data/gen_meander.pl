@@ -91,6 +91,7 @@ GFis
 exit(0); # main
 #-----------------------------------------------------------------------
 sub meander {
+	print "<!-================================-_>\n";
     $bpath  = join("", map { my $bnum = &to_base($_); (length($bnum) < 2 ? "0$bnum" : $bnum) . $sep} @path);
     my $content = "";
     if (1) { # generate b-file
@@ -126,21 +127,22 @@ sub meander {
         $content .="</b$base-file>\n";
     } # b-file
     
-    if ($fail == 0) { # success
-		print "<!-================================-_>\n";
+	if (1) {
 	    print "<meander id=\"$ident\" path=\"" . join(",", @path) . "\"\n"
     	    . "    bpath=\"$bpath\"\n"
         	. "    >\n";
     	&draw_path(@path);
+   }
+    if ($fail == 0) { # success
     	print "$content";
         if ($graph > 0) {
             &draw_graph();
         }
-	    print "</meander>\n";
         # success
-    } else {
-        # print "<failed />\n";
+     } else {
+        print "<failed />\n";
     }
+    print "</meander>\n";
 } # meander
 #--------
 sub get_successor {
@@ -264,14 +266,14 @@ sub get_successor {
     my $lcand = scalar(@cands);
     if (0) {
     } elsif ($lcand >  1) {
-        print "<!--# id $ident: >1 candidate for $bcurr @ $ind" . ", cands=" . join(",", @cands) . "-->\n";
+        print "<!--# id $ident: multiway $bcurr @ $ind" . ", cands=" . join(",", @cands) . "-->\n";
         if ($even > 0) { 
             $cand = $cands[0];
         } else {
             $fail = 1;
         }
     } elsif ($lcand <  1) {
-        print "<!--# id $ident: no candidate for $bcurr at $ind-->\n";
+        print "<!--# id $ident: nocand for $bcurr at $ind, path=" . join(",", @path) . "			-->\n";
         $fail = 1;
     } else { # $lcand == 1
         $cand = $cands[0];
