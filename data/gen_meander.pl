@@ -105,10 +105,10 @@ sub meander {
         while ($fail == 0 and $ind <= $limit) {
             my $bnext = &get_successor($bprev, $bcurr);
             if ($ind == $corner and $bnext ne $corner_val) {
-            	print "<!--# id $ident: degenerating bnext=$bnext, corner=$corner, corner_val=$corner_val -->\n";
+            	print "<!--# id $ident: degenerate bnext=$bnext, corner=$corner, corner_val=$corner_val -->\n";
             	$fail = 1;
             } elsif (length($bnext) > 7) {
-            	print "<!--# id $ident: exploding bnext=$bnext -->\n";
+            	print "<!--# id $ident: explode bnext=$bnext -->\n";
                 $fail = 1;
             } else { # not yet_failed
                 if ($bfile > 0) {

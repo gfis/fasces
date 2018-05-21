@@ -85,12 +85,12 @@ while ($ind < $base) { # start with 00->01->02->...->0b
 &push_urdl();
 
 while (scalar(@queue) > 0) { # pop
-    my ($dir, $pind, $pval) = split(/$sep/, pop(@queue));
+    my ($pind, $pval) = split(/$sep/, pop(@queue));
     while (scalar(@path) > $pind) {
         &unmark();
     } # while unmark
     if ($debug >= 2) {
-        print "queue[" . sprintf("%3d", scalar(@queue)) . "]\@$pind $dir: "
+        print "queue[" . sprintf("%3d", scalar(@queue)) . "]\@$pind: "
                 . join(",", map { &based0($_) } @path) . " ". &based0($pval)
                 . "?\n";
         my $ifil = 0;
@@ -114,7 +114,7 @@ while (scalar(@queue) > 0) { # pop
                 print join("/", map { &based0($_) } @path) . "\n";
             }
             &output_path();
-            @path = splice(@path, 0, $last + 1);
+            @path = splice(@path, 0, $last + 1); # pop
         } elsif ($diag == 1 and $pval == $last) {
             print "# skipped because of diag, plen=$plen\n" if $debug >= 1;
         } else {
@@ -157,84 +157,114 @@ sub is_free {
 } # is_free
 #--------
 sub push_urdl {
-    # determine and push possible followers of last vertex
-    # if the path hits a border, the two neighbours on the border may not be both free
+    # Determine and push possible followers of last vertex.
+    # If the path hits a border, the square is divided in 2 halves,
+    # and the two neighbours on the border may not be both free,
     my $len   = scalar(@path);
     my $vlast = $path[$len - 1];
     my $vprev = $path[$len - 2];
     my $xlast = &get_digit($vlast, 1);
-    my $ylast = &get_digit($vlast, 0);
+    my $ylast = &get_digit($vlast, 0); # rightmost character
     my ($vnext, $xnext, $ynext, $vnei1, $vnei2, $fail);
-
-    if ($ylast < $base_1) { $fail = 0; # may go up
-        $vnext = $vlast + 1    ;       # go up
-        if (&is_free($vnext) == 1) {
-            $ynext =     &get_digit($vnext, 0);
-            if ($ynext == $base_1) {   # at upper border
-                $xnext = &get_digit($vnext, 1);
-                $vnei1 = $xnext == 0       ? $vnext - 1     : $vnext - $base; # down or left
-                if (&is_free($vnei1)) {
-                $vnei2 = $xnext == $base_1 ? $vnext - 1     : $vnext + $base; # down or right
-                if (&is_free($vnei2)) { $fail = 1; }
-                }
-            }
-            if ($fail == 0) { push(@queue, "u$sep$len$sep$vnext"); }          # push upper
-        }
-    }
-    if ($ylast > 0      ) { $fail = 0; # may go down
-        $vnext = $vlast - 1    ;       # go down
-        if (&is_free($vnext) == 1) {
-            $ynext =     &get_digit($vnext, 0);
-            if ($ynext == 0      ) {   # at lower  border
-                $xnext = &get_digit($vnext, 1);
-                $vnei1 = $xnext == 0       ? $vnext + 1     : $vnext - $base; # up or left
-                if (&is_free($vnei1)) {
-                $vnei2 = $xnext == $base_1 ? $vnext + 1     : $vnext + $base; # up or right
-                if (&is_free($vnei2)) { $fail = 1; }
-                }
-            }
-            if ($fail == 0) { push(@queue, "d$sep$len$sep$vnext"); }          # push lower
-        }
-    }
-    if ($xlast < $base_1) { $fail = 0; # may go right
-        $vnext = $vlast + $base;       # go right
-        if (&is_free($vnext) == 1) {
-            $xnext =     &get_digit($vnext, 1);
-            if ($xnext == $base_1) {   # at right  border
-                $ynext = &get_digit($vnext, 0);
-                $vnei1 = $ynext == $base_1 ? $vnext - $base : $vnext - 1    ; # left or down
-                if (&is_free($vnei1)) {
-                $vnei2 = $ynext == 0       ? $vnext - $base : $vnext + 1    ; # left or up
-                if (&is_free($vnei2)) { $fail = 1; }
-                }
-            }
-            if ($fail == 0) { push(@queue, "r$sep$len$sep$vnext"); }          # push right
-        }
-    }
-    if ($xlast > 0      ) { $fail = 0; # may go left
-        $vnext = $vlast - $base;       # go left
-        if (&is_free($vnext) == 1) {
-            $xnext =     &get_digit($vnext, 1);
-            if ($xnext == 0      ) {   # at left   border
-                $ynext = &get_digit($vnext, 0);
-                $vnei1 = $ynext == $base_1 ? $vnext + $base : $vnext - 1    ; # right or down
-                if (&is_free($vnei1)) {
-                $vnei2 = $ynext == 0       ? $vnext + $base : $vnext + 1    ; # right or up
-                if (&is_free($vnei2)) { $fail = 1; }
-                }
-            }
-            if ($fail == 0) { push(@queue, "l$sep$len$sep$vnext"); }          # push left
-        }
-    }
-    print "push_urdl: vlast=$vlast, xlast=$xlast, ylast=$ylast, "
-            . join("/", @queue) . "\n" if $debug >= 2;
+	$fail = 0;
+    if (($xlast eq $ylast)) { # on the diagonal nn
+    	# if there are 2 continuations nm and qn, there may not be 0n,1n
+    	# otherwise there will be a multiway branch from nn to 1nn and nm (or nq)
+    	my $search = $ylast; # really "0$last"
+    	my $ind = 0;
+    	while ($ind < scalar(@path) and ($path[$ind] != $ylast)) {
+    		$ind ++;
+    	} # while
+    	if ($ind < scalar(@path) - 1) { # found one more
+    		print "# multiway $xlast$ylast, scalar=" . scalar(@path) . ", search=$ylast"
+    			. ", path[$ind]=$path[$ind]; path[$ind+1]=$path[$ind+1]; path=" . join(",", map { &based0($_) } @path) . "\n" if $debug >= 2;
+    		if ($path[$ind + 1] == $ylast + $base) { # this would cause a multiway branch
+    			$fail = 1;
+    			&add_attr("multiway");
+    			# print "<multiway id=\"$pathno\" />\n";
+    		}
+    	} # found $search
+    } # on the diagonal
+	if ($fail == 0) {
+	    if ($ylast < $base_1) { $fail = 0; 	# may go up
+	        $vnext = $vlast + 1    ;       	# go up
+	        if (&is_free($vnext) == 1) {
+	            $ynext =     &get_digit($vnext, 0);
+	            if ($ynext == $base_1) {   	# at upper border
+	                $xnext = &get_digit($vnext, 1);
+	                $vnei1 = $xnext == 0       ? $vnext - 1     : $vnext - $base; # down or left
+	                if (&is_free($vnei1)) {
+	                $vnei2 = $xnext == $base_1 ? $vnext - 1     : $vnext + $base; # down or right
+	                if (&is_free($vnei2)) { $fail = 1; }
+	                }
+	            }
+	            if ($fail == 0) { 
+	            	push(@queue, "$len$sep$vnext"); 
+	            }          					# push upper
+	        }
+	    }
+	    if ($ylast > 0      ) { $fail = 0; 	# may go down
+	        $vnext = $vlast - 1    ;       	# go down
+	        if (&is_free($vnext) == 1) {
+	            $ynext =     &get_digit($vnext, 0);
+	            if ($ynext == 0      ) {   	# at lower  border
+	                $xnext = &get_digit($vnext, 1);
+	                $vnei1 = $xnext == 0       ? $vnext + 1     : $vnext - $base; # up or left
+	                if (&is_free($vnei1)) {
+	                $vnei2 = $xnext == $base_1 ? $vnext + 1     : $vnext + $base; # up or right
+	                if (&is_free($vnei2)) { $fail = 1; }
+	                }
+	            }
+	            if ($fail == 0) { 
+	            	push(@queue, "$len$sep$vnext"); 
+	            }          					# push lower
+	        }
+	    }
+	    if ($xlast < $base_1) { $fail = 0; 	# may go right
+	        $vnext = $vlast + $base;       	# go right
+	        if (&is_free($vnext) == 1) {
+	            $xnext =     &get_digit($vnext, 1);
+	            if ($xnext == $base_1) {   	# at right  border
+	                $ynext = &get_digit($vnext, 0);
+	                $vnei1 = $ynext == $base_1 ? $vnext - $base : $vnext - 1    ; # left or down
+	                if (&is_free($vnei1)) {
+	                $vnei2 = $ynext == 0       ? $vnext - $base : $vnext + 1    ; # left or up
+	                if (&is_free($vnei2)) { $fail = 1; }
+	                }
+	            }
+	            if ($fail == 0) { 
+	            	push(@queue, "$len$sep$vnext"); 
+	            }          					# push right
+	        }
+	    }
+	    if ($xlast > 0      ) { $fail = 0; 	# may go left
+	        $vnext = $vlast - $base;       	# go left
+	        if (&is_free($vnext) == 1) {
+	            $xnext =     &get_digit($vnext, 1);
+	            if ($xnext == 0      ) {   	# at left   border
+	                $ynext = &get_digit($vnext, 0);
+	                $vnei1 = $ynext == $base_1 ? $vnext + $base : $vnext - 1    ; # right or down
+	                if (&is_free($vnei1)) {
+	                $vnei2 = $ynext == 0       ? $vnext + $base : $vnext + 1    ; # right or up
+	                if (&is_free($vnei2)) { $fail = 1; }
+	                }
+	            }
+	            if ($fail == 0) { 
+	            	push(@queue, "$len$sep$vnext"); 
+	            }          					# push left
+	        }
+	    }
+	    if ($debug >= 2) {
+		    print "push_urdl: vlast=$vlast, xlast=$xlast, ylast=$ylast, " . join("/", @queue) . "\n";
+		}
+	} # $fail = 0
 } # push_urdl
 #--------
 sub output_path {
     $pathno ++;
     print "<!-- ========================== -->\n";
-    my $attrs = &get_final_attributes();
-    print "<matrix id=\"$pathno\" attrs=\"$attrs\" base=\"$base\"\n";
+    my $attributes = &get_final_attributes();
+    print "<matrix id=\"$pathno\" attrs=\"$attributes\" base=\"$base\"\n";
     print "     path=\""  . join(",", map {         $_  } @path) . "\"\n"
         . "     bpath=\"" . join(",", map { &based0($_) } @path) . "/\"\n"
         . "     >\n";
@@ -409,3 +439,4 @@ sys     2m4.309s
 
 with 00->01 only:
 <summary count="412" corner="45" diagonal="52" inside="182" opposite="41" outside="92" symmetrical="8" />
+<summary base="7" count="13541" diagonal="11658" inside="1883" multiway="2968247" symmetrical="66" />

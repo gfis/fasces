@@ -130,10 +130,11 @@ meander.4:
 	perl -w gen_paths.pl    -b 4 | grep " path="    | sed -e "s/ *path=//" | xargs  -l -iqqq \
 	perl -w gen_meander.pl  -b 4 -l  4096 -p qqq -g | tee $@.tmp
 meander.5:
-	perl -w gen_paths.pl    -b 5  | grep " path="   | sed -e "s/ *path=//" | xargs  -l -iqqq \
-	perl -w gen_meander.pl  -b 5 -l  3125 -p qqq -g | tee $@.tmp
+	perl -w gen_paths.pl    -b 5 > paths.5.tmp
+	perl -w gen_meander.pl  -b 5 -l 3125 -g -r paths.5.tmp | tee $@.tmp
 	grep " 144444"  $@.tmp
 	grep " 144444"  $@.tmp | wc -l
+	tail -5 paths.5.tmp
 meander.7:
 	# perl -w gen_paths.pl  -b 7 -s | grep " path=" | sed -e "s/ *path=//" | xargs  -l -iqqq 
 	# cat paths.7.tmp                 | grep " path=" | sed -e "s/ *path=//" | xargs  -l -iqqq \
