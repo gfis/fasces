@@ -151,10 +151,13 @@ meander.9:
 	# perl -w gen_paths.pl  -b 7 -s | grep " path=" | sed -e "s/ *path=//" | xargs  -l -iqqq 
 	# cat paths.7.tmp                 | grep " path=" | sed -e "s/ *path=//" | xargs  -l -iqqq \
 	# perl -w gen_meander.pl  -b 7 -l  3125 -p qqq -v | tee $@.tmp
-	perl -w gen_meander.pl  -b 9 -l  729 -r paths.9.tmp > $@.tmp
+	perl -w gen_meander.pl  -b 9 -l 729 -v -r paths.9.tmp > $@.tmp
+	# 6561
 	# grep " 16666" $@.tmp
 	# grep " 16666" $@.tmp | wc -l
 	# grep -ve "^#" meander.7.tmp | grep -vE "\," | tee meander.7c.tmp
+flip5:
+	perl gen_meander.pl -b 5 -l 3165 -v -f -pb "00,01,02,12,11,10,20,21,22,32,31,30,40,41,42,43,33,23,13,03,04,14,24,34,44"
 mea7d:
 	perl -w gen_meander.pl  -b 7 -l 2401 -r paths.7d.tmp | tee $@.tmp
 

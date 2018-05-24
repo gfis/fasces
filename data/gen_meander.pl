@@ -132,14 +132,14 @@ sub meander {
         $content .="</b$base-file>\n";
     } # b-file
     
-    if ($fail == 0) {
+    if (1 or $fail == 0) {
         print "<meander id=\"$ident\" path=\"" . join(",", @path) . "\"\n"
             . "    bpath=\"$bpath\"\n"
             . "    >\n" if $xml > 0;
         &draw_path(@path);
         print "$content" if $xml > 0;
     }
-    if ($fail == 0) { # success
+    if (1 or $fail == 0) { # success
         if ($vector > 0) {
             &out_vector();
         }

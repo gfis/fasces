@@ -169,7 +169,7 @@ sub push_urdl {
     my ($vnext, $xnext, $ynext, $vnei1, $vnei2, $fail);
     $fail = 0;
     if ($xlast == $ylast and $xlast == $base_1 and scalar(@path) != $corner) { # digonal corner is not last path element
-    	$fail = 1;
+        $fail = 1;
     }
     if (0 and ($xlast eq $ylast)) { # on the diagonal nn
         # if there are 2 continuations nm and qn, there may not be 0n,1n
@@ -189,7 +189,7 @@ sub push_urdl {
             }
         } # found $search
     } # on the diagonal
-    
+
     if ($fail == 0) {
         if ($ylast < $base_1) { $fail = 0;  # may go up
             $vnext = $vlast + 1    ;        # go up
@@ -203,8 +203,8 @@ sub push_urdl {
                     if (&is_free($vnei2)) { $fail = 1; }
                     }
                 }
-                if ($fail == 0) { 
-                    push(@queue, "$len$sep$vnext"); 
+                if ($fail == 0) {
+                    push(@queue, "$len$sep$vnext");
                 }                           # push upper
             }
         }
@@ -220,8 +220,8 @@ sub push_urdl {
                     if (&is_free($vnei2)) { $fail = 1; }
                     }
                 }
-                if ($fail == 0) { 
-                    push(@queue, "$len$sep$vnext"); 
+                if ($fail == 0) {
+                    push(@queue, "$len$sep$vnext");
                 }                           # push lower
             }
         }
@@ -237,8 +237,8 @@ sub push_urdl {
                     if (&is_free($vnei2)) { $fail = 1; }
                     }
                 }
-                if ($fail == 0) { 
-                    push(@queue, "$len$sep$vnext"); 
+                if ($fail == 0) {
+                    push(@queue, "$len$sep$vnext");
                 }                           # push right
             }
         }
@@ -254,8 +254,8 @@ sub push_urdl {
                     if (&is_free($vnei2)) { $fail = 1; }
                     }
                 }
-                if ($fail == 0) { 
-                    push(@queue, "$len$sep$vnext"); 
+                if ($fail == 0) {
+                    push(@queue, "$len$sep$vnext");
                 }                           # push left
             }
         }
@@ -268,52 +268,129 @@ sub push_urdl {
 sub output_path {
     $pathno ++;
     my $symdiag = &check_symdiag();
-    if ($symdiag >= 4) {
-    	print "<!-- ========================== -->\n";
-    	my $attributes = &get_final_attributes();
-    	print "<matrix id=\"$pathno\" symdiag=\"$symdiag\" attrs=\"$attributes\" base=\"$base\"\n";
-    	print "     path=\""  . join(",", map {         $_  } @path) . "\"\n"
-    	    . "     bpath=\"" . join(",", map { &based0($_) } @path) . "/\"\n"
-    	    . "     >\n";
-    	if (1) {
-    	    &draw_path(@path);
-    	}
-    	print "</matrix>\n";
-	}
+    my $wave = &check_wave();
+    if ($wave >= 3) {
+        print "<!-- ========================== -->\n";
+        my $attributes = &get_final_attributes();
+        print "<matrix id=\"$pathno\" symdiag=\"$symdiag\" wave=\"$wave\" attrs=\"$attributes\" base=\"$base\"\n";
+        print "     path=\""  . join(",", map {         $_  } @path) . "\"\n"
+            . "     bpath=\"" . join(",", map { &based0($_) } @path) . "/\"\n"
+            . "     >\n";
+        if (1) {
+            &draw_path(@path);
+        }
+        print "</matrix>\n";
+    } # success
 } # output_path
 #--------
 sub check_symdiag { # check whether there are symmetric shapes on any diagonal node
-	my $result = 0; # assume failure
-	my $basep1 = $base + 1;
-	my $inode = $basep1 * 2;
-	while ($result == 0 and $inode < $full) { # diagonal nodes 22..33 for base=5
-		my $dnode = $path[$inode];
-		if ($dnode % $basep1 == 0 and $dnode > $basep1 and $dnode < $full) { # a diagonal value
-			my $dist = 1; # from the diagonal node
-			my $symmetric = 1; # as long as the path is symmetric around $inode
-			while ($symmetric == 1 and $dist < $half) { # determine 1st deviation from symmetricity
-				my $diff   = $path[$inode + $dist] - $dnode ;
-				if ($dnode - $path[$inode - $dist] != $diff) { # deviation found
-					print "# id=$pathno inode=$inode, dnode=" . &based0($dnode) . ", diff=$diff, <> " 
-							. ($dnode - $path[$inode - $dist]) . "\n" if $debug >= 0;
-					$symmetric = 0;
-					if ($dist > 4) {
-						$result = $dist;
-					} 
-				    # deviation found
-				} else { # no deviation
-					print "# id=$pathno inode=$inode, dnode=" . &based0($dnode) . ", dist=$dist, diff=$diff\n" if $debug >= 0;
-				}
-				$dist ++;
-			} # while symmetricity
-			if ($symmetric == 1) {
-				$result = $dist;
-			}
-		} # a diagnoal value
-		$inode ++;
-	} # while on diagonal
-	return $result;
+    my $result = 0; # assume failure
+    my $basep1 = $base + 1;
+    my $inode = $basep1 * 2;
+    while ($result == 0 and $inode < $full) { # diagonal nodes 22..33 for base=5
+        my $dnode = $path[$inode];
+        if ($dnode % $basep1 == 0 and $dnode > $basep1 and $dnode < $full) { # a diagonal value
+            my $dist = 1; # from the diagonal node
+            my $symmetric = 1; # as long as the path is symmetric around $inode
+            while ($symmetric == 1 and $dist < $half) { # determine 1st deviation from symmetricity
+                my $diff   = $path[$inode + $dist] - $dnode ;
+                if ($dnode - $path[$inode - $dist] != $diff) { # deviation found
+                    print "# id=$pathno inode=$inode, dnode=" . &based0($dnode) . ", diff=$diff, <> "
+                            . ($dnode - $path[$inode - $dist]) . "\n" if $debug >= 1;
+                    $symmetric = 0;
+                    if ($dist > 4) {
+                        $result = $dist;
+                    }
+                    # deviation found
+                } else { # no deviation
+                    print "# id=$pathno inode=$inode, dnode=" . &based0($dnode) 
+                    		. ", dist=$dist, diff=$diff\n" if $debug >= 1;
+                }
+                $dist ++;
+            } # while symmetricity
+            if ($symmetric == 1) {
+                $result = $dist;
+            }
+        } # a diagnoal value
+        $inode ++;
+    } # while on diagonal
+    return $result;
 } # check_symdiag
+#--------
+sub check_wave { # check whether there is a wave with a center on the diagonal
+    # similiar to checK_symdiag, but the symmetricity must have a wave shape
+    my $result = 0; # assume failure
+    my $basep1 = $base + 1;
+    my @diff2; # 2nd differences
+    my $inode = $basep1 * 2;
+    while ($result == 0 and $inode < $full) { # diagonal nodes 22..33 for base=5
+        my $dnode = $path[$inode];
+        my $odiff = 0;
+        @diff2 = ();
+        if ($dnode % $basep1 == 0 and $dnode > $basep1 and $dnode < $full) { # a diagonal value
+            my $dist = 1; # from the diagonal node
+            my $symmetric = 1; # as long as the path is symmetric around $inode
+            while ($symmetric == 1 and $dist <= $half) { # determine 1st deviation from symmetricity
+                my $diff   = $path[$inode + $dist] - $dnode ;
+                if ($dnode - $path[$inode - $dist] != $diff) { # deviation found
+                    print "# id=$pathno inode=$inode, dnode=" . &based0($dnode) . ", diff=$diff, <> "
+                            . ($dnode - $path[$inode - $dist]) . "\n" if $debug >= 1;
+                    $symmetric = 0;
+                    # deviation found
+                } else { # no deviation
+                    push(@diff2, $odiff - $diff);
+                    $odiff = $diff;
+                    print "# id=$pathno inode=$inode, dnode=" . &based0($dnode) 
+                    		. ", dist=$dist, diff=$diff\n" if $debug >= 1;
+                }
+                $dist ++;
+            } # while symmetricity
+            if (scalar(@diff2) >= 4) { # evaluate the 2nd differences and check for wave shape
+		        # for example -5,+1,+5,+5 for base-5 "s" with normal stroke direction
+        		# the 2nd differences switch between +-5 and -+1
+        		my $hlen = 0;
+           	    print "# id=$pathno inode=$inode, dnode=" . &based0($dnode) 
+           	    		. ", #diff2=" . scalar(@diff2) 
+           	    		. ", diff2=" . join(",", @diff2) . "\n" if $debug >= 0;
+        		my $first = $diff2[$hlen ++];
+        		while ($diff2[$hlen] == $first) {
+        			$hlen ++;
+        		} # while
+        		# now $hlen = half of the length of the bar from the $dnode
+        		# a 7-wave MM would have @diff2 =  1 1 1 9 -1 -1 -1 -1 -1 -1 9 1 1 1 1 1 1 9 -1 -1 -1 -1 -1 -1
+        		if (scalar(@diff2) >= $hlen + $hlen + (2 * $hlen) * $hlen) { # long enough fo ra complete wave
+	        		my $parity = $inode % 2; # indicates the displacement from the center
+    	    		my $nshape = abs($first) == 1 ? 1 : 0; # whether bars are vertical 
+            	    print "# id=$pathno inode=$inode, dnode=" . &based0($dnode) 
+            	    		. ", hlen=$hlen, parity=$parity, nshape=$nshape\n" if $debug >= 0;
+            	    my $fail = 0;
+	                # (1) check the bars: half(= $first), -full, +full, ...
+	                my $target = - $first;
+	                my $ind = $hlen;
+	                my $iter = 0;
+	                while ($fail == 0 and $iter < $hlen) {
+	                	$ind ++; # skip over the separator, the unit connector
+	                	my $loop = 2 * $hlen;
+	                	while ($fail == 0 and $loop > 0) {
+	                		if ($diff2[$ind] != $target) {
+	                			$fail = 1;
+	                		}
+	                		$ind ++;
+	                		$loop --;
+	                	} # while $loop
+	                	$target = - $target;
+	                	$iter ++;
+	                } # while $iter
+	                if ($fail == 0) {
+		                $result = 2 * $hlen + 1;
+					}
+    			} # long enough
+            } # >= 4
+        } # a diagnoal value
+        $inode ++;
+    } # while on diagonal
+    return $result;
+} # check_wave
 #--------
 sub add_attr { # add an attribute
     my ($attr) = @_;
@@ -321,7 +398,7 @@ sub add_attr { # add an attribute
         $attrs{$attr} ++;
     } else {
         $attrs{$attr} = 1;
-    } 
+    }
     return $attrs{$attr};
 } # add_attr
 #--------
@@ -363,7 +440,7 @@ sub get_final_attributes {
     return $result;
 } # get_final_attributes
 #--------
-sub draw_path {     
+sub draw_path {
     our $vert   = "||"; if ($ansi == 1) { $vert = "\x1b[103m$vert\x1b[0m"; }
     our $hori   = "=="; if ($ansi == 1) { $hori = "\x1b[103m$hori\x1b[0m"; }
     our @matrix = ();
