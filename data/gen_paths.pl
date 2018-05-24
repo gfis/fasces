@@ -54,6 +54,7 @@ my @filled = ();
 my $corner = $base * $base;
 my $full = $corner - 1;
 my $last = $corner - 1;
+my $half = $full / 2;
 if ($symm == 1) {
     $last /= 2; # in the center
 }
@@ -167,7 +168,7 @@ sub push_urdl {
     my $ylast = &get_digit($vlast, 0); # rightmost character
     my ($vnext, $xnext, $ynext, $vnei1, $vnei2, $fail);
     $fail = 0;
-    if ($xlast eq $ylast and $xlast == $base_1 and scalar(@path) != $corner) { # digonal corner is not last path element
+    if ($xlast == $ylast and $xlast == $base_1 and scalar(@path) != $corner) { # digonal corner is not last path element
     	$fail = 1;
     }
     if (0 and ($xlast eq $ylast)) { # on the diagonal nn
@@ -183,8 +184,8 @@ sub push_urdl {
                 . ", path[$ind]=$path[$ind]; path[$ind+1]=$path[$ind+1]; path=" . join(",", map { &based0($_) } @path) . "\n" if $debug >= 2;
             if ($path[$ind + 1] == $ylast + $base) { # this would cause a multiway branch
                 $fail = 1;
-                &add_attr("multiway");
-                # print "<multiway id=\"$pathno\" />\n";
+                &add_attr("conflict");
+                # print "<conflict id=\"$pathno\" />\n";
             }
         } # found $search
     } # on the diagonal
@@ -266,17 +267,53 @@ sub push_urdl {
 #--------
 sub output_path {
     $pathno ++;
-    print "<!-- ========================== -->\n";
-    my $attributes = &get_final_attributes();
-    print "<matrix id=\"$pathno\" attrs=\"$attributes\" base=\"$base\"\n";
-    print "     path=\""  . join(",", map {         $_  } @path) . "\"\n"
-        . "     bpath=\"" . join(",", map { &based0($_) } @path) . "/\"\n"
-        . "     >\n";
-    if (1) {
-        &draw_path(@path);
-    }
-    print "</matrix>\n";
+    my $symdiag = &check_symdiag();
+    if ($symdiag >= 4) {
+    	print "<!-- ========================== -->\n";
+    	my $attributes = &get_final_attributes();
+    	print "<matrix id=\"$pathno\" symdiag=\"$symdiag\" attrs=\"$attributes\" base=\"$base\"\n";
+    	print "     path=\""  . join(",", map {         $_  } @path) . "\"\n"
+    	    . "     bpath=\"" . join(",", map { &based0($_) } @path) . "/\"\n"
+    	    . "     >\n";
+    	if (1) {
+    	    &draw_path(@path);
+    	}
+    	print "</matrix>\n";
+	}
 } # output_path
+#--------
+sub check_symdiag { # check whether there are symmetric shapes on any diagonal node
+	my $result = 0; # assume failure
+	my $basep1 = $base + 1;
+	my $inode = $basep1 * 2;
+	while ($result == 0 and $inode < $full) { # diagonal nodes 22..33 for base=5
+		my $dnode = $path[$inode];
+		if ($dnode % $basep1 == 0 and $dnode > $basep1 and $dnode < $full) { # a diagonal value
+			my $dist = 1; # from the diagonal node
+			my $symmetric = 1; # as long as the path is symmetric around $inode
+			while ($symmetric == 1 and $dist < $half) { # determine 1st deviation from symmetricity
+				my $diff   = $path[$inode + $dist] - $dnode ;
+				if ($dnode - $path[$inode - $dist] != $diff) { # deviation found
+					print "# id=$pathno inode=$inode, dnode=" . &based0($dnode) . ", diff=$diff, <> " 
+							. ($dnode - $path[$inode - $dist]) . "\n" if $debug >= 0;
+					$symmetric = 0;
+					if ($dist > 4) {
+						$result = $dist;
+					} 
+				    # deviation found
+				} else { # no deviation
+					print "# id=$pathno inode=$inode, dnode=" . &based0($dnode) . ", dist=$dist, diff=$diff\n" if $debug >= 0;
+				}
+				$dist ++;
+			} # while symmetricity
+			if ($symmetric == 1) {
+				$result = $dist;
+			}
+		} # a diagnoal value
+		$inode ++;
+	} # while on diagonal
+	return $result;
+} # check_symdiag
 #--------
 sub add_attr { # add an attribute
     my ($attr) = @_;
@@ -444,3 +481,9 @@ sys     2m4.309s
 with 00->01 only:
 <summary count="412" corner="45" diagonal="52" inside="182" opposite="41" outside="92" symmetrical="8" />
 <summary base="7" count="13541" diagonal="11658" inside="1883" multiway="2968247" symmetrical="66" />
+<summary base="7" count="11658" diagonal="11658" symmetrical="66" />
+</paths>
+
+real    5m14.596s
+user    5m13.858s
+sys     0m0.169s
