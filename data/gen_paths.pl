@@ -58,6 +58,8 @@ my $half = $full / 2;
 if ($symm == 1) {
     $last /= 2; # in the center
 }
+my $bpow2 = $base  * $base;
+my $bpow3 = $bpow2 * $base;
 my $base_1 = $base - 1;
 my @path = ();
 my
@@ -267,7 +269,7 @@ sub push_urdl {
 #--------
 sub output_path {
     $pathno ++;
-    my $symdiag = &check_symdiag();
+    my $symdiag = 0; # &check_symdiag();
     my $wave = &check_wave();
     if ($wave >= 3) {
         print "<!-- ========================== -->\n";
@@ -283,6 +285,7 @@ sub output_path {
     } # success
 } # output_path
 #--------
+# no more used
 sub check_symdiag { # check whether there are symmetric shapes on any diagonal node
     my $result = 0; # assume failure
     my $basep1 = $base + 1;
@@ -303,8 +306,8 @@ sub check_symdiag { # check whether there are symmetric shapes on any diagonal n
                     }
                     # deviation found
                 } else { # no deviation
-                    print "# id=$pathno inode=$inode, dnode=" . &based0($dnode) 
-                    		. ", dist=$dist, diff=$diff\n" if $debug >= 1;
+                    print "# id=$pathno inode=$inode, dnode=" . &based0($dnode)
+                            . ", dist=$dist, diff=$diff\n" if $debug >= 1;
                 }
                 $dist ++;
             } # while symmetricity
@@ -340,51 +343,51 @@ sub check_wave { # check whether there is a wave with a center on the diagonal
                 } else { # no deviation
                     push(@diff2, $odiff - $diff);
                     $odiff = $diff;
-                    print "# id=$pathno inode=$inode, dnode=" . &based0($dnode) 
-                    		. ", dist=$dist, diff=$diff\n" if $debug >= 1;
+                    print "# id=$pathno inode=$inode, dnode=" . &based0($dnode)
+                            . ", dist=$dist, diff=$diff\n" if $debug >= 1;
                 }
                 $dist ++;
             } # while symmetricity
             if (scalar(@diff2) >= 4) { # evaluate the 2nd differences and check for wave shape
-		        # for example -5,+1,+5,+5 for base-5 "s" with normal stroke direction
-        		# the 2nd differences switch between +-5 and -+1
-        		my $hlen = 0;
-           	    print "# id=$pathno inode=$inode, dnode=" . &based0($dnode) 
-           	    		. ", #diff2=" . scalar(@diff2) 
-           	    		. ", diff2=" . join(",", @diff2) . "\n" if $debug >= 0;
-        		my $first = $diff2[$hlen ++];
-        		while ($diff2[$hlen] == $first) {
-        			$hlen ++;
-        		} # while
-        		# now $hlen = half of the length of the bar from the $dnode
-        		# a 7-wave MM would have @diff2 =  1 1 1 9 -1 -1 -1 -1 -1 -1 9 1 1 1 1 1 1 9 -1 -1 -1 -1 -1 -1
-        		if (scalar(@diff2) >= $hlen + $hlen + (2 * $hlen) * $hlen) { # long enough fo ra complete wave
-	        		my $parity = $inode % 2; # indicates the displacement from the center
-    	    		my $nshape = abs($first) == 1 ? 1 : 0; # whether bars are vertical 
-            	    print "# id=$pathno inode=$inode, dnode=" . &based0($dnode) 
-            	    		. ", hlen=$hlen, parity=$parity, nshape=$nshape\n" if $debug >= 0;
-            	    my $fail = 0;
-	                # (1) check the bars: half(= $first), -full, +full, ...
-	                my $target = - $first;
-	                my $ind = $hlen;
-	                my $iter = 0;
-	                while ($fail == 0 and $iter < $hlen) {
-	                	$ind ++; # skip over the separator, the unit connector
-	                	my $loop = 2 * $hlen;
-	                	while ($fail == 0 and $loop > 0) {
-	                		if ($diff2[$ind] != $target) {
-	                			$fail = 1;
-	                		}
-	                		$ind ++;
-	                		$loop --;
-	                	} # while $loop
-	                	$target = - $target;
-	                	$iter ++;
-	                } # while $iter
-	                if ($fail == 0) {
-		                $result = 2 * $hlen + 1;
-					}
-    			} # long enough
+                # for example -5,+1,+5,+5 for base-5 "s" with normal stroke direction
+                # the 2nd differences switch between +-5 and -+1
+                my $hlen = 0;
+                print "# id=$pathno inode=$inode, dnode=" . &based0($dnode)
+                        . ", #diff2=" . scalar(@diff2)
+                        . ", diff2=" . join(",", @diff2) . "\n" if $debug >= 0;
+                my $first = $diff2[$hlen ++];
+                while ($diff2[$hlen] == $first) {
+                    $hlen ++;
+                } # while
+                # now $hlen = half of the length of the bar from the $dnode
+                # a 7-wave MM would have @diff2 =  1 1 1 9 -1 -1 -1 -1 -1 -1 9 1 1 1 1 1 1 9 -1 -1 -1 -1 -1 -1
+                if (scalar(@diff2) >= $hlen + $hlen + (2 * $hlen) * $hlen) { # long enough fo ra complete wave
+                    my $parity = $inode % 2; # indicates the displacement from the center
+                    my $nshape = abs($first) == 1 ? 1 : 0; # whether bars are vertical
+                    print "# id=$pathno inode=$inode, dnode=" . &based0($dnode)
+                            . ", hlen=$hlen, parity=$parity, nshape=$nshape\n" if $debug >= 0;
+                    my $fail = 0;
+                    # (1) check the bars: half(= $first), -full, +full, ...
+                    my $target = - $first;
+                    my $ind = $hlen;
+                    my $iter = 0;
+                    while ($fail == 0 and $iter < $hlen) {
+                        $ind ++; # skip over the separator, the unit connector
+                        my $loop = 2 * $hlen;
+                        while ($fail == 0 and $loop > 0) {
+                            if ($diff2[$ind] != $target) {
+                                $fail = 1;
+                            }
+                            $ind ++;
+                            $loop --;
+                        } # while $loop
+                        $target = - $target;
+                        $iter ++;
+                    } # while $iter
+                    if ($fail == 0) {
+                        $result = 2 * $hlen + 1;
+                    }
+                } # long enough
             } # >= 4
         } # a diagnoal value
         $inode ++;
@@ -537,6 +540,115 @@ sub based0 {
     } # while $idig
     return $result;
 } # based0
+
+#--------
+sub check_cube { # check the continuation to a cube
+    my $maxdig = 3;
+    my $ind;
+    my $ncurr;
+    my (@invp, @p2);  # numbers have 3 digits: zxy
+    for ($ind = 0; $ind < $base; $ind ++) { # precompute the values where one digit is 0
+        my $paval = $path[$ind];
+        $invp[$paval] = $ind;
+        $p2[0][$ind] = ($paval / $base)  * $base;                   # zx0
+        $p2[1][$ind] = ($paval / $bpow2) * $bpow2 + $paval % $base; # z0y
+        $p2[2][$ind] = $paval % $bpow2;                             # 0xy
+    } # for
+    $ind = $bpow2;
+    my $nprev = $path[$ind - 1] + $bpow2; # previous node, e.g. 188
+    my $fail = 0;
+    while ($fail == 0 and $ind < $bpow3) {
+        # compute the successor of $nprev at $ind
+        my $next = -1; # no candidate found so far
+        my $cand = -1;
+        my $idig = 0;
+        while ($fail == 0 and $idig < $maxdig) { # try all pairs
+            my $pair = &get_pair($idig, $nprev);
+            my $miss = &get_miss($idig, $nprev);
+            my $papos = $invp[$pair]; # position in @path; try lower and higher (if they exist)
+            my $compare = 0; # skip for this first
+            my $incr = -1;
+            while ($fail == 0 and $incr <= 1) { # first the lower
+                if ($papos != $compare) { # neighbour exists
+                    $cand = $p2[$idig][$papos + $incr] + $miss;
+                    if ($cand != $nprev) { # now check whether all pairs in $cand are adjacent to $nprev
+                        my $adjacent = 1;
+                        my $jdig = 0;
+                        while ($adjacent == 1 and $jdig < $maxdig) {
+                            if ($jdig != $idig) { # the pair corresponding to $idig needs not to be checked, only the other 2
+                                my $prev2 = &get_pair($jdig, $nprev);
+                                my $cand2 = &get_pair($jdig, $cand );
+                                if ($prev2 != $cand2 and abs($invp[$prev2] - $invp[$cand2]) > 1) { # not adjacent
+                                    $adjacent = 0;
+                                } # not adjacent
+                            } # != $idig
+                            $jdig ++;
+                        } # while $jdig
+                        if ($adjacent == 1) {
+                            if ($next < 0) {
+                                $next = $cand;
+                            } else { # conflict, more than 1 candidate
+                                $fail = 1;
+                            }
+                        }
+                    } # $cand != $nprev
+                } # neighbour exists
+                $compare = $base;
+                $incr += 2;
+            } # while $incr
+            $idig ++;
+        } # while $idig
+        if ($next >= 0) {
+            $nprev = $next;
+        } else { # no candidate found
+            $fail = 1;
+        }
+        $ind ++;
+    } # while $ind
+    return $fail == 0 ? 0 : $nprev;
+} # check_cube
+#--------
+sub get_pair { # get a pair of digits
+    my ($idig, $nprev) = @_;
+    my $result;
+    if (0) {
+    } elsif ($idig == 0) {
+        $result = $nprev / $base;                                  #  zx
+    } elsif ($idig == 1) {
+        $result = ($nprev / $bpow2) * $base + $nprev % $base;      #  zy
+    } elsif ($idig == 2) {
+        $result = $nprev % $bpow2;                                 #  xy
+    }
+    return $result;
+} # get_pair
+#--------
+sub get_mask { # get all digits, but one replaced by 0
+    my ($idig, $nprev) = @_;
+    my $result;
+    if (0) {
+    } elsif ($idig == 0) {
+        $result = ($nprev / $base)  * $base;                   # zx0
+    } elsif ($idig == 1) {
+        $result = ($nprev / $bpow2) * $bpow2 + $nprev % $base; # z0y
+    } elsif ($idig == 2) {
+        $result = $nprev % $bpow2;                             # 0xy
+    }
+    return $result;
+} # get_mask
+#--------
+sub get_miss { # get all digits, but one replaced by 0
+    my ($idig, $nprev) = @_;
+    my $result;
+    if (0) {
+    } elsif ($idig == 0) {
+        $result = ($nprev / $base)  * $base;                   # zx0
+    } elsif ($idig == 1) {
+        $result = ($nprev / $bpow2) * $bpow2 + $nprev % $base; # z0y
+    } elsif ($idig == 2) {
+        $result = $nprev % $bpow2;                             # 0xy
+    }
+    return $result;
+} # get_miss
 #--------
 __DATA__
 with first vertical bar:
