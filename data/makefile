@@ -89,7 +89,7 @@ paths.3:
 paths.4:
 	perl gen_paths.pl -b 4 -d $(D)  | tee $@.tmp
 paths.5:
-	perl gen_paths.pl -b 5 -d $(D)  >     $@.tmp
+	perl gen_paths.pl -b 5 -d $(D)  | tee $@.tmp | less
 	tail $@.tmp
 paths.6:
 	perl gen_paths.pl -b 6 -d $(D)  >     $@.tmp
