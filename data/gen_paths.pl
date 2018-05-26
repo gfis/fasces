@@ -11,7 +11,7 @@
 # usage:
 #   perl gen_paths [[-b] base] [-s] [-d n]
 #       -b   base (default 5)
-#       -m x mode, x=symm(etric), diag(onal)
+#       -m x mode, x=symm(etric), diag(onal), wave, cube
 #       -d n debug level n (default: 0)
 #-------------------------
 use strict;
@@ -22,7 +22,7 @@ my $ansi   = 0;  # whether to use ANSI colors on console output
 my $base   = 5;
 my $diag   = 0;
 my $maxexp = 2;  # compute b-file up to $base**$maxexp
-my $mode   = ""; # no special conditions
+my $mode   = "wave,cube"; # no special conditions
 my $symm   = 0;
 my $vert   = "||";
 my $hori   = "==";
@@ -119,7 +119,7 @@ while (scalar(@queue) > 0) { # pop
             &output_path();
             @path = splice(@path, 0, $last + 1); # pop
         } elsif ($diag == 1 and $pval == $last) {
-            print "# skipped because of diag, plen=$plen\n" if $debug >= 2;
+            # print "# skipped because of diag, plen=$plen\n" if $debug >= 2;
         } else {
             &push_urdl();
         }
@@ -136,6 +136,24 @@ print " />\n</paths>\n";
 
 exit(0);
 
+#--------
+sub output_path {
+    $pathno ++;
+    my $wave = &check_wave();
+    if ($wave >= 3) {
+        my $cube = &check_cube();
+        if ($cube > 0) {
+            print "<!-- ========================== -->\n";
+            my $attributes = &get_final_attributes();
+            print "<matrix id=\"$pathno\" wave=\"$wave\" attrs=\"$attributes\" base=\"$base\"\n";
+            print "     path=\""  . join(",", map {         $_  } @path) . "\"\n"
+                . "     bpath=\"" . join(",", map { &based0($_) } @path) . "/\"\n"
+                . "     >\n";
+            &draw_path(@path);
+            print "</matrix>\n";
+        } # cube success
+    } # wave success
+} # output_path
 #--------
 sub mark {
     my ($val) = @_;
@@ -266,24 +284,6 @@ sub push_urdl {
         # }
     } # $fail = 0
 } # push_urdl
-#--------
-sub output_path {
-    $pathno ++;
-    my $wave = &check_wave();
-    if ($wave >= 3) {
-        my $cube = &check_cube();
-		if ($cube > 0) {
-	        print "<!-- ========================== -->\n";
-    	    my $attributes = &get_final_attributes();
-        	print "<matrix id=\"$pathno\" wave=\"$wave\" attrs=\"$attributes\" base=\"$base\"\n";
-	        print "     path=\""  . join(",", map {         $_  } @path) . "\"\n"
-    	        . "     bpath=\"" . join(",", map { &based0($_) } @path) . "/\"\n"
-        	    . "     >\n";
-            &draw_path(@path);
-	        print "</matrix>\n";
-	    } # cube success
-    } # wave success
-} # output_path
 #--------
 # no more used
 sub check_symdiag { # check whether there are symmetric shapes on any diagonal node
