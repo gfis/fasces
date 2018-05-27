@@ -11,7 +11,7 @@
 # usage:
 #   perl gen_paths [[-b] base] [-s] [-d n]
 #       -b   base (default 5)
-#       -m x mode, x=symm(etric), diag(onal), wave, cube
+#       -m x mode, x=symm(etric), diag(onal), wave, cube, nobar
 #       -d n debug level n (default: 0)
 #-------------------------
 use strict;
@@ -22,7 +22,7 @@ my $ansi   = 0;  # whether to use ANSI colors on console output
 my $base   = 5;
 my $diag   = 0;
 my $maxexp = 2;  # compute b-file up to $base**$maxexp
-my $mode   = "wave,cube"; # no special conditions
+my $mode   = "wave,cube"; # no special conditions; maybe "nobar"
 my $symm   = 0;
 my $vert   = "||";
 my $hori   = "==";
@@ -75,67 +75,71 @@ print <<"GFis";
 <paths base="$base">
 GFis
 
-my @queue = (); # entries are "path_index${sep}value"
+my @stack = (); # entries are "path_index${sep}value"
 $ind = 0;
 &mark($ind); $ind ++;
 &mark($ind); $ind ++;
-# normalized start: 00->01
-# $ind = $base; # comment this out to assume a vertical bar at the beginning
+# always with a normalized start: 00->01
+if ($mode =~ m{nobar}) { # but full length bar can be suppressed by "nobar"
+    $ind = $base; 
+}
 while ($ind < $base) { # start with 00->01->02->...->0b
     &mark($ind);
     $ind ++;
 } # vertical bar
 &push_urdl();
-
-while (scalar(@queue) > 0) { # pop
-    my ($pind, $pval) = split(/$sep/, pop(@queue));
-    while (scalar(@path) > $pind) {
-        &unmark();
-    } # while unmark
-    # if ($debug >= 2) {
-    #     print "queue[" . sprintf("%3d", scalar(@queue)) . "]\@$pind: "
-    #             . join(",", map { &based0($_) } @path) . " ". &based0($pval)
-    #             . "?\n";
-    #     my $ifil = 0;
-    #     while ($ifil < scalar(@filled)) {
-    #         print &based0($ifil) . ";$filled[$ifil] ";
-    #         $ifil ++;
-    #     }
-    #     print "\n";
-    # }
-    &mark($pval);
-    my $plen = scalar(@path);
-    if ($symm == 1 ? ($pval == $last) : ($plen <= $last + 1)) {
-        print "pval=$pval, plen=$plen, last=$last, full=$full\n" if $debug >= 2;
-        if ($plen == $last + 1) { # really at the end or in the center
-            while ($plen < $corner) { # fill 2nd half in case of $symm
-                push(@path, $full - $path[$full - $plen]);
-                $plen ++;
-            } # fill
-            # if ($debug >= 2) {
-            #     print "scalar(path)=" . scalar(@path) . ", plen=$plen, last=$last, full=$full\n";
-            #     print join("/", map { &based0($_) } @path) . "\n";
-            # }
-            &output_path();
-            @path = splice(@path, 0, $last + 1); # pop
-        } elsif ($diag == 1 and $pval == $last) {
-            # print "# skipped because of diag, plen=$plen\n" if $debug >= 2;
+&iterate();
+exit(0);
+#-----------------------------------------
+sub iterate { # process stack
+	%attrs = ();
+    while (scalar(@stack) > 0) { # pop
+        my ($pind, $pval) = split(/$sep/, pop(@stack));
+        while (scalar(@path) > $pind) {
+            &unmark();
+        } # while unmark
+        # if ($debug >= 2) {
+        #     print "stack[" . sprintf("%3d", scalar(@stack)) . "]\@$pind: "
+        #             . join(",", map { &based0($_) } @path) . " ". &based0($pval)
+        #             . "?\n";
+        #     my $ifil = 0;
+        #     while ($ifil < scalar(@filled)) {
+        #         print &based0($ifil) . ";$filled[$ifil] ";
+        #         $ifil ++;
+        #     }
+        #     print "\n";
+        # }
+        &mark($pval);
+        my $plen = scalar(@path);
+        if ($symm == 1 ? ($pval == $last) : ($plen <= $last + 1)) {
+            print "pval=$pval, plen=$plen, last=$last, full=$full\n" if $debug >= 2;
+            if ($plen == $last + 1) { # really at the end or in the center
+                while ($plen < $corner) { # fill 2nd half in case of $symm
+                    push(@path, $full - $path[$full - $plen]);
+                    $plen ++;
+                } # fill
+                # if ($debug >= 2) {
+                #     print "scalar(path)=" . scalar(@path) . ", plen=$plen, last=$last, full=$full\n";
+                #     print join("/", map { &based0($_) } @path) . "\n";
+                # }
+                &output_path();
+                @path = splice(@path, 0, $last + 1); # pop
+            } elsif ($diag == 1 and $pval == $last) {
+                # print "# skipped because of diag, plen=$plen\n" if $debug >= 2;
+            } else {
+                &push_urdl();
+            }
         } else {
             &push_urdl();
         }
-    } else {
-        &push_urdl();
-    }
-} # while popping
-
-print "\n<summary base=\"$base\" count=\"$pathno\"";
-foreach my $attr(sort(keys(%attrs))) {
-    print " $attr=\"$attrs{$attr}\"";
-} # foreach
-print " />\n</paths>\n";
-
-exit(0);
-
+    } # while popping
+    
+    print "\n<summary base=\"$base\" count=\"$pathno\"";
+    foreach my $attr(sort(keys(%attrs))) {
+        print " $attr=\"$attrs{$attr}\"";
+    } # foreach
+    print " />\n</paths>\n";
+} # iterate
 #--------
 sub output_path {
     $pathno ++;
@@ -224,7 +228,7 @@ sub push_urdl {
                     }
                 }
                 if ($fail == 0) {
-                    push(@queue, "$len$sep$vnext");
+                    push(@stack, "$len$sep$vnext");
                 }                           # push upper
             }
         }
@@ -241,7 +245,7 @@ sub push_urdl {
                     }
                 }
                 if ($fail == 0) {
-                    push(@queue, "$len$sep$vnext");
+                    push(@stack, "$len$sep$vnext");
                 }                           # push lower
             }
         }
@@ -258,7 +262,7 @@ sub push_urdl {
                     }
                 }
                 if ($fail == 0) {
-                    push(@queue, "$len$sep$vnext");
+                    push(@stack, "$len$sep$vnext");
                 }                           # push right
             }
         }
@@ -275,50 +279,15 @@ sub push_urdl {
                     }
                 }
                 if ($fail == 0) {
-                    push(@queue, "$len$sep$vnext");
+                    push(@stack, "$len$sep$vnext");
                 }                           # push left
             }
         }
         # if ($debug >= 2) {
-        #     print "push_urdl: vlast=$vlast, xlast=$xlast, ylast=$ylast, " . join("/", @queue) . "\n";
+        #     print "push_urdl: vlast=$vlast, xlast=$xlast, ylast=$ylast, " . join("/", @stack) . "\n";
         # }
     } # $fail = 0
 } # push_urdl
-#--------
-# no more used
-sub check_symdiag { # check whether there are symmetric shapes on any diagonal node
-    my $result = 0; # assume failure
-    my $basep1 = $base + 1;
-    my $inode = $basep1 * 2;
-    while ($result == 0 and $inode < $full) { # diagonal nodes 22..33 for base=5
-        my $dnode = $path[$inode];
-        if ($dnode % $basep1 == 0 and $dnode > $basep1 and $dnode < $full) { # a diagonal value
-            my $dist = 1; # from the diagonal node
-            my $symmetric = 1; # as long as the path is symmetric around $inode
-            while ($symmetric == 1 and $dist < $half) { # determine 1st deviation from symmetricity
-                my $diff   = $path[$inode + $dist] - $dnode ;
-                if ($dnode - $path[$inode - $dist] != $diff) { # deviation found
-                    print "# id=$pathno inode=$inode, dnode=" . &based0($dnode) . ", diff=$diff, <> "
-                            . ($dnode - $path[$inode - $dist]) . "\n" if $debug >= 2;
-                    $symmetric = 0;
-                    if ($dist > 4) {
-                        $result = $dist;
-                    }
-                    # deviation found
-                } else { # no deviation
-                    print "# id=$pathno inode=$inode, dnode=" . &based0($dnode)
-                            . ", dist=$dist, diff=$diff\n" if $debug >= 2;
-                }
-                $dist ++;
-            } # while symmetricity
-            if ($symmetric == 1) {
-                $result = $dist;
-            }
-        } # a diagnoal value
-        $inode ++;
-    } # while on diagonal
-    return $result;
-} # check_symdiag
 #--------
 sub check_wave { # check whether there is a wave with a center on the diagonal
     # similiar to checK_symdiag, but the symmetricity must have a wave shape
@@ -406,23 +375,23 @@ sub add_attr { # add an attribute
 } # add_attr
 #--------
 sub get_final_attributes {
-    # determine general properties of the finished path
+    # determine general properties of the endpoint and of the finished path
     my $result = "";
     my $last = $path[scalar(@path) - 1];
     #----
     my $dig0 =  $last          % $base;
     my $dig1 = ($last / $base) % $base;
-    if (0) {
+    if (0) {                    # properties of the endpoint
     } elsif ((              $dig0 == $base_1) and (              $dig1 == $base_1)) {
-        $result .= ",diagonal";
+        $result .= ",diagonal"; # right upper
     } elsif (($dig0 == 0                    ) and (              $dig1 == $base_1)) {
-        $result .= ",opposite";
+        $result .= ",opposite"; # right lower
     } elsif (($dig0 == 0 or $dig0 == $base_1) and ($dig1 == 0 or $dig1 == $base_1)) {
-        $result .= ",corner";
+        $result .= ",corner";   # in one of the 3 corners
     } elsif (($dig0 == 0 or $dig0 == $base_1) or  ($dig1 == 0 or $dig1 == $base_1)) {
-        $result .= ",outside";
+        $result .= ",outside";  # at the border
     } else {
-        $result .= ",inside";
+        $result .= ",inside";   # inside
     }
     #----
     my $ipa = 0;
@@ -442,7 +411,7 @@ sub get_final_attributes {
     } # foreach
     return $result;
 } # get_final_attributes
-#--------
+#---------------------------------------------------------------------------
 sub draw_path {
     our $vert   = "||"; if ($ansi == 1) { $vert = "\x1b[103m$vert\x1b[0m"; }
     our $hori   = "=="; if ($ansi == 1) { $hori = "\x1b[103m$hori\x1b[0m"; }
@@ -692,6 +661,41 @@ sub to_base { # convert from decimal to base
     } # while > 0
     return $result eq "" ? "0" : $result; 
 } # to_base
+#--------
+# not used anymor
+esub check_symdiag { # check whether there are symmetric shapes on any diagonal node
+    my $result = 0; # assume failure
+    my $basep1 = $base + 1;
+    my $inode = $basep1 * 2;
+    while ($result == 0 and $inode < $full) { # diagonal nodes 22..33 for base=5
+        my $dnode = $path[$inode];
+        if ($dnode % $basep1 == 0 and $dnode > $basep1 and $dnode < $full) { # a diagonal value
+            my $dist = 1; # from the diagonal node
+            my $symmetric = 1; # as long as the path is symmetric around $inode
+            while ($symmetric == 1 and $dist < $half) { # determine 1st deviation from symmetricity
+                my $diff   = $path[$inode + $dist] - $dnode ;
+                if ($dnode - $path[$inode - $dist] != $diff) { # deviation found
+                    print "# id=$pathno inode=$inode, dnode=" . &based0($dnode) . ", diff=$diff, <> "
+                            . ($dnode - $path[$inode - $dist]) . "\n" if $debug >= 2;
+                    $symmetric = 0;
+                    if ($dist > 4) {
+                        $result = $dist;
+                    }
+                    # deviation found
+                } else { # no deviation
+                    print "# id=$pathno inode=$inode, dnode=" . &based0($dnode)
+                            . ", dist=$dist, diff=$diff\n" if $debug >= 2;
+                }
+                $dist ++;
+            } # while symmetricity
+            if ($symmetric == 1) {
+                $result = $dist;
+            }
+        } # a diagnoal value
+        $inode ++;
+    } # while on diagonal
+    return $result;
+} # check_symdiag
 #--------
 __DATA__
 with first vertical bar:

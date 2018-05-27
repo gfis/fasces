@@ -157,7 +157,7 @@ meander.9:
 	# grep " 16666" $@.tmp | wc -l
 	# grep -ve "^#" meander.7.tmp | grep -vE "\," | tee meander.7c.tmp
 diag_dist:
-	perl gen_meander.pl -b 7 -r meander.7.err -l 2401 > meadiag.7.tmp
+	perl gen_meander.pl -b 7 -r meander.7.err -l 2401 O> meadiag.7.tmp
 flip5:
 	perl gen_meander.pl -b 5 -l 3165 -v -f -pb "00,01,02,12,11,10,20,21,22,32,31,30,40,41,42,43,33,23,13,03,04,14,24,34,44"
 mea7d:
