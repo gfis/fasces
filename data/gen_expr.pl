@@ -2,7 +2,7 @@
 
 # Generate path expressions for FASS curves
 # @(#) $Id$
-# 2018-92-21: for "Fs" also
+# 2018-02-21: for "Fs" also
 # 2018-02-19: determine a single element (x1000000)
 # 2018-02-18, Georg Fischer
 # Program in the public domain

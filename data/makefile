@@ -14,6 +14,18 @@ all:
 	# please use a specific makefile target: 
 	grep -E "^[a-zA-Z0-9]+\:" makefile | head -n 20
 #-------------------------------
+pdesc.5: pdesc.5.Ln pdesc.5.Ls pdesc.5.Kn pdesc.5.Fs pdesc.5.NN
+pdesc.5.Ln:
+	grep -vE "^#" $@.txt | sort
+pdesc.5.Ls:
+	grep -vE "^#" $@.txt | sort
+pdesc.5.Kn:
+	grep -vE "^#" $@.txt | sort
+pdesc.5.Fs:
+	grep -vE "^#" $@.txt | sort
+pdesc.5.NN:
+	grep -vE "^#" $@.txt | sort
+#-------------------------------
 # A220952 - Knuth's adjacency matrix
 # compare results of expanded path expressions with Mathar's b-files
 pexpr: pexpr5

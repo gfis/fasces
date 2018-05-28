@@ -2,6 +2,7 @@
 
 # Read path expressions for FASS curves and expand them into plain element vectors
 # @(#) $Id$
+# 2018-05-28: break lnes after 16 elements
 # 2018-02-18, Georg Fischer
 # Program in the public domain
 # c.f. <http://www.teherba.org/index.php/OEIS/A220952>
@@ -52,19 +53,27 @@ while (<>) { # read output of gen_expr.pl
                 foreach my $elem (@old_path) {
                     my $len = length($elem);
                     if ($exp ne "") {
-                        $elem = substr($elem, 0, $len - $exp) . $digit 
+                        $elem = substr($elem, 0, $len - $exp) . $digit
                               . substr($elem, $len - $exp);
                     }
                     push(@new_path, $elem);
                 } # foreach $elem
             } # not empty
         } # length > 0
-    } # foreach 
-    print "   = [" . join(",", @new_path) . "];\n";
+    } # foreach
+    my $count = 1;
+    print "   = [" . join(",", map {
+            my $element = $_;
+            if ($count % 16 == 0) {
+                $element .= "\n     ";
+            }
+            $count ++;
+            $element
+        } @new_path) . "];\n";
     $pexprs{$var} = join(",", @new_path);
 } # while <>
 __DATA__
-georg@nunki:~/work/gits/fasces/data$ perl gen_expr.pl 5 
+georg@nunki:~/work/gits/fasces/data$ perl gen_expr.pl 5
 A0 = []; len = 1;
 #----
 A1 = [A0.0+1,/A0.0+2,A0.0+3]; len = 3;
@@ -92,4 +101,4 @@ D5 = [C4.2+0,C5,C4.2+4]; len = 1125;
 E5 = [D4.3+4,D5,D4.3+0]; len = 1875;
 F5 = [E4.4+0,E5,E4.4+4]; len = 3125;
 #--------
-georg@nunki:~/work/gits/fasces/data$ 
+georg@nunki:~/work/gits/fasces/data$
