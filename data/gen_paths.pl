@@ -9,10 +9,11 @@
 # c.f. https://oeis.org/A220952
 # C.f. Knuth's meander sequence, OEIS A220952
 # usage:
-#   perl gen_paths [[-b] base] [-s] [-d n]
-#       -b   base (default 5)
-#       -m x mode, x=symm(etric), diag(onal), wave, cube, nobar
-#       -d n debug level n (default: 0)
+#   perl gen_paths [-b base] [-l dim] [-m mode] [-d n]
+#       -b base  (default 5)
+#       -m mode  symm(etric), diag(onal), wave, extra, nobar
+#       -l dim   extrapolate up to this dimension (default 3 = cube)
+#       -d debug level n (default: 0 = none)
 #-------------------------
 use strict;
 use integer; # avoid division problems with reals
@@ -24,6 +25,7 @@ my $diag   = 0;
 my $maxexp = 2;  # compute b-file up to $base**$maxexp
 my $mode   = "wave,cube"; # no special conditions; maybe "nobar"
 my $symm   = 0;
+my $maxdim = 3;
 my $vert   = "||";
 my $hori   = "==";
 my $blan   = "  ";
@@ -32,17 +34,17 @@ my %attrs  = (); # path attributes: symmetrical, corner, ...
 
 while (scalar(@ARGV) > 0) {
     my $opt = shift(@ARGV);
-    if ($opt =~ m{\A(\-b)?(\d+)\Z}) {
-        $base  = $2;
-    }
-    if ($opt eq "\-a") {
+    if (0) {
+    } elsif ($opt =~ m{b}) {
+        $base   = shift(@ARGV);
+    } elsif ($opt =~ m{a}) {
         $ansi   = 1;
-    }
-    if ($opt =~ m{m}) {
-        $mode = shift(@ARGV);
-    }
-    if ($opt =~ m{d}) {
-        $debug = shift(@ARGV);
+    } elsif ($opt =~ m{l}) {
+        $maxdim = shift(@ARGV);
+    } elsif ($opt =~ m{m}) {
+        $mode   = shift(@ARGV);
+    } elsif ($opt =~ m{d}) {
+        $debug  = shift(@ARGV);
     }
 } # while opt
 $symm = ($mode =~ m{sy}) ? 1 : 0;
@@ -61,6 +63,8 @@ if ($symm == 1) {
 my $bpow2 = $base  * $base;
 my $bpow3 = $bpow2 * $base;
 my $base_1 = $base - 1;
+my @bpow = (1, $base, $bpow2, $bpow3, $bpow3 * $base, $bpow3 * $bpow2); # up to ^5
+
 my @path = ();
 my
 $ind = 0;
@@ -81,7 +85,7 @@ $ind = 0;
 &mark($ind); $ind ++;
 # always with a normalized start: 00->01
 if ($mode =~ m{nobar}) { # but full length bar can be suppressed by "nobar"
-    $ind = $base; 
+    $ind = $base;
 }
 while ($ind < $base) { # start with 00->01->02->...->0b
     &mark($ind);
@@ -92,7 +96,7 @@ while ($ind < $base) { # start with 00->01->02->...->0b
 exit(0);
 #-----------------------------------------
 sub iterate { # process stack
-	%attrs = ();
+    %attrs = ();
     while (scalar(@stack) > 0) { # pop
         my ($pind, $pval) = split(/$sep/, pop(@stack));
         while (scalar(@path) > $pind) {
@@ -133,7 +137,7 @@ sub iterate { # process stack
             &push_urdl();
         }
     } # while popping
-    
+
     print "\n<summary base=\"$base\" count=\"$pathno\"";
     foreach my $attr(sort(keys(%attrs))) {
         print " $attr=\"$attrs{$attr}\"";
@@ -145,8 +149,9 @@ sub output_path {
     $pathno ++;
     my $wave = &check_wave();
     if ($wave >= 3) {
-        my $cube = &check_cube();
-        if ($cube > 0) {
+        my $not_expandable = &extrapolate($maxdim);
+        # my $cube = &check_cube();
+        if ($not_expandable == 0) {
             print "<!-- ========================== -->\n";
             my $attributes = &get_final_attributes();
             print "<matrix id=\"$pathno\" wave=\"$wave\" attrs=\"$attributes\" base=\"$base\"\n";
@@ -510,147 +515,6 @@ sub based0 {
     return $result;
 } # based0
 #--------
-sub check_cube { # check the continuation to a cube
-    my $debsave = $debug;
-    # $debug = 1;
-    my $maxdig = 3;
-    my $ind;
-    my $ncurr;
-    my @invp; # at which index does a path value occur 
-    my @mask; # the path expanded by a missing digit
-    for ($ind = 0; $ind < $bpow2; $ind ++) { # precompute the values where one digit is 0
-        my $paval = $path[$ind];
-        $invp[$paval] = $ind;
-        # print "# invp[$paval]=" . &based0($ind) . "\n" if $debug >= 2;
-        $mask[0][$ind] = $paval * $base;                              # zx0, y is masked
-        $mask[1][$ind] = ($paval / $base ) * $bpow2 + $paval % $base; # z0y, x is masked
-        $mask[2][$ind] = $paval         ;                             # 0xy, z is masked
-    } # for
-    if ($debug >= 2) {
-        print "# ind :   "; for ($ind = 0; $ind < $bpow2; $ind ++) { print sprintf("%4s",         ($ind          )); } print "\n";
-        print "# bind:   "; for ($ind = 0; $ind < $bpow2; $ind ++) { print sprintf("%4s", &based0 ($ind          )); } print "\n";
-        print "# path:   "; for ($ind = 0; $ind < $bpow2; $ind ++) { print sprintf("%4s", &based0 ($path[$ind]   )); } print "\n";
-        print "# invp:   "; for ($ind = 0; $ind < $bpow2; $ind ++) { print sprintf("%4s", &based0 ($invp[$ind]   )); } print "\n";
-        print "# mask[0]:"; for ($ind = 0; $ind < $bpow2; $ind ++) { print sprintf("%4s", &to_base($mask[0][$ind])); } print "\n";
-        print "# mask[1]:"; for ($ind = 0; $ind < $bpow2; $ind ++) { print sprintf("%4s", &to_base($mask[1][$ind])); } print "\n";
-        print "# mask[2]:"; for ($ind = 0; $ind < $bpow2; $ind ++) { print sprintf("%4s", &to_base($mask[2][$ind])); } print "\n";
-    }
-    $ind = $bpow2;
-    my $fail = 0;
-    my $nprev = $path[$ind - 1]         ; # previous node, e.g.  44 for base=5
-    my $ncurr = $nprev          + $bpow2; # current  node, e.g. 144    my $fail = 0;
-    while ($fail == 0 and $ind < $bpow3 - 1) {
-        # compute the successor of $ncurr at $ind
-        my $nsucc = -1; # no candidate found so far
-        my $cand = -1;
-        my $idig = 0;
-        while ($fail == 0 and $idig < $maxdig) { # try all pairs
-            my $pair  = &get_pair($idig, $ncurr);
-            my $miss  = &get_miss($idig, $ncurr);
-            my $papos = $invp[$pair]; # position in @path; try lower and higher (if they exist)
-            # print "# try pair : idig=$idig, ncurr=" . &to_base($ncurr) . ", pair=" 
-            #         . &to_base($pair) . ", miss=" . &to_base($miss) . ", papos=$papos\n" if $debug >= 2;
-            my $compare = 0; # skip for this first
-            my $incr = -1;
-            while ($fail == 0 and $incr <= 1) { # first the lower
-                if ($papos != $compare) { # neighbour exists
-                    $cand = $mask[$idig][$papos + $incr] + $miss;
-                    # print "# candidate: idig=$idig, ncurr=" . &to_base($ncurr) . ", cand=" 
-                    #         . &to_base($cand) . ", incr=$incr, compare=$compare\n" if $debug >= 2;
-                    if ($cand != $nprev) { # now check whether all pairs in $cand are adjacent to $ncurr
-                        my $adjacent = 1;
-                        my $jdig = 0;
-                        while ($adjacent == 1 and $jdig < $maxdig) {
-                            if ($jdig != $idig) { # the pair corresponding to $idig needs not to be checked, only the other 2
-                                my $prev2 = &get_pair($jdig, $ncurr);
-                                my $cand2 = &get_pair($jdig, $cand );
-                                if ($prev2 != $cand2 and abs($invp[$prev2] - $invp[$cand2]) > 1) { # not adjacent
-                                    # print "# not adj  : idig=$idig, ncurr=" . &to_base($ncurr) . ", prev2=" 
-                                    #         . &to_base($prev2) . ", cand=" . &to_base($cand) . ", cand2=" . &to_base($cand2) . "\n" if $debug >= 2;
-                                    $adjacent = 0;
-                                } # not adjacent
-                            } # != $idig
-                            $jdig ++;
-                        } # while $jdig
-                        if ($adjacent == 1) {
-                            if ($nsucc < 0) {
-                                $nsucc = $cand;
-                            } elsif ($cand != $nsucc) { # conflict, more than 1 candidate
-                                print "# conflict:  idig=$idig, ncurr=" . &to_base($ncurr) . ", next=" 
-                                        . &to_base($nsucc) . ", cand=" . &to_base($cand) . "\n" if $debug >= 1;
-                                $fail = 1;
-                            }
-                        }
-                        # $cand != $ncurr
-                    } else {
-                        # print "# same as nprev=" . &to_base($nprev) . "\n" if $debug >= 2;
-                    }
-                    # neighbour exists
-                } else {
-                    # print "# nex cand : idig=$idig, ncurr=" . &to_base($ncurr) . ", cand=" 
-                    #         . &to_base($cand) . ", incr=$incr, compare=$compare\n" if $debug >= 2;
-                }
-                $compare = $bpow2;
-                $incr += 2;
-            } # while $incr
-            $idig ++;
-        } # while $idig
-        if ($fail == 0 and $nsucc >= 0) {
-            $nprev = $ncurr;
-            $ncurr = $nsucc;
-            # print "# took-----> next= " . &to_base($nsucc) . ", ind=$ind\n" if $debug >= 2;
-        } else { # no candidate found
-            print "# no cand--> ncurr=" . &to_base($ncurr) . ", ind=$ind\n" if $debug >= 1;
-            $fail = 1;
-        }
-        $ind ++;    
-    } # while $ind
-    $debug = $debsave;
-    return $fail == 0 ? $ncurr : 0;
-} # check_cube
-#--------
-sub get_pair { # get a pair of digits from zxy
-    my ($idig, $ncurr) = @_;
-    my $result;
-    if (0) {
-    } elsif ($idig == 0) {
-        $result = $ncurr / $base;                                  #  zx
-    } elsif ($idig == 1) {
-        $result = ($ncurr / $bpow2) * $base + $ncurr % $base;      #  zy
-    } elsif ($idig == 2) {
-        $result = $ncurr % $bpow2;                                 #  xy
-    }
-    return $result;
-} # get_pair
-#--------
-sub get_miss { # get a single digit in the proper position from zxy
-    my ($idig, $ncurr) = @_;
-    my $result;
-    if (0) {
-    } elsif ($idig == 0) {
-        $result = $ncurr % $base;                              # 00y
-    } elsif ($idig == 1) {
-        $result = (($ncurr / $base) % $base) * $base;          # 0x0
-    } elsif ($idig == 2) {
-        $result = ($ncurr / $bpow2) * $bpow2;                  # z00
-    }
-    return $result;
-} # get_miss
-#--------
-sub get_mask { # get all digits, but one replaced by 0
-    my ($idig, $ncurr) = @_;
-    my $result;
-    if (0) {
-    } elsif ($idig == 0) {
-        $result = ($ncurr / $base)  * $base;                   # zx0
-    } elsif ($idig == 1) {
-        $result = ($ncurr / $bpow2) * $bpow2 + $ncurr % $base; # z0y
-    } elsif ($idig == 2) {
-        $result = $ncurr % $bpow2;                             # 0xy
-    }
-    return $result;
-} # get_mask
-#--------
 sub to_base { # convert from decimal to base
     my ($num)  = @_;
     my $result = "";
@@ -659,43 +523,103 @@ sub to_base { # convert from decimal to base
         $result =  $digit . $result;
         $num /= $base;
     } # while > 0
-    return $result eq "" ? "0" : $result; 
+    return $result eq "" ? "0" : $result;
 } # to_base
 #--------
-# not used anymor
-esub check_symdiag { # check whether there are symmetric shapes on any diagonal node
-    my $result = 0; # assume failure
-    my $basep1 = $base + 1;
-    my $inode = $basep1 * 2;
-    while ($result == 0 and $inode < $full) { # diagonal nodes 22..33 for base=5
-        my $dnode = $path[$inode];
-        if ($dnode % $basep1 == 0 and $dnode > $basep1 and $dnode < $full) { # a diagonal value
-            my $dist = 1; # from the diagonal node
-            my $symmetric = 1; # as long as the path is symmetric around $inode
-            while ($symmetric == 1 and $dist < $half) { # determine 1st deviation from symmetricity
-                my $diff   = $path[$inode + $dist] - $dnode ;
-                if ($dnode - $path[$inode - $dist] != $diff) { # deviation found
-                    print "# id=$pathno inode=$inode, dnode=" . &based0($dnode) . ", diff=$diff, <> "
-                            . ($dnode - $path[$inode - $dist]) . "\n" if $debug >= 2;
-                    $symmetric = 0;
-                    if ($dist > 4) {
-                        $result = $dist;
+sub extrapolate { # try to expand the path up to some dimension
+    my ($maxdim) = @_;
+    my $debsave = $debug;
+    my $UNKN = -256; # never met
+    # $debug = 1;
+    my $ind;
+    my @invp; # at which index does a path value occur
+    for ($ind = 0; $ind < $bpow2; $ind ++) { # precompute the values where one digit is 0
+        my $paval = $path[$ind];
+        $invp[$paval] = $ind;
+    } # for
+    if ($debug >= 2) {
+        print "# ind :   "; for ($ind = 0; $ind < $bpow2; $ind ++) { print sprintf("%4s",         ($ind          )); } print "\n";
+        print "# bind:   "; for ($ind = 0; $ind < $bpow2; $ind ++) { print sprintf("%4s", &based0 ($ind          )); } print "\n";
+        print "# path:   "; for ($ind = 0; $ind < $bpow2; $ind ++) { print sprintf("%4s", &based0 ($path[$ind]   )); } print "\n";
+        print "# invp:   "; for ($ind = 0; $ind < $bpow2; $ind ++) { print sprintf("%4s", &based0 ($invp[$ind]   )); } print "\n";
+    }
+    $ind      = $bpow2;
+    my $fail  = 0;
+    my $nprev = $path[$ind - 2]; # previous node, e.g.  44 for base=5
+    my $ncurr = $path[$ind - 1]; # at least for diagonal paths, with odd base
+    my $limit = $bpow[$maxdim];
+    while ($fail == 0 and $ind < $limit) {
+        # compute the successor of $nprev at $ind
+        print "# try       " . &to_base($nprev) . " -> " . &to_base($ncurr) . " -> ?\n" if $debug >= 1;
+        my $nnext   = $UNKN;
+        my $candno = 0; # number of possible candidates
+        my $k = 0;
+        while ($k < $maxdim) {
+            my $pm = -1;
+            while ($pm < 2) {
+                # my $currdig = &get_digit1($ncurr, $k);
+                my $currdig = $k != 0 ? (($ncurr / $bpow[$k]) % $base) : $ncurr % $base;
+                if (($currdig != 0 or $pm != -1) and ($currdig != $base_1 or $pm != +1)) { # next will not be at any border
+                    my $ncand = $ncurr + $pm * $bpow[$k]; # candidate with digit -+ 1
+                    # print "# candidate " . &to_base($ncand) . " k=$k, pm=$pm\n" if $debug >= 1;
+                    if ($ncand != $nprev) { # test whether all subpairs (i,j) of $ncand fulfill the adjacency condition
+                        my $adjac = 1; # assume all subpair combinations are adjacent
+                        my $j = 0;
+                        while ($adjac == 1 and $j < $maxdim - 1) {
+                            my $i = $j + 1;
+                            while ($adjac == 1 and $i < $maxdim) { # try all pairs
+                                my ($curra, $currb) = &get_pair($ncurr, $i, $j);
+                                my ($canda, $candb) = &get_pair($ncand, $i, $j);
+                                my $curr2  = $curra * $base + $currb;
+                                my $cand2  = $canda * $base + $candb;
+                                if ($curr2 != $cand2 and abs($invp[$curr2] - $invp[$cand2]) != 1) {
+                                    $adjac = 0;
+                                }
+                                # print "# pair ($i,$j): curr($curra,$currb) " . ($adjac == 1 ? "isadjac" : "notadj") . " cand($canda,$candb)\n" if $debug >= 2;
+                                $i ++;
+                            } # while $i
+                            $j ++;
+                        } # while $j
+                        if ($adjac == 1) {
+                            $candno ++;
+                            $nnext = $ncand;
+                        }
+                        # next != prev
+                    } else {
+                        # print "# same as previous: " . &to_base($nprev) . "\n" if $debug >= 1;
                     }
-                    # deviation found
-                } else { # no deviation
-                    print "# id=$pathno inode=$inode, dnode=" . &based0($dnode)
-                            . ", dist=$dist, diff=$diff\n" if $debug >= 2;
-                }
-                $dist ++;
-            } # while symmetricity
-            if ($symmetric == 1) {
-                $result = $dist;
-            }
-        } # a diagnoal value
-        $inode ++;
-    } # while on diagonal
-    return $result;
-} # check_symdiag
+                } # not at the border
+                $pm += 2;
+            } # while $pm
+            $k ++;
+        } # while $k
+        if (0) {
+        } elsif ($candno == 0) {
+            print "# no candidate " . &to_base($ncurr) . " -> ?\n" if $debug >= 1;
+            $fail = 1;
+        } elsif ($candno >  1) {
+            print "# conflict for " . &to_base($ncurr) . " -> ?\n" if $debug >= 1;
+            $fail = $candno;
+        } else {
+            # print "# found        " . &to_base($nprev) . " -> " . &to_base($ncurr) . " -> " . &to_base($nnext) . "\n" if $debug >= 1;
+            # print "$ind $nnext\n";
+            $nprev = $ncurr;
+            $ncurr = $nnext;
+        }
+        $ind ++;
+    } # while $ind
+    $debug = $debsave;
+    return $fail;
+} # extrapolate
+#---------
+sub get_pair { # get a pair of digits from an element; 0 <= i < j <= 5
+    my ($nprev, $i, $j) = @_;
+    my ($a, $b) =
+            ( ($i != 0 ? (($nprev / $bpow[$i]) % $base) : $nprev % $base)
+            , ($j != 0 ? (($nprev / $bpow[$j]) % $base) : $nprev % $base)
+            );
+    return ($a, $b);
+} # get_pair
 #--------
 __DATA__
 with first vertical bar:
@@ -723,3 +647,6 @@ with 00->01 only:
 real    5m14.596s
 user    5m13.858s
 sys     0m0.169s
+
+2018-05-29, 23:54:
+<summary base="7" count="11658" diagonal="47" symmetrical="9" />
