@@ -91,26 +91,30 @@ pls5:
 	perl gen_meander.pl  -i Ls -f -l 3125 -b 5 -p ="0,1,2,3,4,9,8,7,6,5,10,15,20,21,16,11,12,17,22,23,18,13,14,19,24"\
 		> $@.gm.tmp
 #-------------------------------
-paths.2-6: paths.2 paths.3 paths.4 paths.5 paths.6
+paths.2-7: paths.2 paths.3 paths.4 paths.5 paths.6 paths.7
 paths: 
-	perl gen_paths.pl -b $(B) | tee paths.$(B).tmp
+	perl gen_paths.pl -b $(B)       | tee paths.$(B).tmp
+	tail $@.tmp
 paths.2:
 	perl gen_paths.pl -b 2 -d $(D)  | tee $@.tmp
+	tail $@.tmp
 paths.3:
 	perl gen_paths.pl -b 3 -d $(D)  | tee $@.tmp
+	tail $@.tmp
 paths.4:
 	perl gen_paths.pl -b 4 -d $(D)  | tee $@.tmp
+	tail $@.tmp
 paths.5:
-	perl gen_paths.pl -b 5 -d $(D)  | tee $@.tmp | less
+	perl gen_paths.pl -b 5 -d $(D)  | tee $@.tmp 
 	tail $@.tmp
 paths.6:
 	perl gen_paths.pl -b 6 -d $(D)  >     $@.tmp
 	tail $@.tmp
 paths.7:
-	perl gen_paths.pl -b 7 -d $(D)  >     $@.tmp
+	perl gen_paths.pl -b 7 -d $(D)  | tee $@.tmp
 	tail $@.tmp
 paths.9:
-	perl gen_paths.pl -b 9 -d $(D)  >     $@.tmp
+	perl gen_paths.pl -b 9 -d $(D)  | tee $@.tmp
 	tail $@.tmp
 #----
 rec_paths: rp1 rp2

@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 # FASS: generate all noncrossing paths which fill a square of defined size completely
-# 2018-05-21: obe some adjacency conditions
+# 2018-05-30: extrapolate
 # 2018-05-18: if the path marks a border element, the two neighbours on the border may not be both unmarked
 # 2018-05-10: even bases 2, 4, ...; summary
 # 2017-08-23, Georg Fischer
@@ -13,6 +13,7 @@
 #       -b base  (default 5)
 #       -m mode  symm(etric), diag(onal), wave, extra, nobar
 #       -l dim   extrapolate up to this dimension (default 3 = cube)
+#       -v       output vector
 #       -d debug level n (default: 0 = none)
 #-------------------------
 use strict;
@@ -21,11 +22,14 @@ use integer; # avoid division problems with reals
 my $debug  = 0;
 my $ansi   = 0;  # whether to use ANSI colors on console output
 my $base   = 5;
+my $unit   = 1;  # dual to $base
 my $diag   = 0;
 my $maxexp = 2;  # compute b-file up to $base**$maxexp
 my $mode   = "wave,cube"; # no special conditions; maybe "nobar"
 my $symm   = 0;
 my $maxdim = 3;
+my $vector = 0; # whether to output a vector
+my $vecstr = "";
 my $vert   = "||";
 my $hori   = "==";
 my $blan   = "  ";
@@ -45,12 +49,13 @@ while (scalar(@ARGV) > 0) {
         $mode   = shift(@ARGV);
     } elsif ($opt =~ m{d}) {
         $debug  = shift(@ARGV);
+    } elsif ($opt =~ m{v}) {
+        $vector = 1;
     }
 } # while opt
 $symm = ($mode =~ m{sy}) ? 1 : 0;
 $diag = ($mode =~ m{di}) ? 1 : 0;
 my $pathno = 0;
-
 my @matrix = ();
 my @filled = ();
 my $corner = $base * $base;
@@ -61,18 +66,20 @@ if ($symm == 1) {
     $last /= 2; # in the center
 }
 my $bpow2 = $base  * $base;
-my $bpow3 = $bpow2 * $base;
 my $base_1 = $base - 1;
-my @bpow = (1, $base, $bpow2, $bpow3, $bpow3 * $base, $bpow3 * $bpow2); # up to ^5
-
+my $ind = 2;
+my @bpow = ($unit, $base, $bpow2);
+while ($ind <= 8) { # how many base digits will fit into an integer???  
+    $bpow[$ind + 1] = $bpow[$ind] * $base;
+    $ind ++;
+} # while bpow
 my @path = ();
-my
 $ind = 0;
 while ($ind < $corner) { # preset filled
     $filled[$ind] = 0;
     $ind ++;
 } # preset filled
-my $sep = ",";
+my $ssep = ",";
 
 print <<"GFis";
 <?xml version="1.0" encoding="UTF-8" ?>
@@ -92,13 +99,15 @@ while ($ind < $base) { # start with 00->01->02->...->0b
     $ind ++;
 } # vertical bar
 &push_urdl();
+my $count = 0;
 &iterate();
 exit(0);
 #-----------------------------------------
-sub iterate { # process stack
+# process the stack
+sub iterate { my ($dummy) = @_;
     %attrs = ();
     while (scalar(@stack) > 0) { # pop
-        my ($pind, $pval) = split(/$sep/, pop(@stack));
+        my ($pind, $pval) = split(/$ssep/, pop(@stack));
         while (scalar(@path) > $pind) {
             &unmark();
         } # while unmark
@@ -126,7 +135,7 @@ sub iterate { # process stack
                 #     print "scalar(path)=" . scalar(@path) . ", plen=$plen, last=$last, full=$full\n";
                 #     print join("/", map { &based0($_) } @path) . "\n";
                 # }
-                &output_path();
+                &check_path();
                 @path = splice(@path, 0, $last + 1); # pop
             } elsif ($diag == 1 and $pval == $last) {
                 # print "# skipped because of diag, plen=$plen\n" if $debug >= 2;
@@ -138,34 +147,41 @@ sub iterate { # process stack
         }
     } # while popping
 
-    print "\n<summary base=\"$base\" count=\"$pathno\"";
+    print "\n<summary base=\"$base\" count=\"$count\" pathno=\"$pathno\"";
     foreach my $attr(sort(keys(%attrs))) {
         print " $attr=\"$attrs{$attr}\"";
     } # foreach
     print " />\n</paths>\n";
 } # iterate
 #--------
-sub output_path {
+sub check_path { my ($dummy) = @_;
     $pathno ++;
     my $wave = &check_wave();
     if ($wave >= 3) {
         my $not_expandable = &extrapolate($maxdim);
         # my $cube = &check_cube();
-        if ($not_expandable == 0) {
+        if ($not_expandable == 0 or ($base & 1) == 0) {
+            &output_path($wave);
+        } # cube success
+    } # wave success
+} # check_path
+#--------
+sub output_path { my ($wave) = @_;
+            $count ++;
             print "<!-- ========================== -->\n";
             my $attributes = &get_final_attributes();
-            print "<matrix id=\"$pathno\" wave=\"$wave\" attrs=\"$attributes\" base=\"$base\"\n";
+            print "<meander id=\"$count\" pathno=\"$pathno\" wave=\"$wave\" attrs=\"$attributes\" base=\"$base\"\n";
             print "     path=\""  . join(",", map {         $_  } @path) . "\"\n"
                 . "     bpath=\"" . join(",", map { &based0($_) } @path) . "/\"\n"
                 . "     >\n";
             &draw_path(@path);
-            print "</matrix>\n";
-        } # cube success
-    } # wave success
+            if ($vector > 0) {
+                print "<vector>\n$vecstr\n</vector>\n";
+            }
+            print "</meander>\n";
 } # output_path
 #--------
-sub mark {
-    my ($val) = @_;
+sub mark { my ($val) = @_;
     push(@path, $val);
     $filled[$val]             = 1;
     if ($symm == 1) {
@@ -173,7 +189,7 @@ sub mark {
     }
 } # mark
 #--------
-sub unmark {
+sub unmark { my ($dummy) = @_;
     my $val = pop(@path);
     $filled[$val]             = 0;
     if ($symm == 1) {
@@ -181,15 +197,32 @@ sub unmark {
     }
 } # unmark
 #--------
-sub is_free {
-    my ($vnext) = @_;
+sub is_free { my ($vnext) = @_;
     return ($filled[$vnext] == 0 and ($symm == 0 or $filled[$corner - 1 - $vnext] == 0)) ? 1 : 0;
 } # is_free
 #--------
+# check for "stairs"
+sub stairs { my ($len, $dist) = @_; # $path[$len - 1] == $vlast
+    my $fail = 0;
+    my $ind = $len - 1;
+    my $vold = $path[$ind]; # $vlast
+    $ind --;
+    while ($fail == 0 and $len - $ind <= 6) {
+        $dist = $base + 1 - $dist;
+        my $vnew = $path[$ind];
+        if (abs($vnew - $vold) != $dist) {
+            $fail = 1;
+        }
+        $vold = $vnew;
+        $ind --;
+    } # while $ind
+    return $len - $ind <= 5 ? 0 : 1;
+} # stairs
+#--------
+# Determine and push possible followers of last vertex.
+# If the path hits a border, the square is divided in 2 halves,
+# and the two neighbours on the border may not be both free,
 sub push_urdl {
-    # Determine and push possible followers of last vertex.
-    # If the path hits a border, the square is divided in 2 halves,
-    # and the two neighbours on the border may not be both free,
     my $len   = scalar(@path);
     my $vlast = $path[$len - 1];
     my $vprev = $path[$len - 2];
@@ -197,7 +230,8 @@ sub push_urdl {
     my $ylast = &get_digit($vlast, 0); # rightmost character
     my ($vnext, $xnext, $ynext, $vnei1, $vnei2, $fail);
     $fail = 0;
-    if ($xlast == $ylast and $xlast == $base_1 and scalar(@path) != $corner) { # digonal corner is not last path element
+    if ($xlast == $ylast and $xlast == $base_1 and scalar(@path) != $corner and ($base & 1) == 1) { 
+        # diagonal corner is not last path element (for odd bases)
         $fail = 1;
     }
     if (0 and ($xlast eq $ylast)) { # on the diagonal nn
@@ -221,70 +255,70 @@ sub push_urdl {
 
     if ($fail == 0) {
         if ($ylast < $base_1) { $fail = 0;  # may go up
-            $vnext = $vlast + 1    ;        # go up
-            if (&is_free($vnext) == 1) {
+            $vnext = $vlast + $unit;        # go up
+            if (&is_free($vnext) == 1 and &stairs($len,   $unit) == 0) {
                 $ynext =     &get_digit($vnext, 0);
                 if ($ynext == $base_1) {    # at upper border
                     $xnext = &get_digit($vnext, 1);
-                    $vnei1 = $xnext == 0       ? $vnext - 1     : $vnext - $base; # down or left
+                    $vnei1 = $xnext == 0       ? $vnext - $unit : $vnext - $base; # down or left
                     if (&is_free($vnei1)) {
-                    $vnei2 = $xnext == $base_1 ? $vnext - 1     : $vnext + $base; # down or right
+                    $vnei2 = $xnext == $base_1 ? $vnext - $unit : $vnext + $base; # down or right
                     if (&is_free($vnei2)) { $fail = 1; }
                     }
                 }
                 if ($fail == 0) {
-                    push(@stack, "$len$sep$vnext");
+                    push(@stack, "$len$ssep$vnext");
                 }                           # push upper
             }
         }
         if ($ylast > 0      ) { $fail = 0;  # may go down
-            $vnext = $vlast - 1    ;        # go down
-            if (&is_free($vnext) == 1) {
+            $vnext = $vlast - $unit;        # go down
+            if (&is_free($vnext) == 1 and &stairs($len,   $unit) == 0) {
                 $ynext =     &get_digit($vnext, 0);
                 if ($ynext == 0      ) {    # at lower  border
                     $xnext = &get_digit($vnext, 1);
-                    $vnei1 = $xnext == 0       ? $vnext + 1     : $vnext - $base; # up or left
+                    $vnei1 = $xnext == 0       ? $vnext + $unit : $vnext - $base; # up or left
                     if (&is_free($vnei1)) {
-                    $vnei2 = $xnext == $base_1 ? $vnext + 1     : $vnext + $base; # up or right
+                    $vnei2 = $xnext == $base_1 ? $vnext + $unit : $vnext + $base; # up or right
                     if (&is_free($vnei2)) { $fail = 1; }
                     }
                 }
                 if ($fail == 0) {
-                    push(@stack, "$len$sep$vnext");
+                    push(@stack, "$len$ssep$vnext");
                 }                           # push lower
             }
         }
         if ($xlast < $base_1) { $fail = 0;  # may go right
             $vnext = $vlast + $base;        # go right
-            if (&is_free($vnext) == 1) {
+            if (&is_free($vnext) == 1 and &stairs($len,   $base) == 0) {
                 $xnext =     &get_digit($vnext, 1);
                 if ($xnext == $base_1) {    # at right  border
                     $ynext = &get_digit($vnext, 0);
-                    $vnei1 = $ynext == $base_1 ? $vnext - $base : $vnext - 1    ; # left or down
+                    $vnei1 = $ynext == $base_1 ? $vnext - $base : $vnext - $unit; # left or down
                     if (&is_free($vnei1)) {
-                    $vnei2 = $ynext == 0       ? $vnext - $base : $vnext + 1    ; # left or up
+                    $vnei2 = $ynext == 0       ? $vnext - $base : $vnext + $unit; # left or up
                     if (&is_free($vnei2)) { $fail = 1; }
                     }
                 }
                 if ($fail == 0) {
-                    push(@stack, "$len$sep$vnext");
+                    push(@stack, "$len$ssep$vnext");
                 }                           # push right
             }
         }
         if ($xlast > 0      ) { $fail = 0;  # may go left
             $vnext = $vlast - $base;        # go left
-            if (&is_free($vnext) == 1) {
+            if (&is_free($vnext) == 1 and &stairs($len,   $base) == 0) {
                 $xnext =     &get_digit($vnext, 1);
                 if ($xnext == 0      ) {    # at left   border
                     $ynext = &get_digit($vnext, 0);
-                    $vnei1 = $ynext == $base_1 ? $vnext + $base : $vnext - 1    ; # right or down
+                    $vnei1 = $ynext == $base_1 ? $vnext + $base : $vnext - $unit; # right or down
                     if (&is_free($vnei1)) {
-                    $vnei2 = $ynext == 0       ? $vnext + $base : $vnext + 1    ; # right or up
+                    $vnei2 = $ynext == 0       ? $vnext + $base : $vnext + $unit; # right or up
                     if (&is_free($vnei2)) { $fail = 1; }
                     }
                 }
                 if ($fail == 0) {
-                    push(@stack, "$len$sep$vnext");
+                    push(@stack, "$len$ssep$vnext");
                 }                           # push left
             }
         }
@@ -294,9 +328,13 @@ sub push_urdl {
     } # $fail = 0
 } # push_urdl
 #--------
-sub check_wave { # check whether there is a wave with a center on the diagonal
+# check whether there is a wave with a center on the diagonal
+sub check_wave { my ($dummy) = @_;
     # similiar to checK_symdiag, but the symmetricity must have a wave shape
     my $result = 0; # assume failure
+    if ($base <= 3 or ($base & 1) == 0) { # skip for 3 and even bases
+        return 3;
+    } # skip
     my $basep1 = $base + 1;
     my @diff2; # 2nd differences
     my $inode = $basep1 * 2;
@@ -369,8 +407,8 @@ sub check_wave { # check whether there is a wave with a center on the diagonal
     return $result;
 } # check_wave
 #--------
-sub add_attr { # add an attribute
-    my ($attr) = @_;
+# add an attribute
+sub add_attr { my ($attr) = @_;
     if (defined($attrs{$attr})) {
         $attrs{$attr} ++;
     } else {
@@ -379,8 +417,8 @@ sub add_attr { # add an attribute
     return $attrs{$attr};
 } # add_attr
 #--------
-sub get_final_attributes {
-    # determine general properties of the endpoint and of the finished path
+# determine general properties of the endpoint and of the finished path
+sub get_final_attributes { my ($dummy) = @_;
     my $result = "";
     my $last = $path[scalar(@path) - 1];
     #----
@@ -417,7 +455,7 @@ sub get_final_attributes {
     return $result;
 } # get_final_attributes
 #---------------------------------------------------------------------------
-sub draw_path {
+sub draw_path { my ($dummy) = @_;
     our $vert   = "||"; if ($ansi == 1) { $vert = "\x1b[103m$vert\x1b[0m"; }
     our $hori   = "=="; if ($ansi == 1) { $hori = "\x1b[103m$hori\x1b[0m"; }
     our @matrix = ();
@@ -493,18 +531,16 @@ sub draw_path {
     print "\n</draw-path>\n";
 } # draw_path
 #---------
-sub get_digit {
-    # return the value of a digit from a string in $base representation
+# return the value of a digit from a string in $base representation
+sub get_digit { my ($num, $pos) = @_; # pos is 0 for last character
     # $base <= 10 for the moment, but hex is prepared
-    my ($num, $pos) = @_; # pos is 0 for last character
     my $bum = &based0($num);
     return substr($bum, length($bum) - 1 - $pos, 1);
 } # get_digit
 #--------
-sub based0 {
-    # return a number in base $base,
+# return a number in base $base,
+sub based0 { my ($num) = @_;
     # filled to $maxexp - 1 with leading zeroes
-    my ($num) = @_;
     my $result = "";
     my $ind = 0;
     while ($ind < $maxexp) {
@@ -515,8 +551,8 @@ sub based0 {
     return $result;
 } # based0
 #--------
-sub to_base { # convert from decimal to base
-    my ($num)  = @_;
+# convert from decimal to base
+sub to_base { my ($num)  = @_;
     my $result = "";
     while ($num > 0) {
         my $digit = $num % $base;
@@ -526,16 +562,25 @@ sub to_base { # convert from decimal to base
     return $result eq "" ? "0" : $result;
 } # to_base
 #--------
-sub extrapolate { # try to expand the path up to some dimension
-    my ($maxdim) = @_;
+# try to expand the path up to some dimension
+sub extrapolate { my ($maxdim) = @_;
     my $debsave = $debug;
     my $UNKN = -256; # never met
     # $debug = 1;
     my $ind;
     my @invp; # at which index does a path value occur
+    my $vsep = "[";
+    $vecstr = "";
     for ($ind = 0; $ind < $bpow2; $ind ++) { # precompute the values where one digit is 0
         my $paval = $path[$ind];
         $invp[$paval] = $ind;
+        if ($vector > 0) {
+            $vecstr .= "$vsep" . &to_base($paval);
+            if ($ind % 16 == 15) {
+                $vecstr .= "\n";
+            }
+            $vsep = ",";
+        } # vector
     } # for
     if ($debug >= 2) {
         print "# ind :   "; for ($ind = 0; $ind < $bpow2; $ind ++) { print sprintf("%4s",         ($ind          )); } print "\n";
@@ -543,51 +588,50 @@ sub extrapolate { # try to expand the path up to some dimension
         print "# path:   "; for ($ind = 0; $ind < $bpow2; $ind ++) { print sprintf("%4s", &based0 ($path[$ind]   )); } print "\n";
         print "# invp:   "; for ($ind = 0; $ind < $bpow2; $ind ++) { print sprintf("%4s", &based0 ($invp[$ind]   )); } print "\n";
     }
-    $ind      = $bpow2;
-    my $fail  = 0;
-    my $nprev = $path[$ind - 2]; # previous node, e.g.  44 for base=5
-    my $ncurr = $path[$ind - 1]; # at least for diagonal paths, with odd base
-    my $limit = $bpow[$maxdim];
+    $ind       = $bpow2;
+    my $fail   = 0;
+    my $nprev  = $path[$ind - 2]; # previous node, e.g.  44 for base=5
+    my $ncurr  = $path[$ind - 1]; # at least for diagonal paths, with odd base
+    my $limit  = $bpow[$maxdim];
+    my $slidim = $maxdim; # not yet: ??? 3; # sliding dimension, start with k up to 2 for 044
+    my $currdig;
     while ($fail == 0 and $ind < $limit) {
         # compute the successor of $nprev at $ind
         print "# try       " . &to_base($nprev) . " -> " . &to_base($ncurr) . " -> ?\n" if $debug >= 1;
         my $nnext   = $UNKN;
         my $candno = 0; # number of possible candidates
         my $k = 0;
-        while ($k < $maxdim) {
+        while ($k < $slidim) {
             my $pm = -1;
             while ($pm < 2) {
                 # my $currdig = &get_digit1($ncurr, $k);
-                my $currdig = $k != 0 ? (($ncurr / $bpow[$k]) % $base) : $ncurr % $base;
+                $currdig = $k != 0 ? (($ncurr / $bpow[$k]) % $base) : $ncurr % $base;
                 if (($currdig != 0 or $pm != -1) and ($currdig != $base_1 or $pm != +1)) { # next will not be at any border
                     my $ncand = $ncurr + $pm * $bpow[$k]; # candidate with digit -+ 1
-                    # print "# candidate " . &to_base($ncand) . " k=$k, pm=$pm\n" if $debug >= 1;
+                    print "# candidate " . &to_base($ncand) . " k=$k, pm=$pm, currdig=$currdig\n" if $debug >= 1;
                     if ($ncand != $nprev) { # test whether all subpairs (i,j) of $ncand fulfill the adjacency condition
                         my $adjac = 1; # assume all subpair combinations are adjacent
                         my $j = 0;
-                        while ($adjac == 1 and $j < $maxdim - 1) {
+                        while ($adjac == 1 and $j < $slidim - 1) {
                             my $i = $j + 1;
-                            while ($adjac == 1 and $i < $maxdim) { # try all pairs
-                                my ($curra, $currb) = &get_pair($ncurr, $i, $j);
-                                my ($canda, $candb) = &get_pair($ncand, $i, $j);
-                                my $curr2  = $curra * $base + $currb;
-                                my $cand2  = $canda * $base + $candb;
-                                if ($curr2 != $cand2 and abs($invp[$curr2] - $invp[$cand2]) != 1) {
-                                    $adjac = 0;
-                                }
-                                # print "# pair ($i,$j): curr($curra,$currb) " . ($adjac == 1 ? "isadjac" : "notadj") . " cand($canda,$candb)\n" if $debug >= 2;
+                            while ($adjac == 1 and $i < $slidim) { # try all pairs
+                                if ($i == $k or $j == $k) {
+                                    my $curr2  = &get_pair($ncurr, $i, $j);
+                                    my $cand2  = &get_pair($ncand, $i, $j);
+                                    if ($curr2 != $cand2 and abs($invp[$curr2] - $invp[$cand2]) != 1) {
+                                        $adjac = 0;
+                                    }
+                                    print "# pair ($i,$j): " . &based0($curr2) . ($adjac == 1 ? " isadjac " : " notadj ") . &based0($cand2) . "\n" if $debug >= 2;
+                                } # i or j is k
                                 $i ++;
                             } # while $i
                             $j ++;
                         } # while $j
-                        if ($adjac == 1) {
+                        if ($adjac == 1) { # found
                             $candno ++;
                             $nnext = $ncand;
-                        }
-                        # next != prev
-                    } else {
-                        # print "# same as previous: " . &to_base($nprev) . "\n" if $debug >= 1;
-                    }
+                        } # found
+                    } # next != prev
                 } # not at the border
                 $pm += 2;
             } # while $pm
@@ -601,24 +645,38 @@ sub extrapolate { # try to expand the path up to some dimension
             print "# conflict for " . &to_base($ncurr) . " -> ?\n" if $debug >= 1;
             $fail = $candno;
         } else {
-            # print "# found        " . &to_base($nprev) . " -> " . &to_base($ncurr) . " -> " . &to_base($nnext) . "\n" if $debug >= 1;
+            if ($k == $slidim and $currdig == 0 and $slidim < $maxdim) {
+                $slidim ++;
+            }
+            print "# found     " . &to_base($nprev) . " -> " . &to_base($ncurr) . " -> " . &to_base($nnext) . ", slidim=$slidim\n" if $debug >= 1;
             # print "$ind $nnext\n";
+            if ($vector > 0) {
+                $vecstr .= $vsep . &to_base($nnext);
+                if ($ind % 16 == 15) {
+                    $vecstr .= "\n";
+                }
+            }
             $nprev = $ncurr;
             $ncurr = $nnext;
         }
         $ind ++;
     } # while $ind
+    $vecstr .= "]";
     $debug = $debsave;
     return $fail;
 } # extrapolate
 #---------
-sub get_pair { # get a pair of digits from an element; 0 <= i < j <= 5
-    my ($nprev, $i, $j) = @_;
-    my ($a, $b) =
-            ( ($i != 0 ? (($nprev / $bpow[$i]) % $base) : $nprev % $base)
-            , ($j != 0 ? (($nprev / $bpow[$j]) % $base) : $nprev % $base)
-            );
-    return ($a, $b);
+# get a pair of digits from an element; 0 <= i < j <= 5
+sub get_pair { my ($nprev, $i, $j) = @_;
+    my $a =   ($i != 0 ? (($nprev / $bpow[$i]) % $base) : $nprev % $base);
+    my $b =   ($j != 0 ? (($nprev / $bpow[$j]) % $base) : $nprev % $base);
+    if (($base & 1) == 0) { # even base
+        if ((abs($i - $j) & 1) == 0) { # even dimension distance
+            $a = $base_1 - $a;
+            $b = $base_1 - $b;
+        }
+    }
+    return $a * $base + $b; 
 } # get_pair
 #--------
 __DATA__
