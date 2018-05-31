@@ -13,7 +13,7 @@
 #       -b base  (default 5)
 #       -m mode  symm(etric), diag(onal), wave, extra, nobar
 #       -l dim   extrapolate up to this dimension (default 3 = cube)
-#       -v       output vector
+#       -v[b]    output vector, maybe in base
 #       -d debug level n (default: 0 = none)
 #-------------------------
 use strict;
@@ -30,43 +30,45 @@ my $symm   = 0;
 my $maxdim = 3;
 my $vector = 0; # whether to output a vector
 my $vecstr = "";
-my $vert   = "||";
-my $hori   = "==";
-my $blan   = "  ";
-my $letters = "abcdefghijklmnopqrstuvwxyz";
+my $digits = "0123456789abcdefghijklmnopqrstuvwxyz"; # for counting in base 11, 13, ...
 my %attrs  = (); # path attributes: symmetrical, corner, ...
 
 while (scalar(@ARGV) > 0) {
     my $opt = shift(@ARGV);
     if (0) {
-    } elsif ($opt =~ m{b}) {
+    } elsif ($opt =~ m{\-b}) {
         $base   = shift(@ARGV);
-    } elsif ($opt =~ m{a}) {
+    } elsif ($opt =~ m{\-a}) {
         $ansi   = 1;
-    } elsif ($opt =~ m{l}) {
+    } elsif ($opt =~ m{\-l}) {
         $maxdim = shift(@ARGV);
-    } elsif ($opt =~ m{m}) {
+    } elsif ($opt =~ m{\-m}) {
         $mode   = shift(@ARGV);
-    } elsif ($opt =~ m{d}) {
+    } elsif ($opt =~ m{\-d}) {
         $debug  = shift(@ARGV);
-    } elsif ($opt =~ m{v}) {
-        $vector = 1;
+    } elsif ($opt =~ m{\-vb?}) {
+        $vector = ($opt =~ m{b}) ? 2 : 1;
     }
 } # while opt
 $symm = ($mode =~ m{sy}) ? 1 : 0;
 $diag = ($mode =~ m{di}) ? 1 : 0;
-my $pathno = 0;
-my @matrix = ();
-my @filled = ();
-my $corner = $base * $base;
-my $full = $corner - 1;
-my $last = $corner - 1;
-my $half = $full / 2;
+my $vert    = "||"; if ($ansi == 1) { $vert = "\x1b[103m$vert\x1b[0m"; }
+my $hori    = "=="; if ($ansi == 1) { $hori = "\x1b[103m$hori\x1b[0m"; }
+my $blan    = "  ";
+my @matrix; # for &draw_path
+my $pathno  = 0;
+my @matrix  = ();
+my @filled  = ();
+my $corner  = $base * $base;
+my $full    = $corner - 1;
+my $last    = $corner - 1;
+my $half    = $full / 2;
 if ($symm == 1) {
     $last /= 2; # in the center
 }
-my $bpow2 = $base  * $base;
-my $base_1 = $base - 1;
+my $bpow2   = $base * $base;
+my $base_1  = $base - 1;
+my $base2_1 = $base * 2 - 1; # 9  for base=5
 my $ind = 2;
 my @bpow = ($unit, $base, $bpow2);
 while ($ind <= 8) { # how many base digits will fit into an integer???  
@@ -74,6 +76,7 @@ while ($ind <= 8) { # how many base digits will fit into an integer???
     $ind ++;
 } # while bpow
 my @path = ();
+my @invp; # at which index does a path value occur
 $ind = 0;
 while ($ind < $corner) { # preset filled
     $filled[$ind] = 0;
@@ -226,8 +229,8 @@ sub push_urdl {
     my $len   = scalar(@path);
     my $vlast = $path[$len - 1];
     my $vprev = $path[$len - 2];
-    my $xlast = &get_digit($vlast, 1);
-    my $ylast = &get_digit($vlast, 0); # rightmost character
+    my $xlast = &get_digit1($vlast, 1);
+    my $ylast = &get_digit1($vlast, 0); # rightmost character
     my ($vnext, $xnext, $ynext, $vnei1, $vnei2, $fail);
     $fail = 0;
     if ($xlast == $ylast and $xlast == $base_1 and scalar(@path) != $corner and ($base & 1) == 1) { 
@@ -257,9 +260,9 @@ sub push_urdl {
         if ($ylast < $base_1) { $fail = 0;  # may go up
             $vnext = $vlast + $unit;        # go up
             if (&is_free($vnext) == 1 and &stairs($len,   $unit) == 0) {
-                $ynext =     &get_digit($vnext, 0);
+                $ynext =     &get_digit1($vnext, 0);
                 if ($ynext == $base_1) {    # at upper border
-                    $xnext = &get_digit($vnext, 1);
+                    $xnext = &get_digit1($vnext, 1);
                     $vnei1 = $xnext == 0       ? $vnext - $unit : $vnext - $base; # down or left
                     if (&is_free($vnei1)) {
                     $vnei2 = $xnext == $base_1 ? $vnext - $unit : $vnext + $base; # down or right
@@ -274,9 +277,9 @@ sub push_urdl {
         if ($ylast > 0      ) { $fail = 0;  # may go down
             $vnext = $vlast - $unit;        # go down
             if (&is_free($vnext) == 1 and &stairs($len,   $unit) == 0) {
-                $ynext =     &get_digit($vnext, 0);
+                $ynext =     &get_digit1($vnext, 0);
                 if ($ynext == 0      ) {    # at lower  border
-                    $xnext = &get_digit($vnext, 1);
+                    $xnext = &get_digit1($vnext, 1);
                     $vnei1 = $xnext == 0       ? $vnext + $unit : $vnext - $base; # up or left
                     if (&is_free($vnei1)) {
                     $vnei2 = $xnext == $base_1 ? $vnext + $unit : $vnext + $base; # up or right
@@ -291,9 +294,9 @@ sub push_urdl {
         if ($xlast < $base_1) { $fail = 0;  # may go right
             $vnext = $vlast + $base;        # go right
             if (&is_free($vnext) == 1 and &stairs($len,   $base) == 0) {
-                $xnext =     &get_digit($vnext, 1);
+                $xnext =     &get_digit1($vnext, 1);
                 if ($xnext == $base_1) {    # at right  border
-                    $ynext = &get_digit($vnext, 0);
+                    $ynext = &get_digit1($vnext, 0);
                     $vnei1 = $ynext == $base_1 ? $vnext - $base : $vnext - $unit; # left or down
                     if (&is_free($vnei1)) {
                     $vnei2 = $ynext == 0       ? $vnext - $base : $vnext + $unit; # left or up
@@ -308,9 +311,9 @@ sub push_urdl {
         if ($xlast > 0      ) { $fail = 0;  # may go left
             $vnext = $vlast - $base;        # go left
             if (&is_free($vnext) == 1 and &stairs($len,   $base) == 0) {
-                $xnext =     &get_digit($vnext, 1);
+                $xnext =     &get_digit1($vnext, 1);
                 if ($xnext == 0      ) {    # at left   border
-                    $ynext = &get_digit($vnext, 0);
+                    $ynext = &get_digit1($vnext, 0);
                     $vnei1 = $ynext == $base_1 ? $vnext + $base : $vnext - $unit; # right or down
                     if (&is_free($vnei1)) {
                     $vnei2 = $ynext == 0       ? $vnext + $base : $vnext + $unit; # right or up
@@ -327,6 +330,135 @@ sub push_urdl {
         # }
     } # $fail = 0
 } # push_urdl
+#--------
+# compute the inverse of @path
+sub set_inverse { my ($dummy) = @_;
+    for (my $ind = 0; $ind < $bpow2; $ind ++) { # precompute the inverse
+        my $paval = $path[$ind];
+        $invp[$paval] = $ind;
+    } # for $ind
+} # set_inverse
+#--------
+# try to expand the path up to some dimension
+sub extrapolate { my ($maxdim) = @_;
+    my $debsave = $debug;
+    my $UNKN = -256; # never met
+    # $debug = 1;
+    my $ind;
+	&set_inverse();
+    my $vsep = "[";
+    if ($vector > 0) {
+	    $vecstr = "";
+    	for ($ind = 0; $ind < $bpow2; $ind ++) { # precompute the values where one digit is 0
+        	my $paval = $path[$ind];
+   	        $vecstr .= $vsep . ($vector == 2 ? &to_base($paval) : $paval);
+       	    if ($ind % 16 == 15) {
+           	    $vecstr .= "\n";
+           	}
+           	$vsep = ",";
+        } # for $ind
+    } # vector
+    if ($debug >= 2) {
+        print "# ind :   "; for ($ind = 0; $ind < $bpow2; $ind ++) { print sprintf("%4s",         ($ind          )); } print "\n";
+        print "# bind:   "; for ($ind = 0; $ind < $bpow2; $ind ++) { print sprintf("%4s", &based0 ($ind          )); } print "\n";
+        print "# path:   "; for ($ind = 0; $ind < $bpow2; $ind ++) { print sprintf("%4s", &based0 ($path[$ind]   )); } print "\n";
+        print "# invp:   "; for ($ind = 0; $ind < $bpow2; $ind ++) { print sprintf("%4s", &based0 ($invp[$ind]   )); } print "\n";
+    }
+    $ind       = $bpow2;
+    my $fail   = 0;
+    my $nprev  = $path[$ind - 2]; # previous node, e.g.  44 for base=5
+    my $ncurr  = $path[$ind - 1]; # at least for diagonal paths, with odd base
+    my $limit  = $bpow[$maxdim];
+    my $slidim = $maxdim; # not yet: ??? 3; # sliding dimension, start with k up to 2 for 044
+    my $currdig;
+    while ($fail == 0 and $ind < $limit) {
+        # compute the successor of $nprev at $ind
+        print "# try       " . &to_base($nprev) . " -> " . &to_base($ncurr) . " -> ?\n" if $debug >= 1;
+        my $nnext   = $UNKN;
+        my $candno = 0; # number of possible candidates
+        my $k = 0;
+        while ($k < $slidim) {
+            my $pm = -1;
+            while ($pm < 2) {
+                $currdig = &get_digit1($ncurr, $k);
+                # $currdig = $k != 0 ? (($ncurr / $bpow[$k]) % $base) : $ncurr % $base;
+                if (($currdig != 0 or $pm != -1) and ($currdig != $base_1 or $pm != +1)) { # next will not be at any border
+                    my $ncand = $ncurr + $pm * $bpow[$k]; # candidate with digit -+ 1
+                    print "# candidate " . &to_base($ncand) . " k=$k, pm=$pm, currdig=$currdig\n" if $debug >= 1;
+                    if ($ncand != $nprev) { # test whether all subpairs (i,j) of $ncand fulfill the adjacency condition
+                        my $adjac = 1; # assume all subpair combinations are adjacent
+                        my $j = 0;
+                        while ($adjac == 1 and $j < $slidim - 1) {
+                            my $i = $j + 1;
+                            while ($adjac == 1 and $i < $slidim) { # try all pairs
+                                if ($i == $k or $j == $k) {
+                                    my $curr2  = &get_pair($ncurr, $i, $j);
+                                    my $cand2  = &get_pair($ncand, $i, $j);
+                                    if ($curr2 != $cand2 and abs($invp[$curr2] - $invp[$cand2]) != 1) {
+                                        $adjac = 0;
+                                    }
+                                    print "# pair ($i,$j): " . &based0($curr2) . ($adjac == 1 ? " isadjac " : " notadj ") . &based0($cand2) . "\n" if $debug >= 2;
+                                } # i or j is k
+                                $i ++;
+                            } # while $i
+                            $j ++;
+                        } # while $j
+                        if ($adjac == 1) { # found
+                            $candno ++;
+                            $nnext = $ncand;
+                        } # found
+                    } # next != prev
+                } # not at the border
+                $pm += 2;
+            } # while $pm
+            $k ++;
+        } # while $k
+        if (0) {
+        } elsif ($candno == 0) {
+            print "# no candidate " . &to_base($ncurr) . " -> ?\n" if $debug >= 1;
+            $fail = 1;
+        } elsif ($candno >  1) {
+            print "# conflict for " . &to_base($ncurr) . " -> ?\n" if $debug >= 1;
+            $fail = $candno;
+        } else {
+            if ($k == $slidim and $currdig == 0 and $slidim < $maxdim) {
+                $slidim ++;
+            }
+            print "# found     " . &to_base($nprev) . " -> " . &to_base($ncurr) . " -> " . &to_base($nnext) . ", slidim=$slidim\n" if $debug >= 1;
+            # print "$ind $nnext\n";
+            if ($vector > 0) {
+                $vecstr .= $vsep . ($vector == 2 ? &to_base($nnext) : $nnext);
+                if ($ind % 16 == 15) {
+                    $vecstr .= "\n";
+                }
+            }
+            $nprev = $ncurr;
+            $ncurr = $nnext;
+        }
+        $ind ++;
+    } # while $ind
+    $vecstr .= "]";
+    $debug = $debsave;
+    return $fail;
+} # extrapolate
+#----------
+# gets 1 digit; position $k = 0 gets lowest digit to base
+sub get_digit1 { my ($ncurr, $k) = @_;
+	return $k != 0 ? ($ncurr / $bpow[$k]) % $base : $ncurr % $base;
+} # get_digit1
+#---------
+# get a pair of digits from an element; 0 <= i < j <= 5
+sub get_pair { my ($nprev, $i, $j) = @_;
+    my $a =   ($i != 0 ? (($nprev / $bpow[$i]) % $base) : $nprev % $base);
+    my $b =   ($j != 0 ? (($nprev / $bpow[$j]) % $base) : $nprev % $base);
+    if (($base & 1) == 0) { # even base
+        if ((abs($i - $j) & 1) == 0) { # even dimension distance
+            $a = $base_1 - $a;
+            $b = $base_1 - $b;
+        }
+    }
+    return $a * $base + $b; 
+} # get_pair
 #--------
 # check whether there is a wave with a center on the diagonal
 sub check_wave { my ($dummy) = @_;
@@ -455,51 +587,14 @@ sub get_final_attributes { my ($dummy) = @_;
     return $result;
 } # get_final_attributes
 #---------------------------------------------------------------------------
+# draw a square matrix showing the path
 sub draw_path { my ($dummy) = @_;
-    our $vert   = "||"; if ($ansi == 1) { $vert = "\x1b[103m$vert\x1b[0m"; }
-    our $hori   = "=="; if ($ansi == 1) { $hori = "\x1b[103m$hori\x1b[0m"; }
-    our @matrix = ();
-    our $blan   = "  ";
-    #----
-    sub get_matrix_pos {
-        my ($x, $y) = @_;
-        my $base2_1 = $base * 2 - 1; # 9  for base=5
-        return $x * 2 + ($base2_1 - 1) * $base2_1 - $y * 2 *$base2_1;
-    } # get_matrix_pos
-    #----
-    sub connect {
-        my ($pa0, $pa1) = @_;
-        if ($pa0 > $pa1) { # exchange, make p1 smaller
-            my $temp = $pa0;
-            $pa0 = $pa1;
-            $pa1 = $temp;
-        } # pa0 <= pa1
-        my $ba0 = &based0($pa0);
-        my $ba1 = &based0($pa1);
-        print "ba0=$ba0, ba1=$ba1" if $debug >= 2;
-        my $x0 = &get_digit($pa0, 1);
-        my $y0 = &get_digit($pa0, 0);
-        my $x1 = &get_digit($pa1, 1);
-        my $y1 = &get_digit($pa1, 0);
-        print ", x0=$x0, y0=$y0, x1=$x1, y1=$y1" if $debug >= 2;
-        my $mp0 = &get_matrix_pos($x0, $y0);
-        if ($x0 eq $x1) { # up
-            $matrix[$mp0 - ($base * 2 - 1)] = $vert; # up
-            print " $vert\n" if $debug >= 2;
-        } else {
-            $matrix[$mp0 + 1]               = $hori; # right
-            print " $hori\n" if $debug >= 2;
-        }
-    } # connect
-    #----
-    # initialize the matrix
-    my $x = 0;
-    my $y = 0;
-    while ($x < $base) {
-        $y = 0;
-        while ($y < $base) {
+    @matrix = ();
+    for (my $x = 0; $x < $base; $x ++) { # initialize the matrix
+        for (my $y = 0; $y < $base; $y ++) {
             my $mp = &get_matrix_pos($x, $y);
-            $matrix[$mp] = $ansi == 1 ? "\x1b[102m$x$y\x1b[0m" : "$x$y";
+            my $xy = substr($digits, $x, 1) . substr($digits, $y, 1);
+            $matrix[$mp] = $ansi == 1 ? "\x1b[102m$xy\x1b[0m" : $xy;
             if ($x < $base_1) {
                 $matrix[$mp + 1] = $blan; # " "; # right
             }
@@ -509,11 +604,8 @@ sub draw_path { my ($dummy) = @_;
                     $matrix[$mp + $base * 2 - 1 + 1] = $blan; # " "; # down
                 }
             }
-            $y ++;
-        } # while y
-        $x ++;
-    } # while $x
-
+        } # for y
+    } # for $x
     my $ipa = 1;
     while ($ipa < scalar(@path)) {
         &connect($path[$ipa - 1], $path[$ipa]);
@@ -524,31 +616,48 @@ sub draw_path { my ($dummy) = @_;
     while ($imp < scalar(@matrix)) { # print
         print "$matrix[$imp]";
         $imp ++;
-        if ($imp % ($base * 2 - 1) == 0) {
+        if ($imp % $base2_1 == 0) {
             print "\n";
         }
     } # printing
     print "\n</draw-path>\n";
 } # draw_path
 #---------
-# return the value of a digit from a string in $base representation
-sub get_digit { my ($num, $pos) = @_; # pos is 0 for last character
-    # $base <= 10 for the moment, but hex is prepared
-    my $bum = &based0($num);
-    return substr($bum, length($bum) - 1 - $pos, 1);
-} # get_digit
+# compute the position of an element in the matrix
+sub get_matrix_pos { my ($x, $y) = @_;
+    return $x * 2 + ($base2_1 - 1) * $base2_1 - $y * 2 * $base2_1;
+} # get_matrix_pos
+#---------
+# draw a connecting bar
+sub connect { my ($pa0, $pa1) = @_;
+    if ($pa0 > $pa1) { # exchange, make $pa0 <= $pa1 
+        my $temp = $pa0;
+        $pa0 = $pa1;
+        $pa1 = $temp;
+    } # exchange
+    my $ba0 = &based0($pa0);
+    my $ba1 = &based0($pa1);
+    # print "ba0=$ba0, ba1=$ba1" if $debug >= 2;
+    my $x0 = &get_digit1($pa0, 1);
+    my $y0 = &get_digit1($pa0, 0);
+    my $x1 = &get_digit1($pa1, 1);
+    my $y1 = &get_digit1($pa1, 0);
+    # print ", x0=$x0, y0=$y0, x1=$x1, y1=$y1" if $debug >= 2;
+    my $mp0 = &get_matrix_pos($x0, $y0);
+    if ($x0 eq $x1) { # up
+        $matrix[$mp0 - ($base * 2 - 1)] = $vert; # up
+        print " $vert\n" if $debug >= 2;
+    } else {
+        $matrix[$mp0 + 1]               = $hori; # right
+        print " $hori\n" if $debug >= 2;
+    }
+} # connect
 #--------
 # return a number in base $base,
 sub based0 { my ($num) = @_;
-    # filled to $maxexp - 1 with leading zeroes
-    my $result = "";
-    my $ind = 0;
-    while ($ind < $maxexp) {
-       $result = ($num % $base) . $result;
-       $num    /= $base;
-       $ind ++;
-    } # while $idig
-    return $result;
+	return substr($digits, &get_digit1($num, 1), 1)
+	    .  substr($digits, &get_digit1($num, 0), 1)
+	    ;
 } # based0
 #--------
 # convert from decimal to base
@@ -556,128 +665,11 @@ sub to_base { my ($num)  = @_;
     my $result = "";
     while ($num > 0) {
         my $digit = $num % $base;
-        $result =  $digit . $result;
+        $result =  substr($digits, $digit, 1) . $result;
         $num /= $base;
     } # while > 0
     return $result eq "" ? "0" : $result;
 } # to_base
-#--------
-# try to expand the path up to some dimension
-sub extrapolate { my ($maxdim) = @_;
-    my $debsave = $debug;
-    my $UNKN = -256; # never met
-    # $debug = 1;
-    my $ind;
-    my @invp; # at which index does a path value occur
-    my $vsep = "[";
-    $vecstr = "";
-    for ($ind = 0; $ind < $bpow2; $ind ++) { # precompute the values where one digit is 0
-        my $paval = $path[$ind];
-        $invp[$paval] = $ind;
-        if ($vector > 0) {
-            $vecstr .= "$vsep" . &to_base($paval);
-            if ($ind % 16 == 15) {
-                $vecstr .= "\n";
-            }
-            $vsep = ",";
-        } # vector
-    } # for
-    if ($debug >= 2) {
-        print "# ind :   "; for ($ind = 0; $ind < $bpow2; $ind ++) { print sprintf("%4s",         ($ind          )); } print "\n";
-        print "# bind:   "; for ($ind = 0; $ind < $bpow2; $ind ++) { print sprintf("%4s", &based0 ($ind          )); } print "\n";
-        print "# path:   "; for ($ind = 0; $ind < $bpow2; $ind ++) { print sprintf("%4s", &based0 ($path[$ind]   )); } print "\n";
-        print "# invp:   "; for ($ind = 0; $ind < $bpow2; $ind ++) { print sprintf("%4s", &based0 ($invp[$ind]   )); } print "\n";
-    }
-    $ind       = $bpow2;
-    my $fail   = 0;
-    my $nprev  = $path[$ind - 2]; # previous node, e.g.  44 for base=5
-    my $ncurr  = $path[$ind - 1]; # at least for diagonal paths, with odd base
-    my $limit  = $bpow[$maxdim];
-    my $slidim = $maxdim; # not yet: ??? 3; # sliding dimension, start with k up to 2 for 044
-    my $currdig;
-    while ($fail == 0 and $ind < $limit) {
-        # compute the successor of $nprev at $ind
-        print "# try       " . &to_base($nprev) . " -> " . &to_base($ncurr) . " -> ?\n" if $debug >= 1;
-        my $nnext   = $UNKN;
-        my $candno = 0; # number of possible candidates
-        my $k = 0;
-        while ($k < $slidim) {
-            my $pm = -1;
-            while ($pm < 2) {
-                # my $currdig = &get_digit1($ncurr, $k);
-                $currdig = $k != 0 ? (($ncurr / $bpow[$k]) % $base) : $ncurr % $base;
-                if (($currdig != 0 or $pm != -1) and ($currdig != $base_1 or $pm != +1)) { # next will not be at any border
-                    my $ncand = $ncurr + $pm * $bpow[$k]; # candidate with digit -+ 1
-                    print "# candidate " . &to_base($ncand) . " k=$k, pm=$pm, currdig=$currdig\n" if $debug >= 1;
-                    if ($ncand != $nprev) { # test whether all subpairs (i,j) of $ncand fulfill the adjacency condition
-                        my $adjac = 1; # assume all subpair combinations are adjacent
-                        my $j = 0;
-                        while ($adjac == 1 and $j < $slidim - 1) {
-                            my $i = $j + 1;
-                            while ($adjac == 1 and $i < $slidim) { # try all pairs
-                                if ($i == $k or $j == $k) {
-                                    my $curr2  = &get_pair($ncurr, $i, $j);
-                                    my $cand2  = &get_pair($ncand, $i, $j);
-                                    if ($curr2 != $cand2 and abs($invp[$curr2] - $invp[$cand2]) != 1) {
-                                        $adjac = 0;
-                                    }
-                                    print "# pair ($i,$j): " . &based0($curr2) . ($adjac == 1 ? " isadjac " : " notadj ") . &based0($cand2) . "\n" if $debug >= 2;
-                                } # i or j is k
-                                $i ++;
-                            } # while $i
-                            $j ++;
-                        } # while $j
-                        if ($adjac == 1) { # found
-                            $candno ++;
-                            $nnext = $ncand;
-                        } # found
-                    } # next != prev
-                } # not at the border
-                $pm += 2;
-            } # while $pm
-            $k ++;
-        } # while $k
-        if (0) {
-        } elsif ($candno == 0) {
-            print "# no candidate " . &to_base($ncurr) . " -> ?\n" if $debug >= 1;
-            $fail = 1;
-        } elsif ($candno >  1) {
-            print "# conflict for " . &to_base($ncurr) . " -> ?\n" if $debug >= 1;
-            $fail = $candno;
-        } else {
-            if ($k == $slidim and $currdig == 0 and $slidim < $maxdim) {
-                $slidim ++;
-            }
-            print "# found     " . &to_base($nprev) . " -> " . &to_base($ncurr) . " -> " . &to_base($nnext) . ", slidim=$slidim\n" if $debug >= 1;
-            # print "$ind $nnext\n";
-            if ($vector > 0) {
-                $vecstr .= $vsep . &to_base($nnext);
-                if ($ind % 16 == 15) {
-                    $vecstr .= "\n";
-                }
-            }
-            $nprev = $ncurr;
-            $ncurr = $nnext;
-        }
-        $ind ++;
-    } # while $ind
-    $vecstr .= "]";
-    $debug = $debsave;
-    return $fail;
-} # extrapolate
-#---------
-# get a pair of digits from an element; 0 <= i < j <= 5
-sub get_pair { my ($nprev, $i, $j) = @_;
-    my $a =   ($i != 0 ? (($nprev / $bpow[$i]) % $base) : $nprev % $base);
-    my $b =   ($j != 0 ? (($nprev / $bpow[$j]) % $base) : $nprev % $base);
-    if (($base & 1) == 0) { # even base
-        if ((abs($i - $j) & 1) == 0) { # even dimension distance
-            $a = $base_1 - $a;
-            $b = $base_1 - $b;
-        }
-    }
-    return $a * $base + $b; 
-} # get_pair
 #--------
 __DATA__
 with first vertical bar:
@@ -708,3 +700,15 @@ sys     0m0.169s
 
 2018-05-29, 23:54:
 <summary base="7" count="11658" diagonal="47" symmetrical="9" />
+
+<!-- ========================== -->
+<meander id="34862" wave="3" attrs="diagonal" base="9"
+     path="0,1,2,3,4,5,6,7,8,17,26,35,44,53,62,71,70,61,52,43,34,33,42,51,60,69,68,67,66,57,58,59,50,49,48,39,40,41,32,31,30,29,38,47,56,65,64,55,46,37,28,19,20,21,22,23,24,25,16,15,14,13,12,11,10,9
+     ,18,27,36,45,54,63,72,73,74,75,76,77,78,79,80"
+     bpath="00,01,02,03,04,05,06,07,08,18,28,38,48,58,68,78,77,67,57,47,37,36,46,56,66,76,75,74,73,63,64,65,55,54,53,43,44,45,35,34,33,32,42,52,62,72,71,61,51,41,31,21,22,23,24,25,26,27,17,16,15,14,13
+,12,11,10,20,30,40,50,60,70,80,81,82,83,84,85,86,87,88/"
+     >
+<draw-path>
+
+08==18==28==38==48==58==68==78  88
+||                          ||  ||

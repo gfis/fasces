@@ -116,6 +116,12 @@ paths.7:
 paths.9:
 	perl gen_paths.pl -b 9 -d $(D)  | tee $@.tmp
 	tail $@.tmp
+paths.11s:
+	perl gen_paths.pl -b 11 -m symm -d $(D)  | tee $@.tmp
+	tail $@.tmp
+paths.13s:
+	perl gen_paths.pl -b 13 -m symm -d $(D)  | tee $@.tmp
+	tail $@.tmp
 #----
 rec_paths: rp1 rp2
 rp1:
