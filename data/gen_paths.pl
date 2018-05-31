@@ -11,6 +11,7 @@
 # usage:
 #   perl gen_paths [-b base] [-l dim] [-m mode] [-d n]
 #       -b base  (default 5)
+#       -e       output paths with extrapolation errors
 #       -m mode  symm(etric), diag(onal), wave, extra, nobar
 #       -l dim   extrapolate up to this dimension (default 3 = cube)
 #       -v[b]    output vector, maybe in base
@@ -24,6 +25,7 @@ my $ansi   = 0;  # whether to use ANSI colors on console output
 my $base   = 5;
 my $unit   = 1;  # dual to $base
 my $diag   = 0;
+my $error  = 0;  # whether to output paths with extrapolation errors
 my $maxexp = 2;  # compute b-file up to $base**$maxexp
 my $mode   = "wave,cube"; # no special conditions; maybe "nobar"
 my $symm   = 0;
@@ -40,6 +42,8 @@ while (scalar(@ARGV) > 0) {
         $base   = shift(@ARGV);
     } elsif ($opt =~ m{\-a}) {
         $ansi   = 1;
+    } elsif ($opt =~ m{\-e}) {
+        $error  = 1;
     } elsif ($opt =~ m{\-l}) {
         $maxdim = shift(@ARGV);
     } elsif ($opt =~ m{\-m}) {
@@ -159,29 +163,31 @@ sub iterate { my ($dummy) = @_;
 #--------
 sub check_path { my ($dummy) = @_;
     $pathno ++;
-    my $wave = &check_wave();
-    if ($wave >= 3) {
-        my $not_expandable = &extrapolate($maxdim);
-        # my $cube = &check_cube();
-        if ($not_expandable == 0 or ($base & 1) == 0) {
-            &output_path($wave);
-        } # cube success
-    } # wave success
+    my $wave           = &check_wave();
+    my $not_expandable = &extrapolate($maxdim);
+    if (   $error > 0 
+        or ($wave >= 3 and $not_expandable == 0) 
+        or ($base & 1) == 0) {
+        &output_path($wave, $not_expandable);
+    } # success
 } # check_path
 #--------
-sub output_path { my ($wave) = @_;
-            $count ++;
-            print "<!-- ========================== -->\n";
-            my $attributes = &get_final_attributes();
-            print "<meander id=\"$count\" pathno=\"$pathno\" wave=\"$wave\" attrs=\"$attributes\" base=\"$base\"\n";
-            print "     path=\""  . join(",", map {         $_  } @path) . "\"\n"
-                . "     bpath=\"" . join(",", map { &based0($_) } @path) . "/\"\n"
-                . "     >\n";
-            &draw_path(@path);
-            if ($vector > 0) {
-                print "<vector>\n$vecstr\n</vector>\n";
-            }
-            print "</meander>\n";
+sub output_path { my ($wave, $not_expandable) = @_;
+    if ($wave >= 3 and $not_expandable == 0) {
+    	$count ++;
+    }
+    print "<!-- ========================== -->\n";
+    my $attributes = &get_final_attributes();
+    print "<meander id=\"$count\" pathno=\"$pathno\" wave=\"$wave\" base=\"$base\"\n"
+        . "     notexp=\"$not_expandable\" turncode=\"" . &get_turncode(@path) . "\"\t attrs=\"$attributes\"\n" 
+        . "     path=\""  . join(",", map {         $_  } @path) . "\"\n"
+        . "     bpath=\"" . join(",", map { &based0($_) } @path) . "\"\n"
+        . "     >\n";
+    &draw_path(@path);
+    if ($vector > 0) {
+        print "<vector>\n$vecstr\n</vector>\n";
+    }
+    print "</meander>\n";
 } # output_path
 #--------
 sub mark { my ($val) = @_;
@@ -205,7 +211,23 @@ sub is_free { my ($vnext) = @_;
 } # is_free
 #--------
 # check for "stairs"
+# resulting bad turncodes for base 5 are:
+#  with       without
+#  2 412      2 412       2 412 
+#  2 3312     2 411       2 3312
+#  2 2        2 3211      2 2   
+#  2 1332     2 211       2 1332
+#  2 132      2 2         2 132 
+#             2 1332
+#             2 132 
+#             2 1234
+#             2 122 
+#             2 1   
+
 sub stairs { my ($len, $dist) = @_; # $path[$len - 1] == $vlast
+	if ($error > 0 or ($base & 1) == 0) { # not if errors allowd or even base
+		return 0;	
+	}
     my $fail = 0;
     my $ind = $len - 1;
     my $vold = $path[$ind]; # $vlast
@@ -345,17 +367,17 @@ sub extrapolate { my ($maxdim) = @_;
     my $UNKN = -256; # never met
     # $debug = 1;
     my $ind;
-	&set_inverse();
+    &set_inverse();
     my $vsep = "[";
     if ($vector > 0) {
-	    $vecstr = "";
-    	for ($ind = 0; $ind < $bpow2; $ind ++) { # precompute the values where one digit is 0
-        	my $paval = $path[$ind];
-   	        $vecstr .= $vsep . ($vector == 2 ? &to_base($paval) : $paval);
-       	    if ($ind % 16 == 15) {
-           	    $vecstr .= "\n";
-           	}
-           	$vsep = ",";
+        $vecstr = "";
+        for ($ind = 0; $ind < $bpow2; $ind ++) { # precompute the values where one digit is 0
+            my $paval = $path[$ind];
+            $vecstr .= $vsep . ($vector == 2 ? &to_base($paval) : $paval);
+            if ($ind % 16 == 15) {
+                $vecstr .= "\n";
+            }
+            $vsep = ",";
         } # for $ind
     } # vector
     if ($debug >= 2) {
@@ -394,7 +416,7 @@ sub extrapolate { my ($maxdim) = @_;
                                 if ($i == $k or $j == $k) {
                                     my $curr2  = &get_pair($ncurr, $i, $j);
                                     my $cand2  = &get_pair($ncand, $i, $j);
-                                    if ($curr2 != $cand2 and abs($invp[$curr2] - $invp[$cand2]) != 1) {
+                                    if (abs($invp[$curr2] - $invp[$cand2]) > 1) { # the are not equal or adjacent
                                         $adjac = 0;
                                     }
                                     print "# pair ($i,$j): " . &based0($curr2) . ($adjac == 1 ? " isadjac " : " notadj ") . &based0($cand2) . "\n" if $debug >= 2;
@@ -444,7 +466,7 @@ sub extrapolate { my ($maxdim) = @_;
 #----------
 # gets 1 digit; position $k = 0 gets lowest digit to base
 sub get_digit1 { my ($ncurr, $k) = @_;
-	return $k != 0 ? ($ncurr / $bpow[$k]) % $base : $ncurr % $base;
+    return $k != 0 ? ($ncurr / $bpow[$k]) % $base : $ncurr % $base;
 } # get_digit1
 #---------
 # get a pair of digits from an element; 0 <= i < j <= 5
@@ -586,7 +608,52 @@ sub get_final_attributes { my ($dummy) = @_;
     } # foreach
     return $result;
 } # get_final_attributes
-#---------------------------------------------------------------------------
+#=========================================
+# presentation routines
+#=========================================
+# copied into gen_meander.pl, change there and here
+# Special encoding of the path with its turns. 
+# Begin with 1, and assume right turn.
+# For each bar,  add one to the current digit. 
+# For a turn in the same direction, a new digit is started.
+# If the direction of the turn was in the opposite direction, insert a "-" first.
+# The directions are:      
+#    +1                   +-+ |
+# -b xy +b                | | |  => turncode "212-12"
+#    -1                   | +-+
+#
+sub get_turncode { my (@path) = @_;
+    my $turncode = "";
+    my $code  = 0;
+    my $odir  = +$unit; # +y
+    my $nturn = "r"; # right, 0 = left
+    my $oturn = $nturn;
+    for (my $ind = 1; $ind < scalar(@path); $ind ++) {
+        my $ndir = $path[$ind] - $path[$ind - 1];
+        # print "[$ind] dir  $odir <> $ndir ?\n" if $debug >= 3;
+        if ($odir == $ndir) { 
+            $code ++;
+        } else { # turning
+            $turncode .= substr($digits, $code, 1);
+            $nturn =  # 4 possible right turns:
+                (  ($odir == +$unit and $ndir == +$base)  # up    to right
+                or ($odir == +$base and $ndir == -$unit)  # right to down
+                or ($odir == -$unit and $ndir == -$base)  # down  to left
+                or ($odir == -$base and $ndir == +$unit)  # left  to up
+                ) ? "r" : "l"; # right : left
+            # print "[$ind] turn $oturn <> $nturn ?\n" if $debug >= 3;
+            if ($oturn ne $nturn) {
+                $turncode .= "-";
+                $oturn = $nturn;
+            } 
+            $odir  = $ndir;
+            $code  = 1;
+        } # turning
+    } # for $ind
+    $turncode .= substr($digits, $code, 1);
+    return $turncode;
+} # get_turncode
+#-----------------------------------------
 # draw a square matrix showing the path
 sub draw_path { my ($dummy) = @_;
     @matrix = ();
@@ -655,9 +722,9 @@ sub connect { my ($pa0, $pa1) = @_;
 #--------
 # return a number in base $base,
 sub based0 { my ($num) = @_;
-	return substr($digits, &get_digit1($num, 1), 1)
-	    .  substr($digits, &get_digit1($num, 0), 1)
-	    ;
+    return substr($digits, &get_digit1($num, 1), 1)
+        .  substr($digits, &get_digit1($num, 0), 1)
+        ;
 } # based0
 #--------
 # convert from decimal to base

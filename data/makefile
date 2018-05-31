@@ -192,6 +192,22 @@ mea0:
 mea47:
 	perl gen_meander.pl -l 125 -b 5 -f -p "0,1,2,3,4,9,8,7,6,5,10,15,20,21,16,11,12,17,22,23,18,13,14,19,24" \
 	| tee meander.47.tmp
+#---------------------
+turncode: tc3 tc5 tc7
+tca:
+	perl eval_turncode.pl tc3.tmp tc5.tmp tc7.tmp | grep "2 " | sort | less
+tc3: 
+	perl gen_paths.pl -b 3 -e > $@.tmp
+	grep turncode $@.tmp  | \
+	perl eval_turncode.pl 
+tc5: 
+	perl gen_paths.pl -b 5 -e > $@.tmp
+	grep turncode $@.tmp  | \
+	perl eval_turncode.pl 
+tc7: 
+	perl gen_paths.pl -b 7 -e > $@.tmp
+	grep turncode $@.tmp  | \
+	perl eval_turncode.pl 
 #-------------------------------
 rebase:
 	perl -w b-file_rebase.pl -f 16 -t 4 b-file_rebase.test.txt | tee b4.tmp
