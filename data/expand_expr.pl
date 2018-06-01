@@ -2,23 +2,38 @@
 
 # Read path expressions for FASS curves and expand them into plain element vectors
 # @(#) $Id$
-# 2018-05-28: break lnes after 16 elements
+# 2018-06-01: optional decimal output
+# 2018-05-28: break lines after 16 elements
 # 2018-02-18, Georg Fischer
 # Program in the public domain
 # c.f. <http://www.teherba.org/index.php/OEIS/A220952>
 #
-# usage:
-#     perl gen_expr.pl n | perl expand_expr.pl
+# Usage:
+#     perl gen_expr.pl n | \
+#     perl expand_expr.pl [-b from_base]
 #
 # Path expressions are built with 2 operations:
 # "/X"    - reverse the sequence of elements in X
 # "X.n+m" - insert digit m after the digit for 5^n in each element of X
-# Examples: [].0+1 = [1]; [12].0+3 = [123]; [12].2+3 = [312]; [1234].1+0 = [12304];
+# Examples: [].0+1 = [1]; [1,2].0+3 = [13,23]; /[12,13].2+3 = [313,312]; [1234].1+0 = [12304];
 # the "inner" expression always has the form A99 = [A98.98+1,/A98.98+2,A98.98+3];
 #---------------------------------------------
 use strict;
 
+my $digits = "0123456789abcdefghijklmnopqrstuvwxyz"; # for counting in base 11, 13, ...
 my %pexprs = (); # stores the generated subexpressions
+my $base   = 0; # from_base if decimal output is desired, default: 0 (no conversion)
+my $debug  = 0;
+
+while (scalar(@ARGV) > 0 and ($ARGV[0] =~ m{\A\-})) {
+    my $opt = shift(@ARGV);
+    if (0) {
+    } elsif ($opt =~ m{\-b}) {
+        $base   = shift(@ARGV);
+    } elsif ($opt =~ m{\-d}) {
+        $debug  = shift(@ARGV);
+    }
+} # while opt
 
 while (<>) { # read output of gen_expr.pl
     print;
@@ -64,6 +79,9 @@ while (<>) { # read output of gen_expr.pl
     my $count = 1;
     print "   = [" . join(",", map {
             my $element = $_;
+            if ($base > 0) {
+            	$element = &from_base($element);
+            }
             if ($count % 16 == 0) {
                 $element .= "\n     ";
             }
@@ -72,6 +90,23 @@ while (<>) { # read output of gen_expr.pl
         } @new_path) . "];\n";
     $pexprs{$var} = join(",", @new_path);
 } # while <>
+#--------
+sub from_base { # convert a string (maybe with letters) from base to decimal
+    my ($num)  = @_;
+    my $bpow   = 1;
+    my $result = 0;
+    my $pos    = length($num) - 1;
+    while ($pos >= 0) { # from backwards
+        my $digit = index($digits, substr($num, $pos, 1));
+        if ($digit < 0) {
+            print STDERR "invalid digit in number $num\n";
+        }
+        $result += $digit * $bpow;
+        $bpow   *= $base;
+        $pos --;
+    } # positive
+    return $result; 
+} # from_base
 __DATA__
 georg@nunki:~/work/gits/fasces/data$ perl gen_expr.pl 5
 A0 = []; len = 1;

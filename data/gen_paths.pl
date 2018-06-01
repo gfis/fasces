@@ -1,6 +1,7 @@
 #!/usr/bin/perl
 
 # FASS: generate all noncrossing paths which fill a square of defined size completely
+# 2018-06-01: draw_graph with oies, utf8
 # 2018-05-30: extrapolate
 # 2018-05-18: if the path marks a border element, the two neighbours on the border may not be both unmarked
 # 2018-05-10: even bases 2, 4, ...; summary
@@ -12,20 +13,23 @@
 #   perl gen_paths [-b base] [-l dim] [-m mode] [-d n]
 #       -b base  (default 5)
 #       -e       output paths with extrapolation errors
-#       -m mode  symm(etric), diag(onal), wave, extra, nobar
+#       -g gmode none, asc, base, oeis, utf8
 #       -l dim   extrapolate up to this dimension (default 3 = cube)
+#       -m mode  symm(etric), diag(onal), wave, extra, nobar
 #       -v[b]    output vector, maybe in base
 #       -d debug level n (default: 0 = none)
 #-------------------------
 use strict;
 use integer; # avoid division problems with reals
-
+use feature 'unicode_strings';
+binmode(STDOUT, ":utf8");
 my $debug  = 0;
 my $ansi   = 0;  # whether to use ANSI colors on console output
 my $base   = 5;
 my $unit   = 1;  # dual to $base
 my $diag   = 0;
 my $error  = 0;  # whether to output paths with extrapolation errors
+my $graph  = "utf8"; # one of the graph modes: none, oeis, asc, utf8
 my $maxexp = 2;  # compute b-file up to $base**$maxexp
 my $mode   = "wave,cube"; # no special conditions; maybe "nobar"
 my $symm   = 0;
@@ -44,6 +48,8 @@ while (scalar(@ARGV) > 0) {
         $ansi   = 1;
     } elsif ($opt =~ m{\-e}) {
         $error  = 1;
+    } elsif ($opt =~ m{\-g}) {
+        $graph  = shift(@ARGV);
     } elsif ($opt =~ m{\-l}) {
         $maxdim = shift(@ARGV);
     } elsif ($opt =~ m{\-m}) {
@@ -75,7 +81,7 @@ my $base_1  = $base - 1;
 my $base2_1 = $base * 2 - 1; # 9  for base=5
 my $ind = 2;
 my @bpow = ($unit, $base, $bpow2);
-while ($ind <= 8) { # how many base digits will fit into an integer???  
+while ($ind <= 8) { # how many base digits will fit into an integer???
     $bpow[$ind + 1] = $bpow[$ind] * $base;
     $ind ++;
 } # while bpow
@@ -165,8 +171,8 @@ sub check_path { my ($dummy) = @_;
     $pathno ++;
     my $wave           = &check_wave();
     my $not_expandable = &extrapolate($maxdim);
-    if (   $error > 0 
-        or ($wave >= 3 and $not_expandable == 0) 
+    if (   $error > 0
+        or ($wave >= 3 and $not_expandable == 0)
         or ($base & 1) == 0) {
         &output_path($wave, $not_expandable);
     } # success
@@ -174,16 +180,17 @@ sub check_path { my ($dummy) = @_;
 #--------
 sub output_path { my ($wave, $not_expandable) = @_;
     if ($wave >= 3 and $not_expandable == 0) {
-    	$count ++;
+        $count ++;
     }
     print "<!-- ========================== -->\n";
     my $attributes = &get_final_attributes();
     print "<meander id=\"$count\" pathno=\"$pathno\" wave=\"$wave\" base=\"$base\"\n"
-        . "     notexp=\"$not_expandable\" turncode=\"" . &get_turncode(@path) . "\"\t attrs=\"$attributes\"\n" 
+        . "     notexp=\"$not_expandable\" turncode=\"" . &get_turncode(@path) . "\"\t attrs=\"$attributes\"\n"
         . "     path=\""  . join(",", map {         $_  } @path) . "\"\n"
         . "     bpath=\"" . join(",", map { &based0($_) } @path) . "\"\n"
         . "     >\n";
-    &draw_path(@path);
+    # &draw_path(@path);
+    &draw_graph($graph);
     if ($vector > 0) {
         print "<vector>\n$vecstr\n</vector>\n";
     }
@@ -213,35 +220,43 @@ sub is_free { my ($vnext) = @_;
 # check for "stairs"
 # resulting bad turncodes for base 5 are:
 #  with       without
-#  2 412      2 412       2 412 
-#  2 3312     2 411       2 3312
-#  2 2        2 3211      2 2   
-#  2 1332     2 211       2 1332
-#  2 132      2 2         2 132 
+#  2 412      2 412
+#  2 3312     2 411
+#  2 2        2 3211
+#  2 1332     2 211
+#  2 132      2 2
 #             2 1332
-#             2 132 
+#             2 132
 #             2 1234
-#             2 122 
-#             2 1   
+#             2 122
+#             2 1
 
-sub stairs { my ($len, $dist) = @_; # $path[$len - 1] == $vlast
-	if ($error > 0 or ($base & 1) == 0) { # not if errors allowd or even base
-		return 0;	
-	}
+sub stairs { my ($len, $pdist) = @_; # $path[$len - 1] == $vlast
+    if (($error > 0 or ($base & 1) == 0)) { # not if errors allowd or even base
+        return 0;
+    }
+    my $dist = $pdist;
     my $fail = 0;
     my $ind = $len - 1;
     my $vold = $path[$ind]; # $vlast
+    my $vnew;
     $ind --;
     while ($fail == 0 and $len - $ind <= 6) {
         $dist = $base + 1 - $dist;
-        my $vnew = $path[$ind];
-        if (abs($vnew - $vold) != $dist) {
+        $vnew = $path[$ind];
+        my $diff = abs($vnew - $vold);
+        if ($diff != $dist) { # and $diff != ($dist << 1)) {
             $fail = 1;
         }
         $vold = $vnew;
         $ind --;
     } # while $ind
-    return $len - $ind <= 5 ? 0 : 1;
+    # if ($debug >= 2 and $len - $ind > 5) {
+    #   print "<!-- len=$len, ind=$ind -->\n";
+    #   &draw_graph($graph);
+    # }
+    $fail = $len - $ind <= 5 ? 0 : 1;
+    return $fail;
 } # stairs
 #--------
 # Determine and push possible followers of last vertex.
@@ -255,7 +270,7 @@ sub push_urdl {
     my $ylast = &get_digit1($vlast, 0); # rightmost character
     my ($vnext, $xnext, $ynext, $vnei1, $vnei2, $fail);
     $fail = 0;
-    if ($xlast == $ylast and $xlast == $base_1 and scalar(@path) != $corner and ($base & 1) == 1) { 
+    if ($xlast == $ylast and $xlast == $base_1 and scalar(@path) != $corner and ($base & 1) == 1) {
         # diagonal corner is not last path element (for odd bases)
         $fail = 1;
     }
@@ -395,7 +410,7 @@ sub extrapolate { my ($maxdim) = @_;
     my $currdig;
     while ($fail == 0 and $ind < $limit) {
         # compute the successor of $nprev at $ind
-        print "# try       " . &to_base($nprev) . " -> " . &to_base($ncurr) . " -> ?\n" if $debug >= 1;
+        print "# try       " . &to_base($nprev) . " -> " . &to_base($ncurr) . " -> ?\n" if $debug >= 2;
         my $nnext   = $UNKN;
         my $candno = 0; # number of possible candidates
         my $k = 0;
@@ -406,7 +421,7 @@ sub extrapolate { my ($maxdim) = @_;
                 # $currdig = $k != 0 ? (($ncurr / $bpow[$k]) % $base) : $ncurr % $base;
                 if (($currdig != 0 or $pm != -1) and ($currdig != $base_1 or $pm != +1)) { # next will not be at any border
                     my $ncand = $ncurr + $pm * $bpow[$k]; # candidate with digit -+ 1
-                    print "# candidate " . &to_base($ncand) . " k=$k, pm=$pm, currdig=$currdig\n" if $debug >= 1;
+                    print "# candidate " . &to_base($ncand) . " k=$k, pm=$pm, currdig=$currdig\n" if $debug >= 2;
                     if ($ncand != $nprev) { # test whether all subpairs (i,j) of $ncand fulfill the adjacency condition
                         my $adjac = 1; # assume all subpair combinations are adjacent
                         my $j = 0;
@@ -437,16 +452,16 @@ sub extrapolate { my ($maxdim) = @_;
         } # while $k
         if (0) {
         } elsif ($candno == 0) {
-            print "# no candidate " . &to_base($ncurr) . " -> ?\n" if $debug >= 1;
+            print "# no candidate " . &to_base($ncurr) . " -> ?\n" if $debug >= 2;
             $fail = 1;
         } elsif ($candno >  1) {
-            print "# conflict for " . &to_base($ncurr) . " -> ?\n" if $debug >= 1;
+            print "# conflict for " . &to_base($ncurr) . " -> ?\n" if $debug >= 2;
             $fail = $candno;
         } else {
             if ($k == $slidim and $currdig == 0 and $slidim < $maxdim) {
                 $slidim ++;
             }
-            print "# found     " . &to_base($nprev) . " -> " . &to_base($ncurr) . " -> " . &to_base($nnext) . ", slidim=$slidim\n" if $debug >= 1;
+            print "# found     " . &to_base($nprev) . " -> " . &to_base($ncurr) . " -> " . &to_base($nnext) . ", slidim=$slidim\n" if $debug >= 2;
             # print "$ind $nnext\n";
             if ($vector > 0) {
                 $vecstr .= $vsep . ($vector == 2 ? &to_base($nnext) : $nnext);
@@ -479,7 +494,7 @@ sub get_pair { my ($nprev, $i, $j) = @_;
             $b = $base_1 - $b;
         }
     }
-    return $a * $base + $b; 
+    return $a * $base + $b;
 } # get_pair
 #--------
 # check whether there is a wave with a center on the diagonal
@@ -612,12 +627,12 @@ sub get_final_attributes { my ($dummy) = @_;
 # presentation routines
 #=========================================
 # copied into gen_meander.pl, change there and here
-# Special encoding of the path with its turns. 
+# Special encoding of the path with its turns.
 # Begin with 1, and assume right turn.
-# For each bar,  add one to the current digit. 
+# For each bar,  add one to the current digit.
 # For a turn in the same direction, a new digit is started.
 # If the direction of the turn was in the opposite direction, insert a "-" first.
-# The directions are:      
+# The directions are:
 #    +1                   +-+ |
 # -b xy +b                | | |  => turncode "212-12"
 #    -1                   | +-+
@@ -631,7 +646,7 @@ sub get_turncode { my (@path) = @_;
     for (my $ind = 1; $ind < scalar(@path); $ind ++) {
         my $ndir = $path[$ind] - $path[$ind - 1];
         # print "[$ind] dir  $odir <> $ndir ?\n" if $debug >= 3;
-        if ($odir == $ndir) { 
+        if ($odir == $ndir) {
             $code ++;
         } else { # turning
             $turncode .= substr($digits, $code, 1);
@@ -645,7 +660,7 @@ sub get_turncode { my (@path) = @_;
             if ($oturn ne $nturn) {
                 $turncode .= "-";
                 $oturn = $nturn;
-            } 
+            }
             $odir  = $ndir;
             $code  = 1;
         } # turning
@@ -653,6 +668,148 @@ sub get_turncode { my (@path) = @_;
     $turncode .= substr($digits, $code, 1);
     return $turncode;
 } # get_turncode
+#-----------------------------------------
+# variables for drawing, set when &draw_line is called with $iline == 0
+my $no_draw_lines;
+my $right_bar;
+my $space_bar;  # must have the length of $right_bar
+my $down_bar;   # must have the length of a grid coordinate representation
+my $space_grid; # must have the length of a grid coordinate representation
+#--------
+sub draw_line { my ($iline, $graph_mode, $y) = @_; # global $base, @path and the 5 variabless above
+    if ($iline == 0) {
+        # initialize
+        if (1) {
+            if (0) {
+            } elsif ($graph_mode =~ m{asc} ) { # with + -- |
+                $no_draw_lines = 1;
+                $right_bar     = "-";
+                $space_bar     = " ";
+                $down_bar      = "";
+                $space_grid    = "";
+            } elsif ($graph_mode =~ m{base}  ) { #
+                $no_draw_lines = 2;
+                $right_bar     = "==";
+                $space_bar     = "  ";
+                $down_bar      = "||";
+                $space_grid    = "  ";
+            } elsif ($graph_mode =~ m{oeis}  ) {
+                $no_draw_lines = 3;
+                $right_bar     = "--";
+                $space_bar     = "  ";
+                if ($base < 10) { #   "(3,4)"
+                    $down_bar      =  "  |  ";
+                    $space_grid    =  "     ";
+                } else { #           "(13,14)"
+                    $down_bar      = "   |   ";
+                    $space_grid    = "       ";
+                }
+            } elsif ($graph_mode =~ m{utf8}   ) { # light unicode box characters
+                $no_draw_lines = 1;
+                $right_bar     = "\N{U+2500}";
+                $space_bar     = " ";
+                $down_bar      = "";
+                $space_grid    = "";
+            }
+        }
+    } else { # draw 1-3 lines
+        # draw one grid point and the right bar
+        for (my $x = 0; $x < $base; $x ++) {
+            my ($adj_right, $adj_down, $adj_left, $adj_up, $code);
+            my $ipa = $x * $base + $y;
+            $adj_right = ($x < $base - 1 and abs($invp[$ipa] - $invp[$ipa + $base]) == 1) ? 1 : 0; # whether x,y is adjacent to x+1,y
+            $adj_left  = ($x > 0         and abs($invp[$ipa] - $invp[$ipa - $base]) == 1) ? 1 : 0; # whether x,y is adjacent to x-1,y
+            $adj_up    = ($y < $base - 1 and abs($invp[$ipa] - $invp[$ipa + 1    ]) == 1) ? 1 : 0; # whether x,y is adjacent to x,y-1
+            $adj_down  = ($y > 0         and abs($invp[$ipa] - $invp[$ipa - 1    ]) == 1) ? 1 : 0; # whether x,y is adjacent to x,y-1
+            $code = "x";
+            if ($iline == 1) { # line with grid points
+                if (0) {
+                } elsif ($graph_mode =~ m{asc} ) { # with + -- |
+                    if (0) {
+                    } elsif ($x == 0         and $y == 0        ) {
+                        $code = "s";
+                    } elsif ($x == $base - 1 and $y == $base - 1) {
+                        $code = "e";
+                    } elsif ($adj_left ) {
+                        if (0) {
+                        } elsif ($adj_right) { $code = "-"; # "-"; # horizontal
+                        } elsif ($adj_up   ) { $code = "J"; # "d";
+                        } elsif ($adj_down ) { $code = "."; # "q";
+                        }
+                    } elsif ($adj_right) {
+                        if (0) {
+                        } elsif ($adj_up   ) { $code = "L"; # "b";
+                        } elsif ($adj_down ) { $code = "r"; # "p";
+                        }
+                    } elsif ($adj_up   ) {
+                        if (0) {
+                        } elsif ($adj_down ) { $code = "|"; # "|"; # vertical
+                        }
+                    }
+                    print $code;
+                    # unicode
+                } elsif ($graph_mode =~ m{base}  ) { #
+                    print substr($digits, $x, 1) . substr($digits, $y, 1);
+                } elsif ($graph_mode =~ m{oeis}  ) {
+                    print sprintf($base < 10 ? "(%d,%d)" : "(%2d,%2d)", $x, $y);
+                } elsif ($graph_mode =~ m{utf8}   ) { # light unicode box characters
+                    if (0) {
+                    } elsif ($x == 0         and $y == 0        ) {
+                        $code = "\N{U+2502}"; # vertical
+                    } elsif ($x == $base - 1 and $y == $base - 1) {
+                        $code = $adj_left ? "\N{U+2500}" : "\N{U+2502}";
+                    } elsif ($adj_left ) {
+                        if (0) {
+                        } elsif ($adj_right) { $code = "\N{U+2500}"; # "\N{U+2501}"; # horizontal
+                        } elsif ($adj_up   ) { $code = "\N{U+2518}"; # "\N{U+251b}";
+                        } elsif ($adj_down ) { $code = "\N{U+2510}"; # "\N{U+2513}";
+                        }                                            #
+                    } elsif ($adj_right) {                           #
+                        if (0) {                                     #
+                        } elsif ($adj_up   ) { $code = "\N{U+2514}"; # "\N{U+2517}";
+                        } elsif ($adj_down ) { $code = "\N{U+250c}"; # "\N{U+250f}";
+                        }                                            #
+                    } elsif ($adj_up   ) {                           #
+                        if (0) {                                     #
+                        } elsif ($adj_down ) { $code = "\N{U+2502}"; # "\N{U+2503}"; # vertical
+                        }
+                    }
+                    print $code;
+                    # unicode
+                }
+                if ($x < $base - 1) {
+                    print ($adj_right == 1 ? $right_bar : $space_bar);
+                } else {
+                    print "\n";
+                }
+            } elsif ($iline > 1 and $y > 0) {
+                # draw vertical bars below the grid points (except for last line)
+                print ($adj_down == 1 ? $down_bar : $space_grid);
+                if ($x < $base - 1) {
+                    print $space_bar;
+                } else {
+                    print "\n";
+                }
+            } # below the grid points
+        } # for $x
+    } # draw 1-3 lines
+} # draw_line
+#--------
+# draw a graph showing the path
+sub draw_graph { my ($graph_mode) = @_; # global $base, @path
+    if ($graph_mode =~ m{none}) {
+        return;
+    }
+    &set_inverse();
+    print "<graph>\n";
+    &draw_line(0, $graph_mode, 0); # initialize
+    for (my $y = $base - 1; $y >= 0; $y --) {
+        for (my $iline = 1; $iline <= $no_draw_lines; $iline ++) {
+            &draw_line($iline, $graph_mode, $y);
+        } # for $iline
+    } # for $y
+    print "</graph>\n";
+} # draw_graph
 #-----------------------------------------
 # draw a square matrix showing the path
 sub draw_path { my ($dummy) = @_;
@@ -697,7 +854,7 @@ sub get_matrix_pos { my ($x, $y) = @_;
 #---------
 # draw a connecting bar
 sub connect { my ($pa0, $pa1) = @_;
-    if ($pa0 > $pa1) { # exchange, make $pa0 <= $pa1 
+    if ($pa0 > $pa1) { # exchange, make $pa0 <= $pa1
         my $temp = $pa0;
         $pa0 = $pa1;
         $pa1 = $temp;
@@ -720,14 +877,14 @@ sub connect { my ($pa0, $pa1) = @_;
     }
 } # connect
 #--------
-# return a number in base $base,
+# return a number in base $base, 2 digits with leading zero
 sub based0 { my ($num) = @_;
     return substr($digits, &get_digit1($num, 1), 1)
         .  substr($digits, &get_digit1($num, 0), 1)
         ;
 } # based0
 #--------
-# convert from decimal to base
+# convert from decimal to base, without leading zeroes
 sub to_base { my ($num)  = @_;
     my $result = "";
     while ($num > 0) {

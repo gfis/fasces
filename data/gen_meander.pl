@@ -81,9 +81,9 @@ if (length($rfile) > 0) { # read generated matrices
         if (m{(matrix|meander)\s+id=\"(\w+)\"}) {
             $ident = $2;
             if (m{\s+attrs=\"(\w+)\"}) {
-            	$attrs = $1;
+                $attrs = $1;
             } else {
-            	$attrs = "";
+                $attrs = "";
             }
         }
         if (m{\spath=\"([\,\0-9]+)\"}) {
@@ -144,7 +144,7 @@ sub meander {
     
     if (1 or $fail == 0) {
         print "<meander id=\"$ident\" attrs=\"$attrs\""
-        	. "    path=\"" . join(",", @path) . "\"\n"
+            . "    path=\"" . join(",", @path) . "\"\n"
             . "    bpath=\"$bpath\"\n"
             . "    fail=\"$fail\" turncode=\"" . &get_turncode(@path) . "\"\n" 
             . "    >\n" if $xml > 0;
@@ -163,24 +163,24 @@ sub meander {
 } # meander
 #--------
 sub diag_dist { # return whether all distances between diagonal elements are divisible by 4
-	my @bpat2 = split(/\D+/, $bpath);
-	my $pattern = "00";
-	my $ldiag = 0; # index of last diagonal element
-	my $ind = 1;
-	my $div4 = 1; # assume that all diagnonal distances are divisible by 4
-	while ($ind < scalar(@bpat2)) {
-		if ($bpat2[$ind] =~ m{(\d)\1}) {
-			my $dist = $ind - $ldiag;
-			if ($dist % 4 != 0) {
-				$div4 = 0;
-			}
-			$pattern .= "($dist)$bpat2[$ind]";
-			$ldiag = $ind;
-	 	}
-		$ind ++;
-	} # while
-	print "# diag div4=$div4, pattern=$pattern " if $debug >= 0;
-	return $div4;
+    my @bpat2 = split(/\D+/, $bpath);
+    my $pattern = "00";
+    my $ldiag = 0; # index of last diagonal element
+    my $ind = 1;
+    my $div4 = 1; # assume that all diagnonal distances are divisible by 4
+    while ($ind < scalar(@bpat2)) {
+        if ($bpat2[$ind] =~ m{(\d)\1}) {
+            my $dist = $ind - $ldiag;
+            if ($dist % 4 != 0) {
+                $div4 = 0;
+            }
+            $pattern .= "($dist)$bpat2[$ind]";
+            $ldiag = $ind;
+        }
+        $ind ++;
+    } # while
+    print "# diag div4=$div4, pattern=$pattern " if $debug >= 0;
+    return $div4;
 } # diag_dist
 #--------
 sub get_successor {
@@ -305,8 +305,8 @@ sub get_successor {
     if (0) {
     } elsif ($lcand >  1) {
         print "<!--# id $ident: conflict $bcurr @ $ind" . ", cands=" . join(",", @cands) 
-        	#	. ", spath=$spath-->
-        	. "\n" if $xml > 0;
+            #   . ", spath=$spath-->
+            . "\n" if $xml > 0;
         if ($even > 0) { 
             $cand = $cands[0];
         } else {
@@ -448,17 +448,17 @@ sub draw_path {
         $ipa ++;
     } # while $ipa 
     if (1) {
-    	print "<draw-path>\n\n" if $xml > 0;
-    	my $imp = 0;
-    	while ($imp < scalar(@matrix)) { # print
-    	    print "$matrix[$imp]";
-    	    $imp ++;
-    	    if ($imp % ($base * 2 - 1) == 0) {
-    	        print "\n";
-    	    }
-    	} # printing
-    	print "\n</draw-path>\n" if $xml > 0;
-	} # xml
+        print "<draw-path>\n\n" if $xml > 0;
+        my $imp = 0;
+        while ($imp < scalar(@matrix)) { # print
+            print "$matrix[$imp]";
+            $imp ++;
+            if ($imp % ($base * 2 - 1) == 0) {
+                print "\n";
+            }
+        } # printing
+        print "\n</draw-path>\n" if $xml > 0;
+    } # xml
 } # draw_path
 #----
 sub based0 {
