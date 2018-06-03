@@ -62,6 +62,8 @@ while (scalar(@ARGV) > 0 and ($ARGV[0] =~ m{\A\-})) { # start with hyphen
     }
 } # while opt
 $even = $base % 2 == 0 ? 1 : 0;
+my $basem1 = $base - 1;
+my $basep1 = $base - 1;
 my $xml = 1;
 my $corner = $base * $base;
 my $corner_val = "1" . ($base - 1) .($base - 1);

@@ -65,7 +65,6 @@ $diag = ($mode =~ m{di}) ? 1 : 0;
 my $vert    = "||"; if ($ansi == 1) { $vert = "\x1b[103m$vert\x1b[0m"; }
 my $hori    = "=="; if ($ansi == 1) { $hori = "\x1b[103m$hori\x1b[0m"; }
 my $blan    = "  ";
-my @matrix; # for &draw_path
 my $pathno  = 0;
 my @matrix  = ();
 my @filled  = ();
@@ -77,8 +76,9 @@ if ($symm == 1) {
     $last /= 2; # in the center
 }
 my $bpow2   = $base * $base;
-my $base_1  = $base - 1;
-my $base2_1 = $base * 2 - 1; # 9  for base=5
+my $basem1  = $base - 1;
+my $basep1  = $base + 1; # mod base+1 = 0 for diagnonal path elements
+my $base2m1 = $base * 2 - 1; # 9  for base=5
 my $ind = 2;
 my @bpow = ($unit, $base, $bpow2);
 while ($ind <= 8) { # how many base digits will fit into an integer???
@@ -184,12 +184,13 @@ sub output_path { my ($wave, $not_expandable) = @_;
     }
     print "<!-- ========================== -->\n";
     my $attributes = &get_final_attributes();
+    my $gear       = &get_gear (@path);
+    my $ratio      = &get_ratio($gear);
     print "<meander id=\"$count\" pathno=\"$pathno\" wave=\"$wave\" base=\"$base\"\n"
-        . "     notexp=\"$not_expandable\" turncode=\"" . &get_turncode(@path) . "\"\t attrs=\"$attributes\"\n"
+        . "     nex=\"$not_expandable\" gear=\"$gear\" ratio=\"$ratio\" \t attrs=\"$attributes\"\n"
         . "     path=\""  . join(",", map {         $_  } @path) . "\"\n"
         . "     bpath=\"" . join(",", map { &based0($_) } @path) . "\"\n"
         . "     >\n";
-    # &draw_path(@path);
     &draw_graph($graph);
     if ($vector > 0) {
         print "<vector>\n$vecstr\n</vector>\n";
@@ -218,7 +219,7 @@ sub is_free { my ($vnext) = @_;
 } # is_free
 #--------
 # check for "stairs"
-# resulting bad turncodes for base 5 are:
+# resulting bad turnss for base 5 are:
 #  with       without
 #  2 412      2 412
 #  2 3312     2 411
@@ -266,11 +267,11 @@ sub push_urdl {
     my $len   = scalar(@path);
     my $vlast = $path[$len - 1];
     my $vprev = $path[$len - 2];
-    my $xlast = &get_digit1($vlast, 1);
-    my $ylast = &get_digit1($vlast, 0); # rightmost character
+    my $xlast = &get_digit($vlast, 1);
+    my $ylast = &get_digit($vlast, 0); # rightmost character
     my ($vnext, $xnext, $ynext, $vnei1, $vnei2, $fail);
     $fail = 0;
-    if ($xlast == $ylast and $xlast == $base_1 and scalar(@path) != $corner and ($base & 1) == 1) {
+    if ($xlast == $ylast and $xlast == $basem1 and scalar(@path) != $corner and ($base & 1) == 1) {
         # diagonal corner is not last path element (for odd bases)
         $fail = 1;
     }
@@ -294,15 +295,15 @@ sub push_urdl {
     } # on the diagonal
 
     if ($fail == 0) {
-        if ($ylast < $base_1) { $fail = 0;  # may go up
+        if ($ylast < $basem1) { $fail = 0;  # may go up
             $vnext = $vlast + $unit;        # go up
             if (&is_free($vnext) == 1 and &stairs($len,   $unit) == 0) {
-                $ynext =     &get_digit1($vnext, 0);
-                if ($ynext == $base_1) {    # at upper border
-                    $xnext = &get_digit1($vnext, 1);
+                $ynext =     &get_digit($vnext, 0);
+                if ($ynext == $basem1) {    # at upper border
+                    $xnext = &get_digit($vnext, 1);
                     $vnei1 = $xnext == 0       ? $vnext - $unit : $vnext - $base; # down or left
                     if (&is_free($vnei1)) {
-                    $vnei2 = $xnext == $base_1 ? $vnext - $unit : $vnext + $base; # down or right
+                    $vnei2 = $xnext == $basem1 ? $vnext - $unit : $vnext + $base; # down or right
                     if (&is_free($vnei2)) { $fail = 1; }
                     }
                 }
@@ -314,12 +315,12 @@ sub push_urdl {
         if ($ylast > 0      ) { $fail = 0;  # may go down
             $vnext = $vlast - $unit;        # go down
             if (&is_free($vnext) == 1 and &stairs($len,   $unit) == 0) {
-                $ynext =     &get_digit1($vnext, 0);
+                $ynext =     &get_digit($vnext, 0);
                 if ($ynext == 0      ) {    # at lower  border
-                    $xnext = &get_digit1($vnext, 1);
+                    $xnext = &get_digit($vnext, 1);
                     $vnei1 = $xnext == 0       ? $vnext + $unit : $vnext - $base; # up or left
                     if (&is_free($vnei1)) {
-                    $vnei2 = $xnext == $base_1 ? $vnext + $unit : $vnext + $base; # up or right
+                    $vnei2 = $xnext == $basem1 ? $vnext + $unit : $vnext + $base; # up or right
                     if (&is_free($vnei2)) { $fail = 1; }
                     }
                 }
@@ -328,13 +329,13 @@ sub push_urdl {
                 }                           # push lower
             }
         }
-        if ($xlast < $base_1) { $fail = 0;  # may go right
+        if ($xlast < $basem1) { $fail = 0;  # may go right
             $vnext = $vlast + $base;        # go right
             if (&is_free($vnext) == 1 and &stairs($len,   $base) == 0) {
-                $xnext =     &get_digit1($vnext, 1);
-                if ($xnext == $base_1) {    # at right  border
-                    $ynext = &get_digit1($vnext, 0);
-                    $vnei1 = $ynext == $base_1 ? $vnext - $base : $vnext - $unit; # left or down
+                $xnext =     &get_digit($vnext, 1);
+                if ($xnext == $basem1) {    # at right  border
+                    $ynext = &get_digit($vnext, 0);
+                    $vnei1 = $ynext == $basem1 ? $vnext - $base : $vnext - $unit; # left or down
                     if (&is_free($vnei1)) {
                     $vnei2 = $ynext == 0       ? $vnext - $base : $vnext + $unit; # left or up
                     if (&is_free($vnei2)) { $fail = 1; }
@@ -348,10 +349,10 @@ sub push_urdl {
         if ($xlast > 0      ) { $fail = 0;  # may go left
             $vnext = $vlast - $base;        # go left
             if (&is_free($vnext) == 1 and &stairs($len,   $base) == 0) {
-                $xnext =     &get_digit1($vnext, 1);
+                $xnext =     &get_digit($vnext, 1);
                 if ($xnext == 0      ) {    # at left   border
-                    $ynext = &get_digit1($vnext, 0);
-                    $vnei1 = $ynext == $base_1 ? $vnext + $base : $vnext - $unit; # right or down
+                    $ynext = &get_digit($vnext, 0);
+                    $vnei1 = $ynext == $basem1 ? $vnext + $base : $vnext - $unit; # right or down
                     if (&is_free($vnei1)) {
                     $vnei2 = $ynext == 0       ? $vnext + $base : $vnext + $unit; # right or up
                     if (&is_free($vnei2)) { $fail = 1; }
@@ -417,9 +418,9 @@ sub extrapolate { my ($maxdim) = @_;
         while ($k < $slidim) {
             my $pm = -1;
             while ($pm < 2) {
-                $currdig = &get_digit1($ncurr, $k);
+                $currdig = &get_digit($ncurr, $k);
                 # $currdig = $k != 0 ? (($ncurr / $bpow[$k]) % $base) : $ncurr % $base;
-                if (($currdig != 0 or $pm != -1) and ($currdig != $base_1 or $pm != +1)) { # next will not be at any border
+                if (($currdig != 0 or $pm != -1) and ($currdig != $basem1 or $pm != +1)) { # next will not be at any border
                     my $ncand = $ncurr + $pm * $bpow[$k]; # candidate with digit -+ 1
                     print "# candidate " . &to_base($ncand) . " k=$k, pm=$pm, currdig=$currdig\n" if $debug >= 2;
                     if ($ncand != $nprev) { # test whether all subpairs (i,j) of $ncand fulfill the adjacency condition
@@ -434,7 +435,8 @@ sub extrapolate { my ($maxdim) = @_;
                                     if (abs($invp[$curr2] - $invp[$cand2]) > 1) { # the are not equal or adjacent
                                         $adjac = 0;
                                     }
-                                    print "# pair ($i,$j): " . &based0($curr2) . ($adjac == 1 ? " isadjac " : " notadj ") . &based0($cand2) . "\n" if $debug >= 2;
+                                    print "# pair ($i,$j): " . &based0($curr2) . ($adjac == 1 ? " isadjac " : " notadj ")
+                                        . &based0($cand2) . "\n" if $debug >= 2;
                                 } # i or j is k
                                 $i ++;
                             } # while $i
@@ -480,9 +482,9 @@ sub extrapolate { my ($maxdim) = @_;
 } # extrapolate
 #----------
 # gets 1 digit; position $k = 0 gets lowest digit to base
-sub get_digit1 { my ($ncurr, $k) = @_;
+sub get_digit { my ($ncurr, $k) = @_;
     return $k != 0 ? ($ncurr / $bpow[$k]) % $base : $ncurr % $base;
-} # get_digit1
+} # get_digit
 #---------
 # get a pair of digits from an element; 0 <= i < j <= 5
 sub get_pair { my ($nprev, $i, $j) = @_;
@@ -490,8 +492,8 @@ sub get_pair { my ($nprev, $i, $j) = @_;
     my $b =   ($j != 0 ? (($nprev / $bpow[$j]) % $base) : $nprev % $base);
     if (($base & 1) == 0) { # even base
         if ((abs($i - $j) & 1) == 0) { # even dimension distance
-            $a = $base_1 - $a;
-            $b = $base_1 - $b;
+            $a = $basem1 - $a;
+            $b = $basem1 - $b;
         }
     }
     return $a * $base + $b;
@@ -594,13 +596,13 @@ sub get_final_attributes { my ($dummy) = @_;
     my $dig0 =  $last          % $base;
     my $dig1 = ($last / $base) % $base;
     if (0) {                    # properties of the endpoint
-    } elsif ((              $dig0 == $base_1) and (              $dig1 == $base_1)) {
+    } elsif ((              $dig0 == $basem1) and (              $dig1 == $basem1)) {
         $result .= ",diagonal"; # right upper
-    } elsif (($dig0 == 0                    ) and (              $dig1 == $base_1)) {
+    } elsif (($dig0 == 0                    ) and (              $dig1 == $basem1)) {
         $result .= ",opposite"; # right lower
-    } elsif (($dig0 == 0 or $dig0 == $base_1) and ($dig1 == 0 or $dig1 == $base_1)) {
+    } elsif (($dig0 == 0 or $dig0 == $basem1) and ($dig1 == 0 or $dig1 == $basem1)) {
         $result .= ",corner";   # in one of the 3 corners
-    } elsif (($dig0 == 0 or $dig0 == $base_1) or  ($dig1 == 0 or $dig1 == $base_1)) {
+    } elsif (($dig0 == 0 or $dig0 == $basem1) or  ($dig1 == 0 or $dig1 == $basem1)) {
         $result .= ",outside";  # at the border
     } else {
         $result .= ",inside";   # inside
@@ -626,48 +628,162 @@ sub get_final_attributes { my ($dummy) = @_;
 #=========================================
 # presentation routines
 #=========================================
+#-----------------------------------------
 # copied into gen_meander.pl, change there and here
 # Special encoding of the path with its turns.
 # Begin with 1, and assume right turn.
-# For each bar,  add one to the current digit.
+# For each bar, add one to the current digit.
 # For a turn in the same direction, a new digit is started.
 # If the direction of the turn was in the opposite direction, insert a "-" first.
-# The directions are:
-#    +1                   +-+ |
-# -b xy +b                | | |  => turncode "212-12"
-#    -1                   | +-+
+# (So far that are the same as the rules for 'turns', above).
+# In addition, start a new digit if the path element is on the diagonal.
+# Assume that the turning direction changes there, and insert a "-" before the new digit,
+# but if the turning direction remains the same, insert a "+" before.
+# start a new digit.
+#    +1                  02==12  22
+# -b xy +b               ||  ||  ||
+#    -1                  01  11  21  => gear = "211-112" = "211/
+#                        ||  ||  ||
+#                        00  10==20
 #
-sub get_turncode { my (@path) = @_;
-    my $turncode = "";
-    my $code  = 0;
-    my $odir  = +$unit; # +y
-    my $nturn = "r"; # right, 0 = left
-    my $oturn = $nturn;
+sub get_gear { my (@path) = @_;
+    my $result = "";
+    my $code   = 0;
+    my $odir   = +$unit; # +y
+    my $nturn  = 1; # right=1, left=0
+    my $oturn  = $nturn;
+    my $change = 0;
+    my $sep    = "";
     for (my $ind = 1; $ind < scalar(@path); $ind ++) {
         my $ndir = $path[$ind] - $path[$ind - 1];
-        # print "[$ind] dir  $odir <> $ndir ?\n" if $debug >= 3;
-        if ($odir == $ndir) {
-            $code ++;
-        } else { # turning
-            $turncode .= substr($digits, $code, 1);
+        $change = 0;
+        if ($odir != $ndir) { # change in direction
+            $change |= 1;
             $nturn =  # 4 possible right turns:
                 (  ($odir == +$unit and $ndir == +$base)  # up    to right
                 or ($odir == +$base and $ndir == -$unit)  # right to down
                 or ($odir == -$unit and $ndir == -$base)  # down  to left
                 or ($odir == -$base and $ndir == +$unit)  # left  to up
-                ) ? "r" : "l"; # right : left
-            # print "[$ind] turn $oturn <> $nturn ?\n" if $debug >= 3;
-            if ($oturn ne $nturn) {
-                $turncode .= "-";
+                ) ? 1 : 0; # right : left
+        }
+        if ($path[$ind - 1] % $basep1 == 0 and ($path[$ind - 1] != 0)) { # diag
+            $change |= 2;
+        }
+        # if ($debug >= 2) {
+        #     print "[" . &based0($path[$ind]) ."] "
+        #         . (($change & 2 != 0) ? "diag " : "")
+        #         . "ndir " . (($change & 1 != 0) ? "same " : "diff ")
+        #         . "code=$code sep=\"$sep\" nturn "
+        #         . ($nturn == 1 ? "right " : "left  ") . "\n";
+        # }
+        if (     $change == 0) { # no change at all
+            $code ++;
+        } elsif ($change == 1) { # only dir change
+            if ($oturn != $nturn) {
+                $sep = "-";
                 $oturn = $nturn;
             }
-            $odir  = $ndir;
-            $code  = 1;
-        } # turning
+            $result .= $sep . substr($digits, $code, 1);
+            $sep = "";
+            $code = 1;
+        } elsif ($change == 2) { # only on diagonal
+            $result .= $sep . substr($digits, $code, 1);
+            $sep = "+";
+            $code = 1;
+            # $oturn = 1 - $oturn;
+        } elsif ($change == 3) { # dir change and on diagonal
+            $result .= $sep . substr($digits, $code, 1);
+            if ($oturn == $nturn) {
+                $sep = "+";
+            } else {
+                $sep = "-";
+                $oturn = $nturn;
+            }
+            $code = 1;
+        }
+        # if ($debug >= 2) {
+        #     print "[" . &based0($path[$ind]) ."]" . "      change $change"
+        #       . " code=$code sep=\"$sep\" $result\n";
+        # }
+        $odir = $ndir;
     } # for $ind
-    $turncode .= substr($digits, $code, 1);
-    return $turncode;
-} # get_turncode
+    $result .= $sep . substr($digits, $code, 1);
+    if ($debug >= 2) {
+        print "[" . &based0($path[$ind]) ."]" . " $result\n";
+    }
+    return $result;
+} # get_gear
+#--------
+# c.f. https://github.com/gfis/ramath/src/main/java/org/teherba/ramath/linear/Vector.java
+sub gcd { my ($a, $b) = @_;
+	my $result = abs($a);
+	if ($result != 1) {
+		my $p = $result;
+		my $q = abs($b);
+		while ($q != 0) {
+			my $temp = $q;
+			$q = $p % $q;
+			$p = $temp;
+		} # while $q
+		$result = $p;
+	}
+	return abs($result);
+} # gcd
+#--------
+# Gets the gear ratio.
+# Replace the n+m portions of the gear expression by p=n+m.
+# Interprete the digits as numbers teeth of gear wheel
+# (times 16, for example, for a corresponding mechanical gear).
+# Concatenated digits will turn in the same direction (by addition
+# of an auxiliary connecting wheel of arbitrary size),
+# while a "-" will reverse the direction.
+# How much and in what direction will the last wheel turn
+# if the first wheel turns +360°?
+#
+sub get_ratio { my ($gear) = @_; # e.g. &gear(Ls) = "413-131-21-211-112"
+    my @chars  = split(//, $gear . "  ");
+    if ($debug >= 1) {
+        print "ratio(\"" . join(".", @chars) . "\")\n";
+    }
+    my $ind    = 0;
+    my $onum   = index($digits, $chars[$ind]); $ind ++;
+    my $nnum   = 1;
+    my $nomin  = 1;
+    my $denom  = 1;
+    my $len    = scalar(@chars) - 2; # we did append "  "
+    while ($ind < $len) {
+        my $nch = $chars[$ind];
+        if (0) {
+        } elsif ($nch eq "+") {
+        	# ignore
+        } elsif ($nch eq "-") {
+            $denom = - $denom;
+        } else { # $nch should be a digit
+            $nnum = index($digits, $nch);
+            # if ($chars[$ind + 1] eq "+") {
+            #     $nnum += index($digits, $chars[$ind + 2]);
+            #     $ind += 2
+            # }
+            if ($onum == $nnum) {
+                # ignore
+            } else {
+                $denom *= $onum;
+                $nomin *= $nnum;
+            }
+            if ($debug >= 1) {
+                print "ratio($gear) \@$ind $onum ~ $nnum: $denom/$nomin\n";
+            }
+            $onum = $nnum;
+        }
+        $ind ++;
+    } # while $ind
+    my $dngcd = &gcd($denom, $nomin);
+    if ($dngcd > 1) {
+    	$denom /= $dngcd;
+    	$nomin /= $dngcd;
+    }
+    return ($nomin == 1) ? $denom : "$denom/$nomin";
+} # get_ratio
 #-----------------------------------------
 # variables for drawing, set when &draw_line is called with $iline == 0
 my $no_draw_lines;
@@ -810,77 +926,11 @@ sub draw_graph { my ($graph_mode) = @_; # global $base, @path
     } # for $y
     print "</graph>\n";
 } # draw_graph
-#-----------------------------------------
-# draw a square matrix showing the path
-sub draw_path { my ($dummy) = @_;
-    @matrix = ();
-    for (my $x = 0; $x < $base; $x ++) { # initialize the matrix
-        for (my $y = 0; $y < $base; $y ++) {
-            my $mp = &get_matrix_pos($x, $y);
-            my $xy = substr($digits, $x, 1) . substr($digits, $y, 1);
-            $matrix[$mp] = $ansi == 1 ? "\x1b[102m$xy\x1b[0m" : $xy;
-            if ($x < $base_1) {
-                $matrix[$mp + 1] = $blan; # " "; # right
-            }
-            if ($y > 0) {
-                $matrix[$mp + $base * 2 - 1] = $blan; # "  "; # down
-                if ($x < $base_1) {
-                    $matrix[$mp + $base * 2 - 1 + 1] = $blan; # " "; # down
-                }
-            }
-        } # for y
-    } # for $x
-    my $ipa = 1;
-    while ($ipa < scalar(@path)) {
-        &connect($path[$ipa - 1], $path[$ipa]);
-        $ipa ++;
-    } # while $ipa
-    print "<draw-path>\n\n";
-    my $imp = 0;
-    while ($imp < scalar(@matrix)) { # print
-        print "$matrix[$imp]";
-        $imp ++;
-        if ($imp % $base2_1 == 0) {
-            print "\n";
-        }
-    } # printing
-    print "\n</draw-path>\n";
-} # draw_path
-#---------
-# compute the position of an element in the matrix
-sub get_matrix_pos { my ($x, $y) = @_;
-    return $x * 2 + ($base2_1 - 1) * $base2_1 - $y * 2 * $base2_1;
-} # get_matrix_pos
-#---------
-# draw a connecting bar
-sub connect { my ($pa0, $pa1) = @_;
-    if ($pa0 > $pa1) { # exchange, make $pa0 <= $pa1
-        my $temp = $pa0;
-        $pa0 = $pa1;
-        $pa1 = $temp;
-    } # exchange
-    my $ba0 = &based0($pa0);
-    my $ba1 = &based0($pa1);
-    # print "ba0=$ba0, ba1=$ba1" if $debug >= 2;
-    my $x0 = &get_digit1($pa0, 1);
-    my $y0 = &get_digit1($pa0, 0);
-    my $x1 = &get_digit1($pa1, 1);
-    my $y1 = &get_digit1($pa1, 0);
-    # print ", x0=$x0, y0=$y0, x1=$x1, y1=$y1" if $debug >= 2;
-    my $mp0 = &get_matrix_pos($x0, $y0);
-    if ($x0 eq $x1) { # up
-        $matrix[$mp0 - ($base * 2 - 1)] = $vert; # up
-        print " $vert\n" if $debug >= 2;
-    } else {
-        $matrix[$mp0 + 1]               = $hori; # right
-        print " $hori\n" if $debug >= 2;
-    }
-} # connect
 #--------
 # return a number in base $base, 2 digits with leading zero
 sub based0 { my ($num) = @_;
-    return substr($digits, &get_digit1($num, 1), 1)
-        .  substr($digits, &get_digit1($num, 0), 1)
+    return substr($digits, &get_digit($num, 1), 1)
+        .  substr($digits, &get_digit($num, 0), 1)
         ;
 } # based0
 #--------
