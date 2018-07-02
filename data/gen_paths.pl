@@ -23,6 +23,7 @@ use strict;
 use integer; # avoid division problems with reals
 use feature 'unicode_strings';
 binmode(STDOUT, ":utf8");
+
 my $debug  = 0;
 my $ansi   = 0;  # whether to use ANSI colors on console output
 my $base   = 5;
@@ -38,6 +39,7 @@ my $vector = 0; # whether to output a vector
 my $vecstr = "";
 my $digits = "0123456789abcdefghijklmnopqrstuvwxyz"; # for counting in base 11, 13, ...
 my %attrs  = (); # path attributes: symmetrical, corner, ...
+my $filename = ""; # for re-evaluation of a file
 
 while (scalar(@ARGV) > 0) {
     my $opt = shift(@ARGV);
@@ -54,6 +56,8 @@ while (scalar(@ARGV) > 0) {
         $maxdim = shift(@ARGV);
     } elsif ($opt =~ m{\-m}) {
         $mode   = shift(@ARGV);
+    } elsif ($opt =~ m{\-r}) {
+        $filename = shift(@ARGV);
     } elsif ($opt =~ m{\-d}) {
         $debug  = shift(@ARGV);
     } elsif ($opt =~ m{\-vb?}) {
@@ -62,11 +66,7 @@ while (scalar(@ARGV) > 0) {
 } # while opt
 $symm = ($mode =~ m{sy}) ? 1 : 0;
 $diag = ($mode =~ m{di}) ? 1 : 0;
-my $vert    = "||"; if ($ansi == 1) { $vert = "\x1b[103m$vert\x1b[0m"; }
-my $hori    = "=="; if ($ansi == 1) { $hori = "\x1b[103m$hori\x1b[0m"; }
-my $blan    = "  ";
 my $pathno  = 0;
-my @matrix  = ();
 my @filled  = ();
 my $corner  = $base * $base;
 my $full    = $corner - 1;
@@ -85,6 +85,7 @@ while ($ind <= 8) { # how many base digits will fit into an integer???
     $bpow[$ind + 1] = $bpow[$ind] * $base;
     $ind ++;
 } # while bpow
+
 my @path = ();
 my @invp; # at which index does a path value occur
 $ind = 0;
@@ -93,11 +94,6 @@ while ($ind < $corner) { # preset filled
     $ind ++;
 } # preset filled
 my $ssep = ",";
-
-print <<"GFis";
-<?xml version="1.0" encoding="UTF-8" ?>
-<paths base="$base">
-GFis
 
 my @stack = (); # entries are "path_index${sep}value"
 $ind = 0;
@@ -113,11 +109,49 @@ while ($ind < $base) { # start with 00->01->02->...->0b
 } # vertical bar
 &push_urdl();
 my $count = 0;
-&iterate();
+
+if (length($filename) == 0) {
+	print <<"GFis";
+<?xml version="1.0" encoding="UTF-8" ?>
+<paths base="$base">
+GFis
+    &generate();
+} else {
+    &re_evaluate($filename);
+}
+
+print "\n<summary base=\"$base\" count=\"$count\" pathno=\"$pathno\"";
+foreach my $attr(sort(keys(%attrs))) {
+    print " $attr=\"$attrs{$attr}\"";
+} # foreach
+print " />\n</paths>\n";
+
 exit(0);
 #-----------------------------------------
-# process the stack
-sub iterate { my ($dummy) = @_;
+sub init_base_variables { my ($dummy) = @_;
+	$pathno  = 0;
+	@filled  = ();
+	$corner  = $base * $base;
+	$full    = $corner - 1;
+	$last    = $corner - 1;
+	$half    = $full / 2;
+	if ($symm == 1) {
+	    $last /= 2; # in the center
+	}
+	$bpow2   = $base * $base;
+	$basem1  = $base - 1;
+	$basep1  = $base + 1; # mod base+1 = 0 for diagnonal path elements
+	$base2m1 = $base * 2 - 1; # 9  for base=5
+	$ind = 2;
+	@bpow = ($unit, $base, $bpow2);
+	while ($ind <= 8) { # how many base digits will fit into an integer???
+	    $bpow[$ind + 1] = $bpow[$ind] * $base;
+	    $ind ++;
+	} # while bpow
+} # init_base_variables
+#-----------------------------------------
+# generate all possible paths with backtracking using a stack
+sub generate { my ($dummy) = @_;
     %attrs = ();
     while (scalar(@stack) > 0) { # pop
         my ($pind, $pval) = split(/$ssep/, pop(@stack));
@@ -159,13 +193,41 @@ sub iterate { my ($dummy) = @_;
             &push_urdl();
         }
     } # while popping
-
-    print "\n<summary base=\"$base\" count=\"$count\" pathno=\"$pathno\"";
-    foreach my $attr(sort(keys(%attrs))) {
-        print " $attr=\"$attrs{$attr}\"";
-    } # foreach
-    print " />\n</paths>\n";
-} # iterate
+} # generate
+#-----------------------------------------
+# generate all possible paths with backtracking using a stack
+sub re_evaluate { my ($filename) = @_;
+	$error = 1; # force output
+    my $line;
+    open(PIN, "<", $filename) || die "cannot read \"$filename\"\n";
+    while (<PIN>) {
+        $line = $_;
+        if (0) {
+        } elsif ($line =~ m{\<(meanders|paths)}) { # document tag
+            $line =~ m{base\=\"(\d+)\"};
+            $base = $1;
+            &init_base_variables();
+			print <<"GFis";
+<?xml version="1.0" encoding="UTF-8" ?>
+<paths base="$base">
+GFis
+       } elsif ($line =~ m{\<(meander|path)\s}) { # start tag
+            $line =~ m{base\=\"(\d+)\"};
+            $base   = $1;
+            $line =~ m{id\=\"(\d+)\"};
+            $count  = $1 - 1; # will be incremented below
+            $line =~ m{pathno\=\"(\d+)\"};
+            $pathno = $1 - 1; # will be incremented below
+        } elsif ($line =~ m{\A\s*path\=\"([^\"]+)\"}) {
+            my $spath = $1;
+            @path = split(/\D+/, $spath);
+            &set_inverse();
+        } elsif ($line =~ m{\<\/(meander|path)\>}) { # end tag
+            &check_path();
+        }
+    } # while PIN
+    close(PIN);
+} # re_evaluate
 #--------
 sub check_path { my ($dummy) = @_;
     $pathno ++;
@@ -186,16 +248,16 @@ sub output_path { my ($wave, $not_expandable) = @_;
     my $attributes = &get_final_attributes();
     my $gear       = &get_gear (@path);
     my $ratio      = &get_ratio($gear);
-    print "<meander id=\"$count\" pathno=\"$pathno\" wave=\"$wave\" base=\"$base\"\n"
-        . "     nex=\"$not_expandable\" gear=\"$gear\" ratio=\"$ratio\" \t attrs=\"$attributes\"\n"
-        . "     path=\""  . join(",", map {         $_  } @path) . "\"\n"
-        . "     bpath=\"" . join(",", map { &based0($_) } @path) . "\"\n"
+    print "<path id=\"$count\" pathno=\"$pathno\" wave=\"$wave\" base=\"$base\"\n"
+        . "     nex=\"$not_expandable\" gear=\"$gear\" ratio=\"$ratio\" attrs=\"$attributes\"\n"
+        . "     path=\""  . join(",", map {         $_  } @path) . "\"\n" # in decimal
+    #   . "     bpath=\"" . join(",", map { &based0($_) } @path) . "\"\n"
         . "     >\n";
     &draw_graph($graph);
     if ($vector > 0) {
         print "<vector>\n$vecstr\n</vector>\n";
     }
-    print "</meander>\n";
+    print "</path>\n";
 } # output_path
 #--------
 sub mark { my ($val) = @_;
@@ -716,18 +778,18 @@ sub get_gear { my (@path) = @_;
 #--------
 # c.f. https://github.com/gfis/ramath/src/main/java/org/teherba/ramath/linear/Vector.java
 sub gcd { my ($a, $b) = @_;
-	my $result = abs($a);
-	if ($result != 1) {
-		my $p = $result;
-		my $q = abs($b);
-		while ($q != 0) {
-			my $temp = $q;
-			$q = $p % $q;
-			$p = $temp;
-		} # while $q
-		$result = $p;
-	}
-	return abs($result);
+    my $result = abs($a);
+    if ($result != 1) {
+        my $p = $result;
+        my $q = abs($b);
+        while ($q != 0) {
+            my $temp = $q;
+            $q = $p % $q;
+            $p = $temp;
+        } # while $q
+        $result = $p;
+    }
+    return abs($result);
 } # gcd
 #--------
 # Gets the gear ratio.
@@ -755,7 +817,7 @@ sub get_ratio { my ($gear) = @_; # e.g. &gear(Ls) = "413-131-21-211-112"
         my $nch = $chars[$ind];
         if (0) {
         } elsif ($nch eq "+") {
-        	# ignore
+            # ignore
         } elsif ($nch eq "-") {
             $denom = - $denom;
         } else { # $nch should be a digit
@@ -779,8 +841,8 @@ sub get_ratio { my ($gear) = @_; # e.g. &gear(Ls) = "413-131-21-211-112"
     } # while $ind
     my $dngcd = &gcd($denom, $nomin);
     if ($dngcd > 1) {
-    	$denom /= $dngcd;
-    	$nomin /= $dngcd;
+        $denom /= $dngcd;
+        $nomin /= $dngcd;
     }
     return ($nomin == 1) ? $denom : "$denom/$nomin";
 } # get_ratio

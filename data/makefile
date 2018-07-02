@@ -209,6 +209,9 @@ tc7:
 	grep turncode $@.tmp  | \
 	perl eval_turncode.pl 
 #-------------------------------
+compress_gear:
+	perl compress.pl
+#-------------------------------
 rebase:
 	perl -w b-file_rebase.pl -f 16 -t 4 b-file_rebase.test.txt | tee b4.tmp
 	perl -w b-file_rebase.pl -f 4       b4.tmp 
