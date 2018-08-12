@@ -5,7 +5,7 @@
 # 2018-05-07, Georg Fischer
 #------------------------------------------------------
 # usage:
-#   perl kea_html.pl maxrow
+#   perl A006852.pl maxrow
 #--------------------------------------------------------
 use strict;
 use integer;
