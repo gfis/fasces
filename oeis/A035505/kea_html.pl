@@ -52,7 +52,7 @@ tr,td,th,p
 .d0     { background-color: darkred;   color: white; font-weight: bold; }
 .d1     { background-color: crimson;   color: white; }
 .d2     { background-color: orangered; color: white; }
-.d3     { background-color: orange;    color: white; }
+.d3     { background-color: orange;    color: black; }
 .d4     { background-color: yellow;    color: black; }
 .meet /* several lines/colors meet in this point */
         { background-color: limegreen; color: white; }
@@ -102,7 +102,7 @@ my $start;
 my $delta;
 
 if (0) { # known values (delta = 3)
-	# last 3 are known
+    # last 3 are known
     $start = 2;
     for ($i3 = 1; $i3 <= 3; $i3 ++) { # last 3
         &line($start, $i3, 1, 2, "k0"); # was k0
@@ -146,22 +146,22 @@ if (0) { # known values (delta = 3)
 &line(26,51, 8,15, "d3"); # d3,15 |->ed2,7  76,99
 if (1) {
 # 4th derivatives, yellow
-#&line(22, 1,16, 1, "d4"); # d4,1  |-> d3,15  
-#&line(17, 1,16, 3, "d4"); # d4,3  |-> d3,13  
-#&line( 7, 4,16, 5, "d4"); # d4,5  |-> d3,11  
-#&line( 4, 4,16, 7, "d4"); # d4,7  |-> d3,9   
-#&line( 8, 9,16, 9, "d4"); # d4,9  |-> d3,7   
-#&line(11,16,16,11, "d4"); # d4,11 |-> d3,5   
-#&line( 9,16,16,13, "d4"); # d4,13 |-> d3,3   
-#&line(26,51,16,15, "d4"); # d4,15 |-> d3,1   
+&line(49, 1,16, 1, "d4"); # d4,1  |-> d3,15 67,21 ok
+&line(24, 3,16, 3, "d4"); # d4,3  |-> d3,13 59,13 
+&line(10, 2,16, 5, "d4"); # d4,5  |-> d3,11 14,65 
+&line(16,18,16, 7, "d4"); # d4,7  |-> d3,9  33,70   
+&line( 3, 1,16, 9, "d4"); # d4,9  |-> d3,7  4,36
+&line( 6, 5,16,11, "d4"); # d4,11 |-> d3,5  9,55   
+&line(12,10,16,13, "d4"); # d4,13 |-> d3,3  22,11,115
+&line(29,58,16,15, "d4"); # d4,15 |-> d3,1  34.82
 &line(21,22,16,17, "d4"); # d4,17 |-> d3,1  2,58
-&line(20,24,16,19, "d4"); # d4,19 |-> d3,3  23,97
-&line( 4, 5,16,21, "d4"); # d4,21 |-> d3,5  8,23
-#&line( 4, 4,16,23, "d4"); # d4,23 |-> d3,7   
-#&line( 8, 9,16,25, "d4"); # d4,25 |-> d3,9   
-#&line(11,16,16,27, "d4"); # d4,27 |-> d3,11  
-#&line( 9,16,16,29, "d4"); # d4,29 |-> d3,13  
-#&line(26,51,16,31, "d4"); # d4,31 |-> d3,15  
+&line( 4, 5,16,19, "d4"); # d4,19 |-> d3,3  8,23,97
+&line(14,19,16,21, "d4"); # d4,21 |-> d3,5  35,48
+&line(11,17,16,23, "d4"); # d4,23 |-> d3,7  28,54
+&line( 7,12,16,25, "d4"); # d4,25 |-> d3,9   18,62  
+&line(18,32,16,27, "d4"); # d4,27 |-> d3,11  6,95
+&line(16,31,16,29, "d4"); # d4,29 |-> d3,13 46,79
+&line(57,113,16,31, "d4"); # d4,31 |-> d3,15 169.216 
 }
 
 #--------
@@ -201,19 +201,22 @@ sub advance { # compute next row
     my $busy = 1; # whether there is a left element
     my $iofs = 1; # offset to the right and to the left
     my $elem;     # current element
-    my $tail;     # element at the end of the row
-    my @nrow = (0);
+    my @nrow = (0); # element [0] is not used
     while ($busy != 0) {
         # to the right
         if (0) {
         } elsif ($irow + $iofs <  scalar(@orow)) {
             $elem = $orow[$irow + $iofs];
+            push(@nrow, $elem);
         } elsif ($irow + $iofs >= scalar(@orow)) {
-            $elem = $orow[scalar(@orow) - 1] + 1;
-            $tail = $elem;
             $busy = 0;
+            $elem = $orow[scalar(@orow) - 1] + 1;
+            push(@nrow, $elem);
+            while (scalar(@nrow) < $irow * 2 + 3) {
+                $elem ++;
+                push(@nrow, $elem);
+            } # while last 3
         }
-        push(@nrow, $elem);
         # to the left
         if ($irow - $iofs >= 1) {
             $elem = $orow[$irow - $iofs];
@@ -221,10 +224,6 @@ sub advance { # compute next row
         }
         $iofs ++;
     } # while busy
-    while (scalar(@nrow) < $irow * 2 + 3) {
-        $tail ++;
-        push(@nrow, $tail);
-    } # while $tail
     for (my $jcol = 0; $jcol < scalar(@nrow) - 1; $jcol ++) {
         $orow[$jcol] = $nrow[$jcol];
         print STDERR sprintf("%4d", $orow[$jcol]) if $debug > 0;
