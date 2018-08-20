@@ -5,11 +5,12 @@
 # 2018-05-02, Georg Fischer 
 #---------------------------------
 N=100
-C=0
+C=1
+K=1
 
 all: kea
 kea:
-	perl kea_html.pl $(N) $(C) > kea.html
+	perl kea_html.pl $(N) -c $(C) -k $(K) > kea.html
 #---------------------------------------------------------------
 # simple triangle
 exp1:

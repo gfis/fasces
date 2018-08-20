@@ -13,19 +13,29 @@ use strict;
 use integer;
 
 my $maxrow = 100;
-my $center = 0;
-if (scalar(@ARGV) > 0) {
-    $maxrow = shift(@ARGV); # number of rows to be printed
-}
-if (scalar(@ARGV) > 0) {
-    $center = shift(@ARGV); # 0 = left aligned, 1 = centered
-}
-my @k;
-$k[0][0]  = 0;
-$k[1][0]  = 0;
-$k[1][1]  = 1;
+my $center = 1;
+my $known  = 1;
+my $debug  = 0;
+while (scalar(@ARGV) > 0) {
+	my $opt = shift(@ARGV);
+	if (0) {
+	} elsif ($opt =~ m{\A\d+\Z}) {
+		$maxrow = $opt;
+	} elsif ($opt =~ m{c}) {
+		$center = shift(@ARGV);
+	} elsif ($opt =~ m{d}) {
+		$debug  = shift(@ARGV);
+	} elsif ($opt =~ m{k}) {
+		$known  = shift(@ARGV);
+	} else {
+		die "invalid option \"$opt\"\n";
+	}
+} # while $opt
+my @karr;
+$karr[0][0]  = 0;
+$karr[1][0]  = 0;
+$karr[1][1]  = 1;
 my @c;              # assembled class attribute for K[i,j]
-my $debug =  0;
 my @orow = (0, 1);  # old row of  triangle
 
 print <<"GFis";
@@ -36,26 +46,27 @@ print <<"GFis";
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <style>
-body,table,p,td,th 
+body,table,p,td,th
         { font-family: Arial; }
 tr,td,th,p
         { text-align: right; }
 .frame  { font-size:smaller; background-color: lightgray;}
 .arr    { background-color: lightyellow;}
 /* known values and their derivatives (delta=3) */
-.k0     { background-color: darkblue;  color: white; font-weight: bold; font-style: italic; }
-.k1     { background-color:     blue;  color: white; font-weight: bold; font-style: italic; }
-.k2     { background-color: lightblue; color: black; font-weight: bold; font-style: italic; }
-.k3     { background-color: lavender;  color: black; font-weight: bold; font-style: italic; }
+.k0     { background-color:    black;  color: white; font-weight: bold; font-style: italic; }
+.k1     { background-color: darkblue;  color: white; font-weight: bold; font-style: italic; }
+.k2     { background-color:     blue;  color: white; font-weight: bold; font-style: italic; }
+.k3     { background-color: lightblue; color: black; font-weight: bold; font-style: italic; }
 .k4     { background-color: lavender;  color: black; font-weight: bold; font-style: italic; }
+.k5     { background-color: lavender;  color: black; font-weight: bold; font-style: italic; }
 /* main diagonal and its derivatives */
 .d0     { background-color: darkred;   color: white; font-weight: bold; }
 .d1     { background-color: crimson;   color: white; }
 .d2     { background-color: orangered; color: white; }
 .d3     { background-color: orange;    color: black; }
 .d4     { background-color: yellow;    color: black; }
-.meet /* several lines/colors meet in this point */
-        { background-color: limegreen; color: white; }
+.meet /* several lines/colors meet in this element */
+        { background-color: limegreen; color: black; }
 </style>
 </head>
 <body>
@@ -89,19 +100,18 @@ tr,td,th,p
 <p>&nbsp;</p>
 <table border="0">
 GFis
-my $irow  = 1; # index for K's rows
-while ($irow <= $maxrow) {
+my $irow  = 1; # index for rows in @karr
+while ($irow <= $maxrow) { # fill with Kimberling's rule
     &advance();
     $irow ++;
 } # while advancing
 #--------
 # set special attributes
-my $i;
 my $i3;
 my $start;
 my $delta;
 
-if (0) { # known values (delta = 3)
+if ($known > 0) { # known values (delta = 3)
     # last 3 are known
     $start = 2;
     for ($i3 = 1; $i3 <= 3; $i3 ++) { # last 3
@@ -112,7 +122,7 @@ if (0) { # known values (delta = 3)
     $start = 3;
     $delta = 1;
     while ($start <= $maxrow) {
-        for ($i3 = 1; $i3 <= 3; $i3 ++) { # 
+        for ($i3 = 1; $i3 <= 3; $i3 ++) { #
             &line($start    ,              1, 1,  2, "k1"); # right, down
             &line($start + 1, $start * 2 - 2, 1, -2, "k2"); # left, down
             &line($start + 2, $start * 2 - 7, 1, -6, "k3"); # left, down
@@ -123,47 +133,45 @@ if (0) { # known values (delta = 3)
         $start += $delta;
     } # while $start
 } # known values
-# |-> means: position in next row 
-# last interesting element is K[i][2*i-1] 
-# main diagonal,   darkred
-&line( 1, 1, 1, 1, "d0"); 
-# 1st derivatives, crimson                  
-&line( 3, 1, 2, 1, "d1"); # d1,1  |->od0,1  left  4,7,8,9,24,14 ...
-&line( 4, 7, 2, 3, "d1"); # d1,3  |->ed0,1  right 10,15,20,18,31 ...
-# 2nd derivatives, orangered                
-&line( 9, 1, 4, 1, "d2"); # d2,1  |->od1,3  18,28,33,36,62...   
-&line( 4, 3, 4, 3, "d2"); # d2,3  |->ed1,1  7,9,14,35,6
-&line( 2, 3, 4, 5, "d2"); # d2,5  |->od1,1  8,24,22,46
-&line(11,21, 4, 7, "d2"); # d2,7  |->ed1,3  31,42,53,2,76
-# 3rd derivatives, orange
-&line(22, 1, 8, 1, "d3"); # d3,1  |->ed2,7  2,34,58
-&line( 5, 1, 8, 3, "d3"); # d3,3  |->od2,5  8,22,23
-&line( 7, 4, 8, 5, "d3"); # d3,5  |->od2,3  9,35,55,48
-&line( 4, 4, 8, 7, "d3"); # d3,7  |->ed2,1  4,28,36,54
-&line( 8, 9, 8, 9, "d3"); # d3,9  |->ed2,1  18,33,62
-&line(11,16, 8,11, "d3"); # d3,11 |->od2,3  14,6
-&line( 9,16, 8,13, "d3"); # d3,13 |->od2,5  24,46,59
-&line(26,51, 8,15, "d3"); # d3,15 |->ed2,7  76,99
-if (1) {
-# 4th derivatives, yellow
-&line(49, 1,16, 1, "d4"); # d4,1  |-> d3,15 67,21 ok
-&line(24, 3,16, 3, "d4"); # d4,3  |-> d3,13 59,13 
-&line(10, 2,16, 5, "d4"); # d4,5  |-> d3,11 14,65 
-&line(16,18,16, 7, "d4"); # d4,7  |-> d3,9  33,70   
-&line( 3, 1,16, 9, "d4"); # d4,9  |-> d3,7  4,36
-&line( 6, 5,16,11, "d4"); # d4,11 |-> d3,5  9,55   
-&line(12,10,16,13, "d4"); # d4,13 |-> d3,3  22,11,115
-&line(29,58,16,15, "d4"); # d4,15 |-> d3,1  34.82
-&line(21,22,16,17, "d4"); # d4,17 |-> d3,1  2,58
-&line( 4, 5,16,19, "d4"); # d4,19 |-> d3,3  8,23,97
-&line(14,19,16,21, "d4"); # d4,21 |-> d3,5  35,48
-&line(11,17,16,23, "d4"); # d4,23 |-> d3,7  28,54
-&line( 7,12,16,25, "d4"); # d4,25 |-> d3,9   18,62  
-&line(18,32,16,27, "d4"); # d4,27 |-> d3,11  6,95
-&line(16,31,16,29, "d4"); # d4,29 |-> d3,13 46,79
-&line(57,113,16,31, "d4"); # d4,31 |-> d3,15 169.216 
-}
 
+# |-> means: position in next row
+# last interesting element is $karr[i][2*i-1]
+# main diagonal,   darkred
+&line(  1,  1, 1, 1, "d0");
+# 1st derivatives, crimson
+&line(  3,  1, 2, 1, "d1"); # d1,1  |->od0,1  left  4,7,8,9,24,14 ...
+&line(  4,  7, 2, 3, "d1"); # d1,3  |->ed0,1  right 10,15,20,18,31 ...
+# 2nd derivatives, orangered
+&line(  9,  1, 4, 1, "d2"); # d2,1  |->od1,3  18,28,33,36,62...
+&line(  4,  3, 4, 3, "d2"); # d2,3  |->ed1,1  7,9,14,35,6
+&line(  2,  3, 4, 5, "d2"); # d2,5  |->od1,1  8,24,22,46
+&line( 11, 21, 4, 7, "d2"); # d2,7  |->ed1,3  31,42,53,2,76
+# 3rd derivatives, orange
+&line( 22,  1, 8, 1, "d3"); # d3,1  |->ed2,7  2,34,58,82
+&line(  5,  1, 8, 3, "d3"); # d3,3  |->od2,5  8,22,23
+&line(  7,  4, 8, 5, "d3"); # d3,5  |->od2,3  9,35,55,48
+&line(  4,  4, 8, 7, "d3"); # d3,7  |->ed2,1  4,28,36,54
+&line(  8,  9, 8, 9, "d3"); # d3,9  |->ed2,1  18,33,62,70
+&line( 11, 16, 8,11, "d3"); # d3,11 |->od2,3  14,6
+&line(  9, 16, 8,13, "d3"); # d3,13 |->od2,5  24,46,59
+&line( 26, 51, 8,15, "d3"); # d3,15 |->ed2,7  76,99
+# 4th derivatives, yellow
+&line( 49,  1,16, 1, "d4"); # d4,1  |-> d3,15 67,21
+&line( 24,  3,16, 3, "d4"); # d4,3  |-> d3,13 59,13
+&line( 10,  2,16, 5, "d4"); # d4,5  |-> d3,11 14,65
+&line( 15,  6,16, 7, "d4"); # d4,7  |-> d3,9  33,70
+&line(  3,  1,16, 9, "d4"); # d4,9  |-> d3,7  4,36,44
+&line(  6,  4,16,11, "d4"); # d4,11 |-> d3,5  9,55
+&line( 12, 10,16,13, "d4"); # d4,13 |-> d3,3  22,11,115
+&line( 29, 28,16,15, "d4"); # d4,15 |-> d3,1  34.82
+&line( 21, 22,16,17, "d4"); # d4,17 |-> d3,1  2,58
+&line(  4,  5,16,19, "d4"); # d4,19 |-> d3,3  8,23,97
+&line( 14, 19,16,21, "d4"); # d4,21 |-> d3,5  35,48
+&line( 11, 17,16,23, "d4"); # d4,23 |-> d3,7  28,54
+&line(  7, 12,16,25, "d4"); # d4,25 |-> d3,9  18,62
+&line( 18, 32,16,27, "d4"); # d4,27 |-> d3,11 6,95
+&line( 16, 31,16,29, "d4"); # d4,29 |-> d3,13 46,79
+&line( 57,113,16,31, "d4"); # d4,31 |-> d3,15 169.216
 #--------
 # print the whole array
 # &print_head();
@@ -187,7 +195,7 @@ sub line { # draw the styles for a line
         $c[$i][$j] .= " $style";
         if ($c[$i][$j]  =~ m{k|meet}) {
             # $c[$i][$j] .= " meet";
-            my $jn = ($i > $j) ? ($i - $j) << 1 : (($j - $i) << 1) - 1; 
+            my $jn = ($i > $j) ? ($i - $j) << 1 : (($j - $i) << 1) - 1;
             my $in = $i + 1;
             # $c[$in][$jn] .= " k1";
         }
@@ -227,7 +235,7 @@ sub advance { # compute next row
     for (my $jcol = 0; $jcol < scalar(@nrow) - 1; $jcol ++) {
         $orow[$jcol] = $nrow[$jcol];
         print STDERR sprintf("%4d", $orow[$jcol]) if $debug > 0;
-        $k[$irow + 1][$jcol] = $orow[$jcol];
+        $karr[$irow + 1][$jcol] = $orow[$jcol];
         $c[$irow + 1][$jcol] = ($jcol < 2 * $irow - 1 ?  " arr" : " "); # initially
     }
     if ($debug > 0) {
@@ -269,8 +277,8 @@ sub print_row {
         if (($c[$irow][$jcol] =~ s{(\d)}{\1}g) >= 2) { # more than 1 attribute
            $c[$irow][$jcol] .= " meet";
         } # more than 1
-        print "<td class=\"$c[$irow][$jcol]\" title=\"$irow,$jcol\">" 
-            . $k[$irow][$jcol]
+        print "<td class=\"$c[$irow][$jcol]\" title=\"$irow,$jcol\">"
+            . $karr[$irow][$jcol]
             . "</td>";
         $jcol ++;
     } # while $jcol
