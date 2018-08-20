@@ -17,19 +17,19 @@ my $center = 1;
 my $known  = 1;
 my $debug  = 0;
 while (scalar(@ARGV) > 0) {
-	my $opt = shift(@ARGV);
-	if (0) {
-	} elsif ($opt =~ m{\A\d+\Z}) {
-		$maxrow = $opt;
-	} elsif ($opt =~ m{c}) {
-		$center = shift(@ARGV);
-	} elsif ($opt =~ m{d}) {
-		$debug  = shift(@ARGV);
-	} elsif ($opt =~ m{k}) {
-		$known  = shift(@ARGV);
-	} else {
-		die "invalid option \"$opt\"\n";
-	}
+    my $opt = shift(@ARGV);
+    if (0) {
+    } elsif ($opt =~ m{\A\d+\Z}) {
+        $maxrow = $opt;
+    } elsif ($opt =~ m{c}) {
+        $center = shift(@ARGV);
+    } elsif ($opt =~ m{d}) {
+        $debug  = shift(@ARGV);
+    } elsif ($opt =~ m{k}) {
+        $known  = shift(@ARGV);
+    } else {
+        die "invalid option \"$opt\"\n";
+    }
 } # while $opt
 my @karr;
 $karr[0][0]  = 0;
@@ -37,69 +37,7 @@ $karr[1][0]  = 0;
 $karr[1][1]  = 1;
 my @c;              # assembled class attribute for K[i,j]
 my @orow = (0, 1);  # old row of  triangle
-
-print <<"GFis";
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd" [
-]>
-<html xmlns="http://www.w3.org/1999/xhtml">
-<head>
-<style>
-body,table,p,td,th
-        { font-family: Arial; }
-tr,td,th,p
-        { text-align: right; }
-.frame  { font-size:smaller; background-color: lightgray;}
-.arr    { background-color: lightyellow;}
-/* known values and their derivatives (delta=3) */
-.k0     { background-color:    black;  color: white; font-weight: bold; font-style: italic; }
-.k1     { background-color: darkblue;  color: white; font-weight: bold; font-style: italic; }
-.k2     { background-color:     blue;  color: white; font-weight: bold; font-style: italic; }
-.k3     { background-color: lightblue; color: black; font-weight: bold; font-style: italic; }
-.k4     { background-color: lavender;  color: black; font-weight: bold; font-style: italic; }
-.k5     { background-color: lavender;  color: black; font-weight: bold; font-style: italic; }
-/* main diagonal and its derivatives */
-.d0     { background-color: darkred;   color: white; font-weight: bold; }
-.d1     { background-color: crimson;   color: white; }
-.d2     { background-color: orangered; color: white; }
-.d3     { background-color: orange;    color: black; }
-.d4     { background-color: yellow;    color: black; }
-.meet /* several lines/colors meet in this element */
-        { background-color: limegreen; color: black; }
-</style>
-</head>
-<body>
-<h3>Kimberling Expulsion Array</h3>
-<table border="0">
-<tr>
-<td class="d0">   &nbsp; &nbsp; &nbsp; </td><td style="text-align:left;">main diagonal (A035505)</td>
-<td class="k0">   &nbsp; &nbsp; &nbsp; </td><td style="text-align:left;">known values</td>
-</tr>
-<tr>
-<td class="d1">   &nbsp; &nbsp; &nbsp; </td><td>1st level derived diagonals</td>
-<td class="k1">   &nbsp; &nbsp; &nbsp; </td><td style="text-align:left;">1st level known delta 3</td>
-</tr>
-<tr>
-<td class="d2">   &nbsp; &nbsp; &nbsp; </td><td>2nd level derived diagonals</td>
-<td class="k2">   &nbsp; &nbsp; &nbsp; </td><td style="text-align:left;">2nd level known delta 3</td>
-</tr>
-<tr>
-<td class="d3">   &nbsp; &nbsp; &nbsp; </td><td>3rd level derived diagonals</td>
-<td class="k3">   &nbsp; &nbsp; &nbsp; </td><td style="text-align:left;">3rd level known delta 3</td>
-</tr>
-<tr>
-<td class="d4">   &nbsp; &nbsp; &nbsp; </td><td>4th level derived diagonals</td>
-<td class="k4">   &nbsp; &nbsp; &nbsp; </td><td style="text-align:left;">4th level known delta 3</td>
-</tr>
-<tr>
-<td class="meet"> &nbsp; &nbsp; &nbsp; </td><td style="text-align:left;">crossing with known value</td>
-<td             > &nbsp; &nbsp; &nbsp; </td><td>&nbsp;</td>
-</tr>
-</table>
-<p>&nbsp;</p>
-<table border="0">
-GFis
+&print_html_head();
 my $irow  = 1; # index for rows in @karr
 while ($irow <= $maxrow) { # fill with Kimberling's rule
     &advance();
@@ -180,13 +118,9 @@ while ($irow <= $maxrow) {
     &print_row();
     $irow ++;
 } # while $irow
-# print "<tr><td class=\"frame\"><strong>i</strong></td></tr>\n";
-print <<"GFis";
-</table>
-</body>
-</html>
-GFis
-#----------------
+&print_html_tail();
+# end main
+#***********************************************
 sub line { # draw the styles for a line
     my ($i1, $j1, $idelta, $jdelta, $style) = @_;
     my $i = $i1;
@@ -286,5 +220,104 @@ sub print_row {
 <td>...</td></tr>
 GFis
 } # sub print_row
+#-----------------
+sub print_html_head {
+    print <<"GFis";
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd" [
+]>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<style>
+body,table,p,td,th
+        { font-family: Arial; }
+tr,td,th,p
+        { text-align: right; }
+.frame  { font-size:smaller; background-color: lightgray;}
+.arr    { background-color: lightyellow;}
+/* known values and their derivatives (delta=3) */
+.k0     { background-color:    black;  color: white; font-weight: bold; font-style: italic; }
+.k1     { background-color: darkblue;  color: white; font-weight: bold; font-style: italic; }
+.k2     { background-color:     blue;  color: white; font-weight: bold; font-style: italic; }
+.k3     { background-color: lightblue; color: black; font-weight: bold; font-style: italic; }
+.k4     { background-color: lavender;  color: black; font-weight: bold; font-style: italic; }
+.k5     { background-color: lavender;  color: black; font-weight: bold; font-style: italic; }
+/* main diagonal and its derivatives */
+.d0     { background-color: darkred;   color: white; font-weight: bold; }
+.d1     { background-color: crimson;   color: white; }
+.d2     { background-color: orangered; color: white; }
+.d3     { background-color: orange;    color: black; }
+.d4     { background-color: yellow;    color: black; }
+.meet /* several lines/colors meet in this element */
+        { background-color: limegreen; color: black; }
+</style>
+</head>
+<body>
+<h3>Kimberling Expulsion Array</h3>
+<table border="0">
+<tr>
+<td class="d0">   &nbsp; &nbsp; &nbsp; </td><td style="text-align:left;">main diagonal (A035505)</td>
+<td class="k0">   &nbsp; &nbsp; &nbsp; </td><td style="text-align:left;">known values</td>
+</tr>
+<tr>
+<td class="d1">   &nbsp; &nbsp; &nbsp; </td><td>1st level derived diagonals</td>
+<td class="k1">   &nbsp; &nbsp; &nbsp; </td><td style="text-align:left;">1st level known delta 3</td>
+</tr>
+<tr>
+<td class="d2">   &nbsp; &nbsp; &nbsp; </td><td>2nd level derived diagonals</td>
+<td class="k2">   &nbsp; &nbsp; &nbsp; </td><td style="text-align:left;">2nd level known delta 3</td>
+</tr>
+<tr>
+<td class="d3">   &nbsp; &nbsp; &nbsp; </td><td>3rd level derived diagonals</td>
+<td class="k3">   &nbsp; &nbsp; &nbsp; </td><td style="text-align:left;">3rd level known delta 3</td>
+</tr>
+<tr>
+<td class="d4">   &nbsp; &nbsp; &nbsp; </td><td>4th level derived diagonals</td>
+<td class="k4">   &nbsp; &nbsp; &nbsp; </td><td style="text-align:left;">4th level known delta 3</td>
+</tr>
+<tr>
+<td class="meet"> &nbsp; &nbsp; &nbsp; </td><td style="text-align:left;">crossing with known value</td>
+<td             > &nbsp; &nbsp; &nbsp; </td><td>&nbsp;</td>
+</tr>
+</table>
+<p>&nbsp;</p>
+<table border="0">
+GFis
+} # print_html_head
+#-----------------
+sub print_html_tail {
+    # print "<tr><td class=\"frame\"><strong>i</strong></td></tr>\n";
+    print <<"GFis";
+</table>
+</body>
+</html>
+GFis
+} # print_html_tail
 #--------
 __DATA__
+from A035505.txt,active part of Kimberling's expulsion (shuffle) array
+K(i,j)=i+j-1; (j>=2*i-3)
+K(i,j)=K(i-1,i-(j+2)/2); If j is Even and (j<2*i-3)
+K(i,j)=K(i-1,i+(j-1)/2); If j is Odd and (j<2*i-3) (End)
+4 2; 6 2 7 4; 8 7 9 2 10 6; ...
+
+k[i   ,2j  ]    = k[i-1,i-(2j+2)/2]     
+k[i   ,2j+1]    = k[i-1,i+(2j+1-1)/2]   
+
+k[i   ,2j  ]    = k[i-1 ,i-j-1 ] xe 
+k[i   ,2j+1]    = k[i-1 ,i+j   ] xo
+#-----------------------------------
+k[2i  ,2j  ]    = k[2i-1,2i-j-1] ee
+k[2i  ,2j+1]    = k[2i-1,2i+j  ] eo
+k[2i+1,2j  ]    = k[2i  ,2i-j  ] oe
+k[2i+1,2j+1]    = k[2i  ,2i+j+1] oo
+#-----------------------------------
+main diagonal
+d0[2i  ,2i  ]   = d1[2i-1,i-1  ] eeA2,1
+d0[2i+1,2i+1]   = d1[2i  ,3i+1 ] A2,3
+
+d1[4j-1,2j-1] A4,1 oo = d2[4j-2,
+d1[4j  ,6j+1] A4,3 eo
+d1[4j+1,2j  ] A4,1 oe
+d1[4j+2,6j+4] A2,3 ee
