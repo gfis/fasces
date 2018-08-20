@@ -4,8 +4,8 @@
 # @(#) $Id$
 # 2018-08-17, Georg Fischer
 #------------------------------------------------------
-# usage:
-#   perl icoll.pl maxrow maxn
+# Usage:
+#   perl collatz_graph.pl -n maxrow 
 #
 # Algorithm:
 # Start with 1,2,4,8.
@@ -20,7 +20,17 @@ use integer;
 my $debug  = 0;
 my $maxn   = 100000;
 my $maxrow = 8192;
-# my $maxrow = shift(@ARGV); # number of rows to be printed
+while (scalar(@ARGV) > 0) {
+    my $opt = shift(@ARGV);
+    if (0) {
+    } elsif ($opt =~ m{\-n}) {
+        $maxrow = shift(@ARGV);
+    } elsif ($opt =~ m{d}) {
+        $debug  = shift(@ARGV);
+    } else {
+        die "invalid option \"$opt\"\n";
+    }
+} # while $opt
 
 my @orow;        # old row 
 my @queue = ();  # rows which must still be processed
@@ -36,12 +46,12 @@ while ($jcol < scalar(@orow)) { # these did occur
     $jcol ++;
 } # while $jcol
 
-&print_header();
+&print_html_head();
 while ($irow < $maxrow) {
     &advance($irow);
     $irow ++;
 } # while $irow
-&print_trailer();
+&print_html_tail();
 # end main
 #----------------
 sub advance { # compute next row
@@ -94,10 +104,10 @@ GFis
 } # sub print_row
 #----------------
 sub get_complete {
-	while ($ncomplete < $maxn and defined($occur[$ncomplete + 1])) {
-		$ncomplete ++;
-	} # while complete
-	return $ncomplete;
+    while ($ncomplete < $maxn and defined($occur[$ncomplete + 1])) {
+        $ncomplete ++;
+    } # while complete
+    return $ncomplete;
 } # get_complete
 #----------------
 sub print_ruler {
@@ -109,8 +119,8 @@ sub print_ruler {
     } # while $icol
 } # sub print_ruler
 #-----------------
-sub print_header {
-print <<"GFis";
+sub print_html_head {
+    print <<"GFis";
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd" [
@@ -119,9 +129,9 @@ print <<"GFis";
 <head>
 <style>
 body,table,p,td,th
-{ font-family: Arial; }
+		{ font-family: Arial; }
 tr,td,th,p
-{ text-align: right; }
+		{ text-align: right; }
 .frame  { font-size:smaller; background-color: lightgray;}
 .arr    { background-color: lightyellow;}
 /* known values and their derivatives (delta=3) */
@@ -137,22 +147,22 @@ tr,td,th,p
 .d3     { background-color: orange;    color: black; }
 .d4     { background-color: yellow;    color: black; }
 .meet /* several lines/colors meet in this point */
-{ background-color: limegreen; color: white; }
+		{ background-color: limegreen; color: white; }
 </style>
 </head>
 <body>
 <h3>Collatz Graph</h3>
 <table>
 GFis
-} # print_header
+} # print_html_head
 #-----------------
-sub print_trailer {
+sub print_html_tail {
     print <<"GFis";
 </table>
 </body>
 </html>
 GFis
-} # print_trailer
+} # print_html_tail
 #-----------------
 __DATA__
       1-----v
