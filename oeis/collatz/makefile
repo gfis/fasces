@@ -7,11 +7,18 @@
 N=1000
 K=64
 
-all: pattern
+all: fract6
+fract6:
+	perl collatz_fract6.pl  -n $(N)    -s 4    -i 6    | tee fract6.html
+#------------------
 graph:
 	perl collatz_graph.pl   -n $(N) > graph.html
-pattern:
-	perl collatz_pattern.pl -n $(N) > pattern.html
+patt2:
+	perl collatz_pattern.pl -n 4096    -s 6    -i 2    > patt2.html
+patt6:
+	perl collatz_pattern.pl -n 4096    -s 4    -i 6    > patt6.html
+fractal:
+	perl collatz_pattern.pl -n 1000000 -s 3280 -i 4374 > fractal.html
 
 #---------------------------------------------------------------
 nodes:

@@ -2,10 +2,10 @@
 
 # Follow patterns in the Collatz graph
 # @(#) $Id$
-# 2018-08-20, Georg Fischer
+# 2018-08-21, Georg Fischer
 #------------------------------------------------------
 # Usage:
-#   perl collatz_pattern.pl [-n maxn] [-s start] [-i incr]
+#   perl collatz_fract6.pl [-n maxn] [-s start] [-i incr]
 #
 # c.f. example behind __DATA__ below
 # The lengths of the ropes show a fractal structure 
@@ -15,7 +15,7 @@ use strict;
 use integer;
 
 my $debug  = 0;
-my $maxn   = 65536; # max. start value
+my $maxn   = 4096; # max. start value
 my $start  = 4;
 my $incr   = 6;
 while (scalar(@ARGV) > 0) {
@@ -33,16 +33,55 @@ while (scalar(@ARGV) > 0) {
         die "invalid option \"$opt\"\n";
     }
 } # while $opt
-
 &print_html_head();
+
+my @rows  = (0, 1, 2, 4); # $rows[0..3] are not used
+my @nums  = @rows; # whether all numbers are visited
+my $ffrow = scalar(@rows); # 1st free in @rows
+my @queue = ($ffrow);
 my $elem0  = $start; # 364; 40;
-while ($elem0 < $maxn) {
-    print &rope2($elem0);
-    $elem0 += $incr;
-} # while incrementing
+while ($ffrow < $maxn) { # dequeue
+	print "dequeue $elem0\n" if $debug > 0;
+	@queue = sort {$a <=> $b} @queue;
+	$elem0 = shift(@queue);
+	if (! defined($rows[$elem0])) {
+		&add_row($elem0, &rope2($elem0));
+	}
+} # while dequeuing
+print <<"GFis";
+</table>
+GFis
+
+my $ffnum = $start;
+while ($ffnum < $maxn) { # look for first undefined @nums
+	if (! defined($nums[$ffnum])) {
+		print "<h4>first uncovered number: $ffnum</h4>\n";
+		$ffnum = $maxn; # break loop
+	}
+	$ffnum ++;
+} # while defined
 &print_html_tail();
 # end main
 #**************************************************
+sub add_row {
+	my ($elem0, $buffer) = @_;
+	$rows[$elem0] = $buffer;
+	if ($ffrow == $elem0) { # output and increase
+		while (defined($rows[$ffrow])) {
+			print "<!-- $ffrow -->$rows[$ffrow]";
+			$ffrow += $incr;
+		} # while printing
+	} # increase
+} # add_row
+#-----------------------
+sub fill3 {
+	my ($elem) = @_;
+	while ($elem < $maxn) {
+		$nums[$elem] = 1;
+		$elem *= 2;
+	} # while $elem
+} # fill3
+#-----------------------
 sub rope2 {
     my ($elem) = @_;
     my $elem0 = $elem;
@@ -69,9 +108,11 @@ sub rope2 {
                 if ($elem0 % 3 == 0) {
                     $busy  = 0;
                     $state = " 0/3";
+                    &fill3($elem0);
                 } elsif ($elem1 % 3 == 0) {
                     $busy  = 0;
                     $state = " 1/3";
+                    &fill3($elem1);
                 }
             } else {
                 $busy  = 0;
@@ -85,9 +126,11 @@ sub rope2 {
                 if ($elem0 % 3 == 0) {
                     $busy  = 0;
                     $state = " 0/3";
+                    &fill3($elem0);
                 } elsif ($elem1 % 3 == 0) {
                     $busy  = 0;
                     $state = " 1/3";
+                    &fill3($elem1);
                 }
             } else {
                 $state = " 0n3";
@@ -97,16 +140,20 @@ sub rope2 {
             die "invalid state \"$state\"\n";
         }
         $buffer .= "<td>";
+        $nums[$elem0] = 1;
         if ($elem0 % $incr == $start) {
-        	$buffer .= "<strong>$elem0</strong>";
+            $buffer .= "<strong>$elem0</strong>";
+            push(@queue,        $elem0);
         } else {
-        	$buffer .= $elem0;
+            $buffer .=          $elem0;
         }
         $buffer .= ",";
+        $nums[$elem1] = 1;
         if ($elem1 % $incr == $start) {
-        	$buffer .= "<strong>$elem1</strong>";
+            $buffer .= "<strong>$elem1</strong>";
+            push(@queue,        $elem1);
         } else {
-        	$buffer .= $elem1;
+            $buffer .=          $elem1;
         }
         $buffer .= "</td><td>$state</td>";
         $count ++;
@@ -149,14 +196,13 @@ tr,td,th,p
 </style>
 </head>
 <body>
-<h3>Patterns in Collatz Graph</h3>
+<h3>1/6 of Collatz Graph</h3>
 <table>
 GFis
 } # print_html_head
 #-----------------
 sub print_html_tail {
     print <<"GFis";
-</table>
 </body>
 </html>
 GFis
