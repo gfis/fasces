@@ -1,13 +1,18 @@
 #!make
 
-# Inverse COllatz sequences
+# Roads in the thicket of the Collatz graph
 # @(#) $Id$
 # 2018-08-17, Georg Fischer 
 #---------------------------------
-N=1000
+N=512
 K=64
+D=0
+S=4
+I=6
 
-all: fract6
+all: roads
+roads: 
+	perl collatz_roads.pl   -n $(N)    -d $(D) -s $(S) -i $(I) > roads.html
 fract6:
 	perl collatz_fract6.pl  -n $(N)    -s 4    -i 6    | tee fract6.html
 #------------------

@@ -1,15 +1,55 @@
 #!perl
 
-# Follow patterns in the Collatz graph
+# Roadmap for the thicket of the Collatz graph
 # @(#) $Id$
 # 2018-08-21, Georg Fischer
 #------------------------------------------------------
 # Usage:
 #   perl collatz_fract6.pl [-n maxn] [-s start] [-i incr]
 #
-# c.f. example behind __DATA__ below
-# The lengths of the ropes show a fractal structure 
-# when indexes are incremented by 2*3=6, 2*3*9=54, 2*3*9*9=486. 2*3*9*9*9=4374
+# Overview:
+# When all Collatz sequences are read backwards, they form 
+# a graph starting with 1, 2 ..., hopefully without cycles 
+# (except for 1,2,4,1,2,4 ...).
+# At each node n in the graph, the path starting at the 
+# root (4) and  with the last node n can in principle 
+# be continued to 2 new nodes by a
+# "m"-step: n * 2 (which is always possible), or
+# "d"-step: (n - 1) / 3 (which is possible only if n - 1 mod 3 = 0).
+# When n mod 3 = 0, the path will continue with m-steps only,
+# since the duplication maintains the divisibility by 3.
+#
+# Motivation of the "road"s:
+# When Collatz sequences are investigated (in A070165), 
+# there are a lot of pairs of adjacent start values with the 
+# same sequence length, and with a characteristical neighbourhood 
+# of every other value (c.f. example 142/143 behind __DATA__, below). 
+#
+# Construction of roads:
+# A "road" (with 2 parallel "lanes") is a sequence of pairs 
+# of elements (in 2 adjacent Collatz sequences read from right to left).
+# A road is built by taking some n (the last common element of the 
+# 2 sequences) with n mod 6 = 4, and by applying the steps
+# d m m d m d m d ... -> upper lane, left  elements in the pairs
+# m m d m d m d m ... -> lower lane, right elements in the pairs
+# in alternating sequence, until one of the elements in the pairs 
+# becomes divisible by 3.
+#
+# Questions:
+# (Q1) Are the roads always of finite length?
+# (Q2) How are theirs lengths distributed?
+# (Q3) Do they cover the whole Collatz graph?
+# (Q4) Can they lead to cycles?
+# With "yes" for Q3 and "no" for Q4, the Collatz conjecture would
+# be proved IMHO.
+#
+# Properties:
+# The program below shows the following for numbers up to 8192:
+# 
+# Algorithm:
+# This program leads to hope for 
+# The lengths of the roads show a fractal structure 
+# when the start values are incremented by 2*3=6, 2*3*9=54, 2*3*9*9=486. 2*3*9*9*9=4374
 #--------------------------------------------------------
 use strict;
 use integer;
@@ -35,17 +75,17 @@ while (scalar(@ARGV) > 0) {
 } # while $opt
 &print_html_head();
 
-my @rows  = (0, 1, 2, 4); # $rows[0..3] are not used
-my @nums  = @rows; # whether all numbers are visited
-my $ffrow = scalar(@rows); # 1st free in @rows
-my @queue = ($ffrow);
+my @roads  = (0, 1, 2, 4); # $roads[0..3] are not used
+my @nums   = @roads; # whether all numbers are visited
+my $ffroad = scalar(@roads); # 1st free in @roads
+my @queue  = ($ffroad);
 my $elem0  = $start; # 364; 40;
-while ($ffrow < $maxn) { # dequeue
+while ($ffroad < $maxn) { # dequeue
 	print "dequeue $elem0\n" if $debug > 0;
 	@queue = sort {$a <=> $b} @queue;
 	$elem0 = shift(@queue);
-	if (! defined($rows[$elem0])) {
-		&add_row($elem0, &rope2($elem0));
+	if (! defined($roads[$elem0])) {
+		&add_road($elem0, &build_road($elem0));
 	}
 } # while dequeuing
 print <<"GFis";
@@ -63,16 +103,16 @@ while ($ffnum < $maxn) { # look for first undefined @nums
 &print_html_tail();
 # end main
 #**************************************************
-sub add_row {
+sub add_road {
 	my ($elem0, $buffer) = @_;
-	$rows[$elem0] = $buffer;
-	if ($ffrow == $elem0) { # output and increase
-		while (defined($rows[$ffrow])) {
-			print "<!-- $ffrow -->$rows[$ffrow]";
-			$ffrow += $incr;
+	$roads[$elem0] = $buffer;
+	if ($ffroad == $elem0) { # output and increase
+		while (defined($roads[$ffroad])) {
+			print "<!-- $ffroad -->$roads[$ffroad]";
+			$ffroad += $incr;
 		} # while printing
 	} # increase
-} # add_row
+} # add_road
 #-----------------------
 sub fill3 {
 	my ($elem) = @_;
@@ -82,7 +122,7 @@ sub fill3 {
 	} # while $elem
 } # fill3
 #-----------------------
-sub rope2 {
+sub build_road {
     my ($elem) = @_;
     my $elem0 = $elem;
     my $count = 0;
@@ -159,7 +199,7 @@ sub rope2 {
         $count ++;
     } # while busy
     return "<tr><td>$count</td><td>$elem</td>$buffer</tr>\n";
-} # rope2
+} # build_road
 #----------------
 sub print_ruler {
 } # sub print_ruler
@@ -179,20 +219,17 @@ tr,td,th,p
         { text-align: right; }
 .frame  { font-size:smaller; background-color: lightgray;}
 .arr    { background-color: lightyellow;}
-/* known values and their derivatives (delta=3) */
-.k0     { background-color: darkblue;  color: white; font-weight: bold; font-style: italic; }
-.k1     { background-color:     blue;  color: white; font-weight: bold; font-style: italic; }
-.k2     { background-color: lightblue; color: black; font-weight: bold; font-style: italic; }
-.k3     { background-color: lavender;  color: black; font-weight: bold; font-style: italic; }
-.k4     { background-color: lavender;  color: black; font-weight: bold; font-style: italic; }
-/* main diagonal and its derivatives */
-.d0     { background-color: darkred;   color: white; font-weight: bold; }
-.d1     { background-color: crimson;   color: white; }
+/* resulting from multiplication, mod 6 */
+.m4     { background-color: darkblue;  color: white; font-weight: bold; }
+.m2     { background-color:     blue;  color: white; }
+.m0     { background-color: lightblue; color: black; }
+.m3     { background-color: green    ;  color: black; }
+/* resulting from division,       mod 6 */
+.dx     { background-color: darkred;   color: white; font-weight: bold; }
+.d4     { background-color: crimson;   color: white; }
 .d2     { background-color: orangered; color: white; }
-.d3     { background-color: orange;    color: black; }
-.d4     { background-color: yellow;    color: black; }
-.meet /* several lines/colors meet in this point */
-        { background-color: limegreen; color: white; }
+.d0     { background-color: orange;    color: black; }
+.d3     { background-color: limegreen; color: white; }
 </style>
 </head>
 <body>
