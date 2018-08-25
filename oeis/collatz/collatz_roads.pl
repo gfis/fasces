@@ -63,7 +63,7 @@ my $start  = $start4;
 my $incr   = $incr6;
 my $action = "simple";
 my $mode   = "html";
-while (scalar(@ARGV) > 0) {
+while (scalar(@ARGV) > 0 and ($ARGV[0] =~ m{\A\-})) {
     my $opt = shift(@ARGV);
     if (0) {
     } elsif ($opt =~ m{a}) {
@@ -116,7 +116,9 @@ if (0) { # switch action
         	$ffroad += $incr6;
         } # try to increase
         if ($ffroad > $oldff) {
-        	print "<!--stopped at $ffroad-->\n";
+        	if ($mode =~ m{html}) {
+        		print "<!--stopped at $ffroad-->\n";
+        	}
         }
     } # while $elem
 
@@ -222,7 +224,12 @@ sub enqueue { # queue the parameter
 sub print_road {
     my ($index) = @_;
     if (! defined($roads[$index])) {
-        print "<tr><td class=\"d4\">$index</td></tr>";
+        if (0) {
+        } elsif ($mode =~ m{html}) {
+        	print "<tr><td class=\"d4\">$index</td></tr>";
+        } elsif ($mode =~ m{tsv} ) {
+            print "$index\n";
+        } # mode
     } else {
         my @road  = split(/\,/, $roads[$index]);
         if ($debug >= 2) {
@@ -248,7 +255,7 @@ sub print_road {
                 my $cla1 = &get_class($elem1);
                 print "<td class=\"$cla0\">$elem0</td><td class=\"$cla1\">$elem1</td>";
             } elsif ($mode =~ m{tsv} ) {
-                print "\t" . join("\t", $elem0, $len);
+                print "\t" . join("\t", $elem0, $elem1);
             } # mode
         } # while walking
     
@@ -293,17 +300,32 @@ sub print_html_head {
 <head>
 <style>
 body,table,p,td,th
-        { font-family: Verdana,Arial,sans-serife; }
+        { font-family: Verdana,Arial,sans-serif; }
 tr,td,th,p
         { text-align: right; }
 .arr    { background-color: lightyellow; color: black;}
 .arl    { background-color: lightyellow; color: black; text-align:left;}
+/*
 .d5     { background-color: peachpuff;   color: black; }
 .d1     { background-color: papayawhip;  color: black; }
-.d4     { background-color: lightsalmon; color: black; font-weight: bold; } /* crimson */
+.d4     { background-color: lightsalmon; color: black; font-weight: bold; }
 .d2     { background-color: lightpink;   color: black; }
 .d0     { background-color: yellow;      color: black; }
 .d3     { background-color: yellow;      color: black; }
+
+.d5     { background-color: white      ; color: lightgray; }
+.d1     { background-color: white      ; color: lightgray; }
+.d4     { background-color: white      ; color: black    ; font-weight: bold; } 
+.d2     { background-color: white      ; color: lightgray; }
+.d0     { background-color: white      ; color: lightgray; }
+.d3     { background-color: white      ; color: lightgray; }
+*/
+.d5     { background-color: white      ; color: gray; }
+.d1     { background-color: white      ; color: gray; }
+.d4     { background-color: white      ; color: black    ; font-weight: bold; } 
+.d2     { background-color: white      ; color: gray; }
+.d0     { background-color: white      ; color: gray; }
+.d3     { background-color: white      ; color: gray; }
 </style>
 </head>
 <body>
@@ -316,41 +338,41 @@ sub print_table_head {
     print <<"GFis";
 <table>
 <tr>
-<td class="arl">a[0]</td>
-<td class="arl">a[1]</td>
-<td class="arl">a[2]</td>
-<td class="arl">a[3]</td>
-<td class="arl">a[4]</td>
-<td class="arl">a[5]</td>
-<td class="arl">a[6]</td>
-<td class="arl">a[7]</td>
-<td class="arl">a[8]</td>
-<td class="arl">a[9]</td>
-<td class="arl">a[10]</td>
-<td class="arl">a[11]</td>
-<td class="arl">a[12]</td>
-<td class="arl">a[13]</td>
-<td class="arl">a[14]</td>
-<td class="arl">a[15]</td>
-<td class="arl">...</td>
+<td class="arr">r<sub>0</sub></td>
+<td class="arr">r<sub>1</sub></td>
+<td class="arr">r<sub>2</sub></td>
+<td class="arr">r<sub>3</sub></td>
+<td class="arr">r<sub>4</sub></td>
+<td class="arr">r<sub>5</sub></td>
+<td class="arr">r<sub>6</sub></td>
+<td class="arr">r<sub>7</sub></td>
+<td class="arr">r<sub>8</sub></td>
+<td class="arr">r<sub>9</sub></td>
+<td class="arr">r<sub>10</sub></td>
+<td class="arr">r<sub>11</sub></td>
+<td class="arr">r<sub>12</sub></td>
+<td class="arr">r<sub>13</sub></td>
+<td class="arr">r<sub>14</sub></td>
+<td class="arr">r<sub>15</sub></td>
+<td class="arr">...</td>
 </tr>
 <tr>
 <td class="arr">start</td>
 <td class="arr">len</td>
-<td class="arr">[0]<strong>d</strong></td>
-<td class="arl"><strong>m</strong>[0]</td>
-<td class="arr">[2]<strong>m</strong></td>
-<td class="arl"><strong>m</strong>[3]</td>
-<td class="arr">[4]<strong>m</strong></td>
-<td class="arl"><strong>d</strong>[5]</td>
-<td class="arr">[6]<strong>d</strong></td>
-<td class="arl"><strong>m</strong>[7]</td>
-<td class="arr">[8]<strong>m</strong></td>
-<td class="arl"><strong>d</strong>[9]</td>
-<td class="arr">[10]<strong>d</strong></td>
-<td class="arl"><strong>m</strong>[11]</td>
-<td class="arr">[12]<strong>m</strong></td>
-<td class="arl"><strong>d</strong>[13]</td>
+<td class="arr"><strong>d</strong>r<sub>0</sub></td>
+<td class="arl"><strong>m</strong>r<sub>0</sub></td>
+<td class="arr"><strong>m</strong>r<sub>2</sub></td>
+<td class="arl"><strong>m</strong>r<sub>3</sub></td>
+<td class="arr"><strong>m</strong>r<sub>4</sub></td>
+<td class="arl"><strong>d</strong>r<sub>5</sub></td>
+<td class="arr"><strong>d</strong>r<sub>6</sub></td>
+<td class="arl"><strong>m</strong>r<sub>7</sub></td>
+<td class="arr"><strong>m</strong>r<sub>8</sub></td>
+<td class="arl"><strong>d</strong>r<sub>9</sub></td>
+<td class="arr"><strong>d</strong>r<sub>10</sub></td>
+<td class="arl"><strong>m</strong>r<sub>11</sub></td>
+<td class="arr"><strong>m</strong>r<sub>12</sub></td>
+<td class="arl"><strong>d</strong>r<sub>13</sub></td>
 <td class="arr">...</td>
 </tr>
 <tr>

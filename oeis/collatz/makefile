@@ -4,7 +4,7 @@
 # @(#) $Id$
 # 2018-08-17, Georg Fischer 
 #---------------------------------
-N=512
+N=3290
 K=64
 D=0
 S=4
@@ -18,6 +18,10 @@ roads.txt:
 	perl collatz_roads.pl   -n $(N)    -d $(D) -s $(S) -i $(I) -a contig -m tsv > roads.txt
 fract6:
 	perl collatz_fract6.pl  -n $(N)    -s 4    -i 6    | tee fract6.html
+sub4mod6:
+	perl collatz_roads.pl   -n 150000  -m tsv > roads.txt
+	perl sub4mod6.pl roads.txt > sub1.tmp
+	sed -e "s/\t/\n/g"           sub1.tmp | sort -n | uniq -c > sub2.tmp
 #------------------
 graph:
 	perl collatz_graph.pl   -n $(N) > graph.html
