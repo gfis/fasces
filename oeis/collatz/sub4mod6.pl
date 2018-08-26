@@ -35,7 +35,7 @@ while (scalar(@ARGV) > 0 and ($ARGV[0] =~ m{\A\-})) {
 } # while $opt
 #----------------
 # initialization
-my @road;
+my @road46;
 #----------------
 # perform one of the possible actions
 if (0) { # switch action
@@ -44,16 +44,16 @@ if (0) { # switch action
     my $count = 0;
     while (<>) {
         s{\s+\Z}{}; # chmpr
-        @road = split(/\t/, $_);
-        if (scalar(@road) >= 8) { # 10 would take the "unusual" only
-            @road = map {
+        @road46 = split(/\t/, $_);
+        if (scalar(@road46) >= 8) { # 10 would take the "unusual" only
+            my @road = map {
                     ($_ + 2) / 6
                 } grep {
                 $_ % 6 == 4
-                } splice(@road, 5);
-            print join("\t", @road) . "\n";
+                } splice(@road46, 5);
+            print join("\t", ($road46[0] + 2)/6, scalar(@road), @road) . "\n";
         } else {
-            print "\n";
+            print "$count\n";
         }
         $count ++;
     } # while $ffroad

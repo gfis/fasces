@@ -22,6 +22,8 @@ sub4mod6:
 	perl collatz_roads.pl   -n 150000  -m tsv > roads.txt
 	perl sub4mod6.pl roads.txt > sub1.tmp
 	sed -e "s/\t/\n/g"           sub1.tmp | sort -n | uniq -c > sub2.tmp
+expand:
+	perl expand32.pl -n 4096 | tee expand.tmp
 #------------------
 graph:
 	perl collatz_graph.pl   -n $(N) > graph.html
