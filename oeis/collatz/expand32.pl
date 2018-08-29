@@ -36,10 +36,13 @@ while (scalar(@ARGV) > 0 and ($ARGV[0] =~ m{\A\-})) {
 my (@queue, @roads);
 #----------------
 # initialization
-my @sarr = (2, 1); # [0] is never used
-my $ffcontig = scalar(@sarr);
+my $sep = "\t";
+my @svis = (2, 1); # [0] is never used
+my @stab = ("0", join($sep, 3, 1, 2));
+my $ffcontig = scalar(@svis);
 my $inext = 1;
 my $maxproc = $0;
+&print_html_head();
 #----------------
 # perform one of the possible actions
 if (0) { # switch action
@@ -49,7 +52,7 @@ if (0) { # switch action
         print "$inext? contig=$ffcontig max=$maxproc\r" if $debug >= 1;
         &build_row($inext); 
         # $inext ++;
-        while ($sarr[$inext] != 1) { # search for next element
+        while ($svis[$inext] != 1) { # search for next element
             $inext ++;
         } # while searching
     } # while $ffcontig
@@ -59,20 +62,28 @@ if (0) { # switch action
 } # switch action
 #----------------
 # output the resulting array
+&print_table_head();
+my $iroad = $start;
+while ($iroad < $maxn) {
+    &print_road($iroad);
+    $iroad += $incr;
+} # while $iroad
+&print_table_tail();
+
 #----------------
 # termination
 if (0) {
 } elsif ($mode =~ m{html}) {
-   # &print_html_tail();
+   &print_html_tail();
 } elsif ($mode =~ m{tsv} ) {
 }
 # end main
 #================================
 sub enqueue { # queue the parameter
     my ($elem, $father) = @_;
-    if (! defined($sarr[$elem])) { # new member
+    if (! defined($svis[$elem])) { # new member
         print "  enq $elem" if $debug >= 2;
-        $sarr[$elem] = 1; # to be processed
+        $svis[$elem] = 1; # to be processed
         if ($elem < $inext) {
             $inext = $elem;
         }
@@ -81,7 +92,7 @@ sub enqueue { # queue the parameter
         }
         if ($elem == $ffcontig) {
             $ffcontig = $elem + 1;
-            while (defined($sarr[$ffcontig])) {
+            while (defined($svis[$ffcontig])) {
                 $ffcontig ++;
             }
             print "\n" if $debug >= 2;
@@ -103,7 +114,7 @@ sub build_row { # build and return a single row for index $elem
         $elem <<= 1;
         &enqueue($elem, $ind);
     } # while divisible by 3
-    $sarr[$ind] = 2; # is processed
+    $svis[$ind] = 2; # is processed
     print "\n  [$ind] built next=$inext contig=$ffcontig max=$maxproc\n" if $debug >= 2;
 } # build_row
 #----------------
@@ -135,7 +146,7 @@ sub print_road {
         } elsif ($mode =~ m{html}) {
             print "<tr><td class=\"d4\">$elem0</td><td class=\"arr\">$len</td>";
         } elsif ($mode =~ m{tsv} ) {
-            print join("\t", $elem0, $len);
+            print join($sep, $elem0, $len);
         } # mode
 
         while ($ir < scalar(@road)) { # walk the entire road
@@ -147,7 +158,7 @@ sub print_road {
                 my $cla1 = &get_class($elem1);
                 print "<td class=\"$cla0\">$elem0</td><td class=\"$cla1\">$elem1</td>";
             } elsif ($mode =~ m{tsv} ) {
-                print "\t" . join("\t", $elem0, $elem1);
+                print $sep . join($sep, $elem0, $elem1);
             } # mode
         } # while walking
 
@@ -306,44 +317,31 @@ GFis
 } # print_html_tail
 #================================
 __DATA__
-Example of a road in A070165 (to be read from right to left, starting at "|"):
-142/104: [142 m  71 d 214 m 107 d 322 m 161 d 484 m  242 m 121 d | 364 m 182, 91, ... 10, 5, 16, 8, 4, 2, 1]
-           +1  *6+4    +1  *6+4    +1  *6+4    +1   *6+4  *6+2     =     =   ...
-143/104: [143 d 430 m 215 d 646 m 323 d 970 m 485 d 1456 m 728 m | 364 m 182, 91, ... 10, 5, 16, 8, 4, 2, 1]
+C:\Users\User\work\gits\fasces\oeis\collatz>perl expand32.pl -n 4096 -d 1
+stop @ 3 <- 1, max=3nd32.pl
+stop @ 4 <- 7, max=27
+stop @ 9 <- 4, max=27
+stop @ 12 <- 4, max=27
+stop @ 13 <- 10, max=39
+stop @ 27 <- 16, max=1539
+stop @ 36 <- 16, max=1539
+stop @ 48 <- 28, max=1539
+stop @ 63 <- 37, max=1539
+stop @ 84 <- 547, max=2187
+stop @ 112 <- 64, max=2187
+stop @ 163 <- 85, max=2187
+stop @ 223 <- 277, max=3555
+stop @ 319 <- 1276, max=19683
+stop @ 351 <- 2734, max=20763
+stop @ 435 <- 2005, max=74223
+stop @ 580 <- 736, max=95499
+stop @ 909 <- 436, max=95499
+stop @ 957 <- 1024, max=378351
+stop @ 1276 <- 1078, max=378351
+stop @ 2127 <- 958, max=378351
+stop @ 2295 <- 8080, max=3026727
+stop @ 3060 <- 5812, max=4076811
+stop @ 4080 <- 2296, max=4076811
+stop @ 4831 <- 3061, max=4076811
 
-continuation:
-124 m 62 m  31 d 94 m  47 d 142 m
- +2   +1  *6+4    +1 *6+4    +1
-126 m 63 d 190 m 95 d 286 m 143 d
-       ^--- divisible by 3
-#================================
-# old code
-
-sub add_road {
-    my ($elem0, $buffer) = @_;
-    $roads[$elem0] = $buffer;
-    if ($ffroad == $elem0) { # output and increase
-        while (defined($roads[$ffroad])) {
-            print "<!-- $ffroad -->$roads[$ffroad]";
-            $ffroad += $incr6;
-        } # while printing
-    } # increase
-} # add_road
-#----------------
-sub fill3 {
-    my ($elem) = @_;
-    while ($elem < $maxn) {
-        $nums[$elem] = 1;
-        $elem *= 2;
-    } # while $elem
-} # fill3
-#----------------
-    my $ffnum = $start;
-    while ($ffnum < $maxn) { # look for first undefined @nums
-        if (! defined($nums[$ffnum])) {
-            print "<h4>first uncovered number: $ffnum</h4>\n";
-            $ffnum = $maxn; # break loop
-        }
-        $ffnum ++;
-    } # while defined
-
+C:\Users\User\work\gits\fasces\oeis\collatz>

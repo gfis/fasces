@@ -2,6 +2,7 @@
 
 # Roads through the thicket of the Collatz graph
 # @(#) $Id$
+# 2018-08-29: kernel of n6-2
 # 2018-08-22, Georg Fischer
 #------------------------------------------------------
 # Usage:
@@ -55,6 +56,7 @@ use strict;
 use integer;
 #----------------
 # get commandline options
+my $sep    = "\t";
 my $debug  = 0;
 my $maxn   = 512; # max. start value
 my $start4 = 4;
@@ -94,6 +96,7 @@ while ($ffroad < $start4) { # $roads[0..3] are not used
 my @nums   = @roads; # defined if the number was visited
 $ffroad    = scalar(@roads); # (is asserted)
 my @queue;
+my $index = 0;
 #----------------
 # perform one of the possible actions
 if (0) { # switch action
@@ -105,22 +108,23 @@ if (0) { # switch action
     } # while $ffroad
 
 } elsif ($action =~ m{contig}) { # identify contiguous blocks of start values
-    @queue   = ($ffroad);
+    @queue = ($ffroad);
     while (scalar(@queue) > 0) {
-	    my $elem = &dequeue();;
-        if (! defined($roads[$elem])) {
-            @roads[$elem] = &build_road($elem);
+        my $selem = &dequeue();
+        $index ++;
+        if (! defined($roads[$selem])) {
+            @roads[$selem] = &build_road($selem);
         }
         my $oldff = $ffroad;
         while (defined($roads[$ffroad])) { # try to increase
-        	$ffroad += $incr6;
+            $ffroad += $incr6;
         } # try to increase
         if ($ffroad > $oldff) {
-        	if ($mode =~ m{html}) {
-        		print "<!--stopped at $ffroad-->\n";
-        	}
+            if ($mode =~ m{html}) {
+                print "<!--stopped at $ffroad-->\n";
+            }
         }
-    } # while $elem
+    } # while $selem
 
 } else {
     die "invalid action \"$action\"\n";
@@ -143,30 +147,35 @@ if (0) {
 }
 # end main
 #================================
-sub build_road { # build and return a single road starting with $elem
-    my ($elem) = @_;
-    my $elem0  = $elem;
-    my $elem1  = $elem0; # 2 parallel lanes: $elem0 (upper, left), $elem1 (lower, right)
-    my $count  = 0;
-    my @result = ($elem, $count); # [1] will be replaced later
-    my $state  = "step0";
-    my $busy   = 1; # as long as we can still do another step
+sub build_road { # build and return a single road starting with $selem
+    my ($selem) = @_;
+    my @elem    = ($selem, $selem);  
+            # 2 parallel lanes: $elem[0] (upper, left), $elem[1] (lower, right)
+    my $len     = 0;
+    my @result  = 
+            (($selem + 2)/6             # 0
+            , &get_kernel($selem)       # 1
+            , &get_kernel($selem * 4)   # 2
+            , $len                      # 3, will be replaced below
+            , $selem);                  # 4
+    my $state   = "step0";
+    my $busy    = 1; # as long as we can still do another step
     while ($busy == 1) { # stepping
         if (0) {
         } elsif ($state eq "step0") {
-            $elem0 = ($elem0 - 1) / 3; # possible because of preparation above
-            $elem1 = $elem1 * 2;
+            $elem[0] = ($elem[0] - 1) / 3; # possible because of preparation above
+            $elem[1] = $elem[1] * 2;
             $state = "step1";
         } elsif ($state eq "step1") {
-            $elem0 = $elem0 * 2; # mm, always possible
-            $elem1 = $elem1 * 2;
+            $elem[0] = $elem[0] * 2; # mm, always possible
+            $elem[1] = $elem[1] * 2;
             $state = "md"; # enter the alternating sequence of steps: md, dm, md, dm ...
         } elsif ($state eq "md") {
-            if (         ($elem1 - 1) % 3 == 0) {
-                $elem1 = ($elem1 - 1) / 3;
-                $elem0 =  $elem0 * 2;
+            if (         ($elem[1] - 1) % 3 == 0) {
+                $elem[1] = ($elem[1] - 1) / 3;
+                $elem[0] =  $elem[0] * 2;
                 $state = "dm";
-                if ($elem0 % 3 == 0 or $elem1 % 3 == 0) {
+                if ($elem[0] % 3 == 0 or $elem[1] % 3 == 0) {
                     $busy  = 0;
                 }
             } else { # should never happen
@@ -174,11 +183,11 @@ sub build_road { # build and return a single road starting with $elem
                 $state = " 1assert3";
             }
         } elsif ($state eq "dm") {
-            if (         ($elem0 - 1) % 3 == 0) {
-                $elem0 = ($elem0 - 1) / 3;
-                $elem1 =  $elem1 * 2;
+            if (         ($elem[0] - 1) % 3 == 0) {
+                $elem[0] = ($elem[0] - 1) / 3;
+                $elem[1] =  $elem[1] * 2;
                 $state = "md";
-                if ($elem0 % 3 == 0 or $elem1 % 3 == 0) {
+                if ($elem[0] % 3 == 0 or $elem[1] % 3 == 0) {
                     $busy  = 0;
                 }
             } else { # should never happen
@@ -188,24 +197,24 @@ sub build_road { # build and return a single road starting with $elem
         } else {
             die "invalid state \"$state\"\n";
         }
-        if ($elem0 % $incr6 ==   $start4) {
-            if (! defined($roads[$elem0])) {
-                &enqueue(        $elem0);
+        if ($elem[0] % $incr6 == $start4) {
+            if (! defined($roads[$elem[0]])) {
+                &enqueue(        $elem[0]);
             }
         }
-        if ($elem1 % $incr6 ==   $start4) {
-            if (! defined($roads[$elem1])) {
-                &enqueue(        $elem1);
+        if ($elem[1] % $incr6 == $start4) {
+            if (! defined($roads[$elem[1]])) {
+                &enqueue(        $elem[1]);
             }
         }
-        push(@result, $elem0, $elem1);
-        $count ++;
+        push(@result, $elem[0], $elem[1]);
+        $len ++;
     } # while busy stepping
-    $result[1] = $count;
+    $result[3] = $len; 
     if ($debug >= 1) {
         print "<!--build_road: " . join(";", @result) . "-->\n";
     }
-    return join(",", @result);
+    return join($sep, @result);
 } # build_road
 #----------------
 sub dequeue { # return lowest queue element
@@ -214,80 +223,81 @@ sub dequeue { # return lowest queue element
     return $elem;
 } # dequeue
 #----------------
+sub get_kernel { # for n6-2, return the 2-3-free factor of n
+    my ($parm) = @_;
+    my $result = 0;
+    if ($parm % $incr6 == $start4) {
+        my $num = $parm / $incr6 + 1; # we had 6*(n-1) + 4
+        my $log3 = 0;
+        while ($num % 3 == 0 and $num > 0) {
+            $log3 ++;
+            $num /= 3;
+        } # while 3
+        my $log2 = 0;
+        while ($num % 2 == 0 and $num > 0) {
+            $log2 ++;
+            $num /= 2;
+        } # while 2
+        $result = "$log3.$log2" . ($num > 1 ? "/$num" : "");
+    }
+    return $result;
+} # get_kernel
+#----------------
 sub enqueue { # queue the parameter
     my ($elem) = @_;
     if ($elem < $maxn) {
-    	push(@queue, $elem);
+        push(@queue, $elem);
     }
 } # enqueue
 #----------------
 sub print_road {
     my ($index) = @_;
     if (! defined($roads[$index])) {
+    	my $kernel1 = &get_kernel($index);
+	    $index = ($index + 2) / 6;
         if (0) {
         } elsif ($mode =~ m{html}) {
-        	print "<tr><td class=\"d4\">$index</td></tr>";
+            print "<tr><td class=\"arr\">$index</td>";
+            print "<td class=\"arl\">$kernel1</td></tr>";
         } elsif ($mode =~ m{tsv} ) {
-            print "$index\n";
+            print "$index$sep$kernel1\n";
         } # mode
     } else {
-        my @road  = split(/\,/, $roads[$index]);
+        my @road  = split(/$sep/, $roads[$index]);
         if ($debug >= 2) {
             print "<!--print_road: " . join(";", @road) . "-->\n";
         }
         my $ir    = 0;
-        my $elem0 = $road[$ir ++];
-        my $elem1 = $road[$ir ++];
-        my $len   = $elem1;
         if (0) {
         } elsif ($mode =~ m{html}) {
-            print "<tr><td class=\"d4\">$elem0</td><td class=\"arr\">$len</td>";
-        } elsif ($mode =~ m{tsv} ) {
-            print join("\t", $elem0, $len);
-        } # mode
-    
-        while ($ir < scalar(@road)) { # walk the entire road
-            $elem0 = $road[$ir ++];
-            $elem1 = $road[$ir ++];
-            if (0) {
-            } elsif ($mode =~ m{html}) {
-                my $cla0 = &get_class($elem0);
-                my $cla1 = &get_class($elem1);
-                print "<td class=\"$cla0\">$elem0</td><td class=\"$cla1\">$elem1</td>";
-            } elsif ($mode =~ m{tsv} ) {
-                print "\t" . join("\t", $elem0, $elem1);
-            } # mode
-        } # while walking
-    
-        if (0) {
-        } elsif ($mode =~ m{html}) {
+            while ($ir < scalar(@road)) { # walk the entire road
+                if (0) {
+                } elsif ($ir == 1 or $ir == 2) {
+                    print "<td class=\"arl\">$road[$ir]</td>";
+                } elsif ($ir < 4) {
+                    print "<td class=\"arr\">$road[$ir]</td>";
+                } else {
+                    &print_cell($road[$ir]);
+                }
+                $ir ++;
+            } # while $ir
             print "</tr>\n";
         } elsif ($mode =~ m{tsv} ) {
-            print "\n";
+            print join($sep, @road) . "\n";
         } # mode
     } # if defined
 } # print_road
 #----------------
-sub get_class { # get the CSS class (color) for a value
+sub print_cell { # print one table cell
     my ($elem) = @_;
-    my $result = "";
     my $rest = $elem % 6;
-    if (0) {
-    } elsif ($rest == 0) {
-        $result = "d0";
-    } elsif ($rest == 1) {
-        $result = "d1";
-    } elsif ($rest == 2) {
-        $result = "d2";
-    } elsif ($rest == 3) {
-        $result = "d3";
-    } elsif ($rest == 4) {
-        $result = "d4";
-    } elsif ($rest == 5) {
-        $result = "d5";
+    print "<td";
+    if ($rest == 4) {
+        my $num = $elem / 6 + 1; # 6 * $num - 2
+        print " title=\"$num\"";
     }
-    return $result;
-} # get_class
+    print " class=\"d$rest\">$elem</td>";
+} # print_cell
 #----------------
 sub print_html_head {
     return if $mode ne "html";
@@ -303,8 +313,9 @@ body,table,p,td,th
         { font-family: Verdana,Arial,sans-serif; }
 tr,td,th,p
         { text-align: right; }
-.arr    { background-color: lightyellow; color: black;}
-.arl    { background-color: lightyellow; color: black; text-align:left;}
+.arr    { background-color: white; color: black;}
+.arc    { background-color: white; color: black; text-align: center;}
+.arl    { background-color: white; color: black; text-align: left;}
 /*
 .d5     { background-color: peachpuff;   color: black; }
 .d1     { background-color: papayawhip;  color: black; }
@@ -315,14 +326,14 @@ tr,td,th,p
 
 .d5     { background-color: white      ; color: lightgray; }
 .d1     { background-color: white      ; color: lightgray; }
-.d4     { background-color: white      ; color: black    ; font-weight: bold; } 
+.d4     { background-color: white      ; color: black    ; font-weight: bold; }
 .d2     { background-color: white      ; color: lightgray; }
 .d0     { background-color: white      ; color: lightgray; }
 .d3     { background-color: white      ; color: lightgray; }
 */
 .d5     { background-color: white      ; color: gray; }
 .d1     { background-color: white      ; color: gray; }
-.d4     { background-color: white      ; color: black    ; font-weight: bold; } 
+.d4     { background-color: white      ; color: black    ; font-weight: bold; }
 .d2     { background-color: white      ; color: gray; }
 .d0     { background-color: white      ; color: gray; }
 .d3     { background-color: white      ; color: gray; }
@@ -338,60 +349,39 @@ sub print_table_head {
     print <<"GFis";
 <table>
 <tr>
-<td class="arr">r<sub>0</sub></td>
-<td class="arr">r<sub>1</sub></td>
-<td class="arr">r<sub>2</sub></td>
-<td class="arr">r<sub>3</sub></td>
-<td class="arr">r<sub>4</sub></td>
-<td class="arr">r<sub>5</sub></td>
-<td class="arr">r<sub>6</sub></td>
-<td class="arr">r<sub>7</sub></td>
-<td class="arr">r<sub>8</sub></td>
-<td class="arr">r<sub>9</sub></td>
-<td class="arr">r<sub>10</sub></td>
-<td class="arr">r<sub>11</sub></td>
-<td class="arr">r<sub>12</sub></td>
-<td class="arr">r<sub>13</sub></td>
-<td class="arr">r<sub>14</sub></td>
-<td class="arr">r<sub>15</sub></td>
-<td class="arr">...</td>
-</tr>
-<tr>
-<td class="arr">start</td>
+<td class="arr">index</td>
+<td class="arl">kernel1</td>
+<td class="arl">kernel2</td>
 <td class="arr">len</td>
-<td class="arr"><strong>d</strong>r<sub>0</sub></td>
-<td class="arl"><strong>m</strong>r<sub>0</sub></td>
-<td class="arr"><strong>m</strong>r<sub>2</sub></td>
-<td class="arl"><strong>m</strong>r<sub>3</sub></td>
-<td class="arr"><strong>m</strong>r<sub>4</sub></td>
-<td class="arl"><strong>d</strong>r<sub>5</sub></td>
-<td class="arr"><strong>d</strong>r<sub>6</sub></td>
-<td class="arl"><strong>m</strong>r<sub>7</sub></td>
-<td class="arr"><strong>m</strong>r<sub>8</sub></td>
-<td class="arl"><strong>d</strong>r<sub>9</sub></td>
-<td class="arr"><strong>d</strong>r<sub>10</sub></td>
-<td class="arl"><strong>m</strong>r<sub>11</sub></td>
-<td class="arr"><strong>m</strong>r<sub>12</sub></td>
-<td class="arl"><strong>d</strong>r<sub>13</sub></td>
+<td class="arr">start</td>
+<td class="arr">col2</td>
+<td class="arr">col3</td>
+<td class="arr">col4</td>
+<td class="arr">col5</td>
+<td class="arr">col6</td>
+<td class="arr">col7</td>
+<td class="arr">col8</td>
+<td class="arr">col9</td>
 <td class="arr">...</td>
 </tr>
 <tr>
-<td class="arr">&#x394;6</td>
 <td class="arr"></td>
-<td class="arr">&#x394;2</td>
-<td class="arr">&#x394;12</td>
-<td class="arr">&#x394;4</td>
-<td class="arr">&#x394;24</td>
-<td class="arr">&#x394;8</td>
-<td class="arr">&#x394;8</td>
-<td class="arr">3&#x394;8</td>
-<td class="arr">3&#x394;48</td>
-<td class="arr">3&#x394;16</td>
-<td class="arr">3&#x394;16</td>
-<td class="arr">9&#x394;16</td>
-<td class="arr">9&#x394;96</td>
-<td class="arr">9&#x394;32</td>
-<td class="arr">9&#x394;32</td>
+<td class="arr"></td>
+<td class="arr"></td>
+<td class="arr"></td>
+<td class="arr"></td>
+<td class="arr">d</td>
+<td class="arr">m</td>
+<td class="arr">m</td>
+<td class="arr">m</td>
+<td class="arr">m</td>
+<td class="arr">d</td>
+<td class="arr">d</td>
+<td class="arr">m</td>
+<td class="arr">m</td>
+<td class="arr">d</td>
+<td class="arr">d</td>
+<td class="arr">m</td>
 <td class="arr">...</td>
 </tr>
 GFis
@@ -425,33 +415,3 @@ continuation:
 126 m 63 d 190 m 95 d 286 m 143 d
        ^--- divisible by 3
 #================================
-# old code
-
-sub add_road {
-    my ($elem0, $buffer) = @_;
-    $roads[$elem0] = $buffer;
-    if ($ffroad == $elem0) { # output and increase
-        while (defined($roads[$ffroad])) {
-            print "<!-- $ffroad -->$roads[$ffroad]";
-            $ffroad += $incr6;
-        } # while printing
-    } # increase
-} # add_road
-#----------------
-sub fill3 {
-    my ($elem) = @_;
-    while ($elem < $maxn) {
-        $nums[$elem] = 1;
-        $elem *= 2;
-    } # while $elem
-} # fill3
-#----------------
-    my $ffnum = $start;
-    while ($ffnum < $maxn) { # look for first undefined @nums
-        if (! defined($nums[$ffnum])) {
-            print "<h4>first uncovered number: $ffnum</h4>\n";
-            $ffnum = $maxn; # break loop
-        }
-        $ffnum ++;
-    } # while defined
-
