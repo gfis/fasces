@@ -11,10 +11,12 @@ S=4
 I=6
 M=html
 
-all: roads
+all: rails roads
+rails: 
+	perl collatz_rails.pl   -n $(N)    -d $(D) -s $(S) -i $(I) -a contig > rails.html
 roads: 
 	perl collatz_roads.pl   -n $(N)    -d $(D) -s $(S) -i $(I) -a contig > roads.html
-roads.txt: 
+txt:
 	perl collatz_roads.pl   -n $(N)    -d $(D) -s $(S) -i $(I) -a contig -m tsv > roads.txt
 fract6:
 	perl collatz_fract6.pl  -n $(N)    -s 4    -i 6    | tee fract6.html
