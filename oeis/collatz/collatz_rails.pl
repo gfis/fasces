@@ -1,6 +1,6 @@
 #!perl
 
-# Print a directory of rails in the Collatz graph
+# Print a directory of railways in the Collatz graph
 # @(#) $Id$
 # 2018-08-30, Georg Fischer: derived from collatz_roads.pl
 #
@@ -8,17 +8,32 @@
 # only the layout of the output is changed.
 #------------------------------------------------------
 # Usage:
-#   perl collatz_rails.pl [-n maxn] [-d debug]
+#   perl collatz_rails.pl [-n maxn] [-d debug] > rails.html
 #
 # Construction of rails:
 # A "rail" is a sequence of pairs
-# of elements (in 2 adjacent Collatz sequences read from right to left).
+# of elements (in 2 adjacent Collatz sequences, read from right to left).
 # A rail is built by taking some n (the last common element of the
-# 2 sequences) with n mod 6 = 4, and by applying the steps
+# 2 sequences) with n &#x2261; -2 mod 6, and by applying the steps
 # d m m d m d m d ...
 # m m d m d m d m ...
 # in alternating sequence, until one of the elements in the pairs
 # becomes divisible by 3.
+#
+# An "m"-step multiplies n by 2.
+# A "d"-step transforms an n &#x2261; 1 mod 3 to (n - 1) / 3.
+# Both steps move away from the root of a Collatz graph.
+#
+# Example of a rail in A070165 (to be read from right to left, starting at "|"):
+# 142/104: [142 m  71 d 214 m 107 d 322 m 161 d 484 m  242 m 121 d | 364 m 182, 91, ... 10, 5, 16, 8, 4, 2, 1]
+#            +1  *6+4    +1  *6+4    +1  *6+4    +1   *6+4  *6+2     =     =   ...
+# 143/104: [143 d 430 m 215 d 646 m 323 d 970 m 485 d 1456 m 728 m | 364 m 182, 91, ... 10, 5, 16, 8, 4, 2, 1]
+# 
+# continuation:
+# 124 m 62 m  31 d 94 m  47 d 142 m
+#  +2   +1  *6+4    +1 *6+4    +1
+# 126 m 63 d 190 m 95 d 286 m 143 d
+#        ^--- divisible by 3
 #--------------------------------------------------------
 use strict;
 use integer;
@@ -281,39 +296,23 @@ body,table,p,td,th
         { font-family: Verdana,Arial,sans-serif; }
 table   { border-collapse: collapse; }
 td      { padding-right: 4px; }
-tr,td,th,p
+tr,td,th
         { text-align: right; }
 .arr    { background-color: white; color: black; }
 .arc    { background-color: white; color: black; text-align: center; }
 .arl    { background-color: white; color: black; text-align: left;   }
 .bor    { border-left  : 1px solid gray ; border-top   : 1px solid gray ;
-	      border-right : 1px solid gray ; border-bottom: 1px solid gray ; }
+          border-right : 1px solid gray ; border-bottom: 1px solid gray ; }
 .btr    { border-left  : 1px solid gray ; border-top   : 1px solid gray ;
-	      border-right : 1px solid gray ; }
+          border-right : 1px solid gray ; }
 .bbr    { border-left  : 1px solid gray ; 
-	      border-right : 1px solid gray ; border-bottom: 1px solid gray ; }
-/*
-
-.d5     { background-color: white          ; color: lightgray;       }
-.d1     { background-color: white          ; color: lightgray;       }
-.d4     { background-color: white          ; color: black    ;       font-weight: bold; }
-.d2     { background-color: white          ; color: lightgray;       }
-.d0     { background-color: white          ; color: lightgray;       }
-.d3     { background-color: white          ; color: lightgray;       }
-                                                                     
-.d0     { background-color: yellow         ; color: black;           }
-.d3     { background-color: yellow         ; color: black;           }
-.d5     { background-color: white          ; color: gray;            }
-.d1     { background-color: white          ; color: gray;            }
-.d4     { background-color: white          ; color: black              ; font-weight: bold; }
-.d2     { background-color: white          ; color: gray;            }
-*/                                                                   
-.d0     { background-color: lemonchiffon   ; color: gray;            }
-.d3     { background-color: lemonchiffon   ; color: gray;            }
-.d5     { background-color: white          ; color: black;           }
+          border-right : 1px solid gray ; border-bottom: 1px solid gray ; }
+.d0     { background-color: lemonchiffon   ; color: black;           }
 .d1     { background-color: white          ; color: black;           }
-.d4     { background-color: papayawhip     ; color: black;           font-weight: bold; }
 .d2     { background-color: beige          ; color: black;           }
+.d3     { background-color: lemonchiffon   ; color: gray;            }
+.d4     { background-color: papayawhip     ; color: black;           font-weight: bold; }
+.d5     { background-color: white          ; color: gray;            }
 </style>
 </head>
 <body>
@@ -324,6 +323,13 @@ GFis
 sub print_table_head {
     return if $mode ne "html";
     print <<"GFis";
+<p>
+with numbers &#x2261; 
+<span class="d0">0</span>, <span class="d1">1</span>,
+<span class="d2">2</span>, <span class="d3">3</span>,
+<span class="d4">4</span>, <span class="d5">5</span> mod 6
+<br />
+</p>
 <table>
 <tr>
 <td class="arc"> </td>
@@ -337,8 +343,7 @@ sub print_table_head {
 <td class="arc">8</td>
 <td class="arc">9</td>
 <td class="arc">10</td>
-<td class="arc    ">...</td>
-<td class="arc"><span class="d0">0</span>,<span class="d3">3</span> mod 6</span></td>
+<td class="arc">...</td>
 </tr>
 <!--
 # d m m d m d m d ...
@@ -357,7 +362,6 @@ sub print_table_head {
 <td class="arc btr">d</td>
 <td class="arc btr">m</td>
 <td class="arc    ">...</td>
-<td class="arc"><span class="d2">2</span>,<span class="d4">4</span> mod 6</span></td>
 </tr>
 <tr>
 <td class="arc    "></td>
@@ -372,7 +376,6 @@ sub print_table_head {
 <td class="arc bbr">m</td>
 <td class="arc bbr">d</td>
 <td class="arc    ">...</td>
-<td class="arc"><span class="d1">1</span>,<span class="d5">5</span> mod 6</span></td>
 </tr>
 GFis
 } # print_table_head
@@ -394,14 +397,4 @@ GFis
 } # print_html_tail
 #================================
 __DATA__
-Example of a rail in A070165 (to be read from right to left, starting at "|"):
-142/104: [142 m  71 d 214 m 107 d 322 m 161 d 484 m  242 m 121 d | 364 m 182, 91, ... 10, 5, 16, 8, 4, 2, 1]
-           +1  *6+4    +1  *6+4    +1  *6+4    +1   *6+4  *6+2     =     =   ...
-143/104: [143 d 430 m 215 d 646 m 323 d 970 m 485 d 1456 m 728 m | 364 m 182, 91, ... 10, 5, 16, 8, 4, 2, 1]
-
-continuation:
-124 m 62 m  31 d 94 m  47 d 142 m
- +2   +1  *6+4    +1 *6+4    +1
-126 m 63 d 190 m 95 d 286 m 143 d
-       ^--- divisible by 3
 #================================
