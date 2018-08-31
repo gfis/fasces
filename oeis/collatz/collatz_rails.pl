@@ -1,5 +1,6 @@
 #!perl
 
+# https://github.com/gfis/fasces/blob/master/oeis/collatz/collatz_rails.pl
 # Print a directory of railways in the Collatz graph
 # @(#) $Id$
 # 2018-08-30, Georg Fischer: derived from collatz_roads.pl
@@ -117,7 +118,11 @@ if (0) { # switch action
 &print_table_head();
 my $irail = $start;
 while ($irail < $maxn) {
-    &print_rail($irail);
+	if (! defined($rails[$irail])) {
+		$irail = $maxn; # break loop
+	} else {
+    	&print_rail($irail);
+    }
     $irail += $incr;
 } # while $irail
 &print_table_tail();
@@ -215,7 +220,7 @@ sub get_kernel { # for n6-2, return the 2-3-free factor of n
             $log2 ++;
             $num /= 2;
         } # while 2
-        $result = "$log3.$log2" . ($num > 1 ? "/$num" : "");
+        $result = "$log3.$log2.$num";
     }
     return $result;
 } # get_kernel
@@ -258,7 +263,12 @@ sub print_rail {
 
             print "<tr>"
                 . "<td class=\"arl\">\&nbsp;</td>"
-                . "<td class=\"arl\">\&nbsp;</td>";
+                . "<td class=\"arr ker\">"
+                . $rail[1] # &get_kernel($rail[1]) 
+                . "\&gt;"
+                . &get_kernel($rail[5])
+                . "," . (scalar(@rail) / 2 - 4)
+                . "</td>";
             $ir = 2;
             while ($ir < scalar(@rail)) {
                 print &cell_html($rail[$ir], " bbr");
@@ -290,7 +300,9 @@ sub print_html_head {
 ]>
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-<title>Collatz railway directory</title>
+<title>3x+1 railway directory</title>
+<meta name="generator" content="https://github.com/gfis/fasces/blob/master/oeis/collatz/collatz_rails.pl" />
+<meta name="author"    content="Georg Fischer" />
 <style>
 body,table,p,td,th
         { font-family: Verdana,Arial,sans-serif; }
@@ -298,25 +310,26 @@ table   { border-collapse: collapse; }
 td      { padding-right: 4px; }
 tr,td,th
         { text-align: right; }
-.arr    { background-color: white; color: black; }
-.arc    { background-color: white; color: black; text-align: center; }
-.arl    { background-color: white; color: black; text-align: left;   }
-.bor    { border-left  : 1px solid gray ; border-top   : 1px solid gray ;
-          border-right : 1px solid gray ; border-bottom: 1px solid gray ; }
-.btr    { border-left  : 1px solid gray ; border-top   : 1px solid gray ;
-          border-right : 1px solid gray ; }
-.bbr    { border-left  : 1px solid gray ; 
-          border-right : 1px solid gray ; border-bottom: 1px solid gray ; }
-.d0     { background-color: lemonchiffon   ; color: black;           }
-.d1     { background-color: white          ; color: black;           }
-.d2     { background-color: beige          ; color: black;           }
-.d3     { background-color: lemonchiffon   ; color: gray;            }
-.d4     { background-color: papayawhip     ; color: black;           font-weight: bold; }
-.d5     { background-color: white          ; color: gray;            }
+.arr    { background-color: white          ; color: black; }
+.arc    { background-color: white          ; color: black; text-align: center;      }
+.arl    { background-color: white          ; color: black; text-align: left;        }
+.ker    { font-style   : italic            }
+.bor    { border-left  : 1px solid gray    ; border-top   : 1px solid gray ;
+          border-right : 1px solid gray    ; border-bottom: 1px solid gray ; }
+.btr    { border-left  : 1px solid gray    ; border-top   : 1px solid gray ;
+          border-right : 1px solid gray    ; }
+.bbr    { border-left  : 1px solid gray    ; 
+          border-right : 1px solid gray    ; border-bottom: 1px solid gray ; }
+.d0     { background-color: lemonchiffon   ; color: black;                   }
+.d1     { background-color: lavender       ; color: black;                   }
+.d2     { background-color: beige          ; color: black;                   }
+.d3     { background-color: lemonchiffon   ; color: gray;                    }
+.d4     { background-color: papayawhip     ; color: black;                   font-weight: bold; }
+.d5     { background-color: lavender       ; color: gray;                    }
 </style>
 </head>
 <body>
-<h3>Collatz railway directory</h3>
+<h3>3x+1 railway directory</h3>
 GFis
 } # print_html_head
 #----------------
@@ -346,13 +359,12 @@ with numbers &#x2261;
 <td class="arc">...</td>
 </tr>
 <!--
-# d m m d m d m d ...
 # m m d m d m d m ...
+# d m m d m d m d ...
 -->
 <tr>
 <td class="arc    ">n</td>
-<td class="arc bor">6n&#8209;2</td>
-<td class="arc btr">d</td>
+<td class="arr bor"><strong>6n&#8209;2</strong></td>
 <td class="arc btr">m</td>
 <td class="arc btr">m</td>
 <td class="arc btr">d</td>
@@ -361,11 +373,13 @@ with numbers &#x2261;
 <td class="arc btr">m</td>
 <td class="arc btr">d</td>
 <td class="arc btr">m</td>
+<td class="arc btr">d</td>
 <td class="arc    ">...</td>
 </tr>
 <tr>
 <td class="arc    "></td>
-<td class="arc    "></td>
+<td class="arr ker">3.2.lk&gt;3.2.rk,len</td>
+<td class="arc bbr">d</td>
 <td class="arc bbr">m</td>
 <td class="arc bbr">m</td>
 <td class="arc bbr">d</td>
@@ -374,7 +388,6 @@ with numbers &#x2261;
 <td class="arc bbr">m</td>
 <td class="arc bbr">d</td>
 <td class="arc bbr">m</td>
-<td class="arc bbr">d</td>
 <td class="arc    ">...</td>
 </tr>
 GFis
@@ -384,6 +397,7 @@ sub print_table_tail {
     return if $mode ne "html";
     print <<"GFis";
 </table>
+<p>End of directory</p>
 GFis
 } # print_table_tail
 #----------------
@@ -397,4 +411,172 @@ GFis
 } # print_html_tail
 #================================
 __DATA__
-#================================
+
+grep -E "\.5," kernels.tmp
+0.2.1>1.0.5,1
+0.1.17>3.0.5,5
+0.4.19>5.0.5,9
+0.1.1367>7.0.5,13
+0.2.6151>9.0.5,17
+
+grep -E "\.7," kernels.tmp
+0.1.1>0.0.7,0
+0.4.1>2.0.7,3
+0.1.71>4.0.7,7
+0.2.319>6.0.7,11
+0.1.5741>8.0.7,15
+0.3.12917>10.0.7,19
+
+grep -E "\.11," kernels.tmp
+1.0.1>0.0.11,0
+0.0.25>2.0.11,4
+0.0.223>4.0.11,8
+0.0.2005>6.0.11,12
+0.0.18043>8.0.11,16
+0.0.162385>10.0.11,20
+
+grep -E "\.13," kernels.tmp
+0.1.5>1.0.13,2
+0.3.11>3.0.13,6
+0.1.395>5.0.13,10
+0.2.1777>7.0.13,14
+0.1.31985>9.0.13,18
+
+grep -E "\.17," kernels.tmp
+0.0.13>1.0.17,1
+0.0.115>3.0.17,5
+0.0.1033>5.0.17,9
+0.0.9295>7.0.17,13
+0.0.83653>9.0.17,17
+
+grep -E "\.19," kernels.tmp
+0.0.5>0.0.19,0
+0.0.43>2.0.19,3
+0.0.385>4.0.19,7
+0.0.3463>6.0.19,11
+0.0.31165>8.0.19,15
+
+grep -E "\.23," kernels.tmp
+1.1.1>0.0.23,0
+0.2.13>2.0.23,4
+0.1.233>4.0.23,8
+0.5.131>6.0.23,12
+0.1.18863>8.0.23,16
+
+grep -E "\.25," kernels.tmp
+0.0.19>1.0.25,2
+0.0.169>3.0.25,6
+0.0.1519>5.0.25,10
+0.0.13669>7.0.25,14
+0.0.123019>9.0.25,18
+
+grep -E "\.29," kernels.tmp
+0.1.11>1.0.29,1
+0.2.49>3.0.29,5
+0.1.881>5.0.29,9
+0.4.991>7.0.29,13
+0.1.71351>9.0.29,17
+
+grep -E "\.31," kernels.tmp
+0.3.1>0.0.31,0
+0.1.35>2.0.31,3
+0.2.157>4.0.31,7
+0.1.2825>6.0.31,11
+0.5.1589>8.0.31,15
+
+grep -E "\.35," kernels.tmp
+2.0.1>0.0.35,0
+0.0.79>2.0.35,4
+0.0.709>4.0.35,8
+0.0.6379>6.0.35,12
+0.0.57409>8.0.35,16
+
+grep -E "\.37," kernels.tmp
+0.2.7>1.0.37,2
+0.1.125>3.0.37,6
+0.3.281>5.0.37,10
+0.1.10115>7.0.37,14
+
+grep -E "\.41," kernels.tmp
+0.0.31>1.0.41,1
+0.0.277>3.0.41,5
+0.0.2491>5.0.41,9
+0.0.22417>7.0.41,13
+
+grep -E "\.47," kernels.tmp
+1.2.1>0.0.47,0
+0.1.53>2.0.47,4
+0.3.119>4.0.47,8
+0.1.4283>6.0.47,12
+0.2.19273>8.0.47,16
+
+grep -E "\.49," kernels.tmp
+0.0.37>1.0.49,2
+0.0.331>3.0.49,6
+0.0.2977>5.0.49,10
+0.0.26791>7.0.49,14
+
+grep -E "\.53," kernels.tmp
+0.3.5>1.0.53,1
+0.1.179>3.0.53,5
+0.2.805>5.0.53,9
+0.1.14489>7.0.53,13
+
+grep -E "\.55," kernels.tmp
+0.1.7>0.0.55,0
+0.2.31>2.0.55,3
+0.1.557>4.0.55,7
+0.3.1253>6.0.55,11
+0.1.45107>8.0.55,15
+
+grep -E "\.59," kernels.tmp
+1.0.5>0.0.59,0
+0.0.133>2.0.59,4
+0.0.1195>4.0.59,8
+0.0.10753>6.0.59,12
+0.0.96775>8.0.59,16
+
+grep -E "\.61," kernels.tmp
+0.1.23>1.0.61,2
+0.2.103>3.0.61,6
+0.1.1853>5.0.61,10
+0.3.4169>7.0.61,14
+
+grep -E "\.65," kernels.tmp
+0.0.49>1.0.65,1
+0.0.439>3.0.65,5
+0.0.3949>5.0.65,9
+0.0.35539>7.0.65,13
+
+grep -E "\.67," kernels.tmp
+0.0.17>0.0.67,0
+0.0.151>2.0.67,3
+0.0.1357>4.0.67,7
+0.0.12211>6.0.67,11
+0.0.109897>8.0.67,15
+
+grep -E "\.71," kernels.tmp
+2.1.1>0.0.71,0
+0.5.5>2.0.71,4
+0.1.719>4.0.71,8
+0.2.3235>6.0.71,12
+0.1.58229>8.0.71,16
+
+grep -E "\.73," kernels.tmp
+0.0.55>1.0.73,2
+0.0.493>3.0.73,6
+0.0.4435>5.0.73,10
+0.0.39913>7.0.73,14
+
+grep -E "\.77," kernels.tmp
+0.1.29>1.0.77,1
+0.3.65>3.0.77,5
+0.1.2339>5.0.77,9
+0.2.10525>7.0.77,13
+
+grep -E "\.79," kernels.tmp
+0.2.5>0.0.79,0
+0.1.89>2.0.79,3
+0.6.25>4.0.79,7
+0.1.7199>6.0.79,11
+0.2.32395>8.0.79,15

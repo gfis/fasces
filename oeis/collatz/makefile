@@ -13,7 +13,7 @@ M=html
 
 all: rails roads
 rails: 
-	perl collatz_rails.pl   -n $(N)    -d $(D) -s $(S) -i $(I) -a contig > rails.html
+	perl collatz_rails.pl   -n $(N)    -d $(D) -s $(S) -i $(I) -a simple > rails.html
 roads: 
 	perl collatz_roads.pl   -n $(N)    -d $(D) -s $(S) -i $(I) -a contig > roads.html
 txt:
@@ -26,6 +26,15 @@ sub4mod6:
 	sed -e "s/\t/\n/g"           sub1.tmp | sort -n | uniq -c > sub2.tmp
 expand:
 	perl expand32.pl -n 4096 | tee expand.tmp
+#------------------
+kernels:
+	lynx -dump rails.html | grep ">" | sed -e "s/^ *//" | cut -d " " -f 1 \
+	> kernels.tmp
+#	grep -e ",0" kernels.tmp
+kx:
+	grep -E "\.$(X)," kernels.tmp
+kerneval:
+	perl kerneval.pl -n 256 kernels.tmp | tee kerneval.tmp
 #------------------
 graph:
 	perl collatz_graph.pl   -n $(N) > graph.html
