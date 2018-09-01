@@ -18,6 +18,8 @@ my $debug  = 0;
 my $maxn   = 512; # max. start value
 my $action = "simple";
 my $mode   = "html";
+my $start  = 4;
+my $incr   = 6;
 while (scalar(@ARGV) > 0 and ($ARGV[0] =~ m{\A\-})) {
     my $opt = shift(@ARGV);
     if (0) {

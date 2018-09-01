@@ -26,6 +26,12 @@ sub4mod6:
 	sed -e "s/\t/\n/g"           sub1.tmp | sort -n | uniq -c > sub2.tmp
 expand:
 	perl expand32.pl -n 4096 | tee expand.tmp
+tract_3xp1:
+	perl traject.pl -mul 3 -add  1 -div 2 | tee $@.tmp
+tract_3xm1:
+	perl traject.pl -mul 3 -add -1 -div 2 | tee $@.tmp
+tract_4xm1:
+	perl traject.pl -mul 4 -add -1 -div 3 | tee $@.tmp
 #------------------
 kernels:
 	lynx -dump rails.html | grep ">" | sed -e "s/^ *//" | cut -d " " -f 1 \

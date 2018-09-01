@@ -118,10 +118,10 @@ if (0) { # switch action
 &print_table_head();
 my $irail = $start;
 while ($irail < $maxn) {
-	if (! defined($rails[$irail])) {
-		$irail = $maxn; # break loop
-	} else {
-    	&print_rail($irail);
+    if (! defined($rails[$irail])) {
+        $irail = $maxn; # break loop
+    } else {
+        &print_rail($irail);
     }
     $irail += $incr;
 } # while $irail
@@ -251,12 +251,24 @@ sub print_rail {
         if (0) {
         } elsif ($mode =~ m{html}) {
             # print the upper path
+            $ir = 1;
             print "<tr>"
                 . "<td class=\"arc    \">$rail[0]</td>"
-                . &cell_html(            $rail[1], " bor");
-            $ir = 3;
+                . &cell_html(            $rail[1], "bor", $ir, "");
+            if (0) {
+            print &cell_html($rail[$ir], " btr", $ir, ""); 
+        	}
+            $ir += 2;
             while ($ir < scalar(@rail)) {
-                print &cell_html($rail[$ir], " btr");
+                my $id = "";
+                if (      $rail[$ir    ] % $incr6 == $start4) {
+                    $id = $rail[$ir    ];
+                } 
+                if ($ir > 5 and $rail[$ir - 1] % $incr6 == $start4) {
+                    $id = $rail[$ir - 1];
+                    # print STDERR "$id\n";
+                }
+                print &cell_html($rail[$ir], "btr", $ir, $id);
                 $ir += 2;
             } # while $ir
             print "</tr>\n";
@@ -264,14 +276,14 @@ sub print_rail {
             print "<tr>"
                 . "<td class=\"arl\">\&nbsp;</td>"
                 . "<td class=\"arr ker\">"
-                . $rail[1] # &get_kernel($rail[1]) 
+                . &get_kernel($rail[1]) # $rail[1] #
                 . "\&gt;"
                 . &get_kernel($rail[5])
                 . "," . (scalar(@rail) / 2 - 4)
                 . "</td>";
             $ir = 2;
             while ($ir < scalar(@rail)) {
-                print &cell_html($rail[$ir], " bbr");
+                print &cell_html($rail[$ir], "bbr", $ir, "");
                 $ir += 2;
             } # while $ir
             print "</tr>\n";
@@ -282,13 +294,28 @@ sub print_rail {
 } # print_rail
 #----------------
 sub cell_html { # print one table cell
-    my ($elem, $border) = @_;
-    my $rest = $elem % 6;
+    my ($elem, $border, $ir, $id) = @_;
+    my $rest = $elem % $incr6;
     my $result = "<td";
-    if ($rest == 4) {
-        $result .= " title=\"" . &get_kernel($elem) . "\"";
+    if ($rest == $start4) {
+        $result .= " title=\"$ir:" . &get_kernel($elem) . "\"";
     }
-    return $result . " class=\"d$rest$border\">$elem</td>";
+    if ($id ne "") { 
+        $result .= " id=\"$id\"";
+        # print STDERR "id2: $id\n";
+    }
+    $result .= " class=\"d$rest";
+    if ($border ne "") {
+        $result .= " $border";
+    }
+    $result .= "\">";
+    if ($ir == 1) { # start element
+        $result .= "\&nbsp;<a href=\"\#$elem\">$elem</a>\&nbsp;"; # to be able to search for " 84 "
+    } else {
+        $result .=                     "\&nbsp;$elem\&nbsp;";
+    }
+    $result .= "</td>";
+    return $result;
 } # cell_html
 #----------------
 sub print_html_head {
@@ -308,8 +335,16 @@ body,table,p,td,th
         { font-family: Verdana,Arial,sans-serif; }
 table   { border-collapse: collapse; }
 td      { padding-right: 4px; }
-tr,td,th
-        { text-align: right; }
+tr,td,th{ text-align: right; }
+/* from https://stackoverflow.com/questions/10732690/offsetting-an-html-anchor-to-adjust-for-fixed-header
+does not work
+.anchor   { 
+          display: block; position: relative;
+          top: -250px; visibility: hidden; }
+.anch { margin-top: -300px;        /* Size of fixed header */
+        padding-bottom: 300px; 
+        display: block;} 
+*/
 .arr    { background-color: white          ; color: black; }
 .arc    { background-color: white          ; color: black; text-align: center;      }
 .arl    { background-color: white          ; color: black; text-align: left;        }
@@ -337,10 +372,10 @@ sub print_table_head {
     return if $mode ne "html";
     print <<"GFis";
 <p>
-with numbers &#x2261; 
+tree root &lt;-&nbsp;&nbsp;&nbsp;numbers &#x2261;
 <span class="d0">0</span>, <span class="d1">1</span>,
 <span class="d2">2</span>, <span class="d3">3</span>,
-<span class="d4">4</span>, <span class="d5">5</span> mod 6
+<span class="d4">4</span>, <span class="d5">5</span> mod 6&nbsp;&nbsp;&nbsp;-&gt; infinity
 <br />
 </p>
 <table>
