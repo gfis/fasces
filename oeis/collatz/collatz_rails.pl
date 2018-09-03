@@ -273,14 +273,22 @@ sub print_rail {
             } # while $ir
             print "</tr>\n";
 
+			my $len = 0;
+			$ir = 5;
+            while ($ir < scalar(@rail)) { # length is number of highlighted elements >= [4]
+                if (      $rail[$ir    ] % $incr6 == $start4) {
+                	$len ++;
+                }
+                $ir ++;
+            } # while len
+            $len = ($len - 1) / 2;
             print "<tr>"
                 . "<td class=\"arl\">\&nbsp;</td>"
                 . "<td class=\"arr ker\">"
                 . &get_kernel($rail[1]) # $rail[1] #
                 . "\&gt;"
                 . &get_kernel($rail[5])
-                . "," . (scalar(@rail) / 2 - 4)
-                . "</td>";
+                . ",$len</td>";
             $ir = 2;
             while ($ir < scalar(@rail)) {
                 print &cell_html($rail[$ir], "bbr", $ir, "");
@@ -357,7 +365,10 @@ does not work
           border-right : 1px solid gray    ; border-bottom: 1px solid gray ; }
 .d0     { background-color: lemonchiffon   ; color: black;                   }
 .d1     { background-color: lavender       ; color: black;                   }
+/*
 .d2     { background-color: beige          ; color: black;                   }
+*/
+.d2     { background-color: white          ; color: gray ;                   }
 .d3     { background-color: lemonchiffon   ; color: gray;                    }
 .d4     { background-color: papayawhip     ; color: black;                   font-weight: bold; }
 .d5     { background-color: lavender       ; color: gray;                    }
@@ -413,7 +424,7 @@ tree root &lt;-&nbsp;&nbsp;&nbsp;numbers &#x2261;
 </tr>
 <tr>
 <td class="arc    "></td>
-<td class="arr ker">3.2.lk&gt;3.2.rk,len</td>
+<td class="arr ker"></td>
 <td class="arc bbr">d</td>
 <td class="arc bbr">m</td>
 <td class="arc bbr">m</td>

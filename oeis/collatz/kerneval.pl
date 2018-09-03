@@ -36,15 +36,19 @@ my $infile = shift(@ARGV);
 # perform one of the possible actions
 if (0) { # switch action
 } elsif ($action =~ m{simple}) { # straightforward incrementing of the start values
-    my $ikern = 5;
+    my $ikern = 1;
     while ($ikern < $maxn) {
         if ($ikern % 3 != 0) { # is 3-2-free
-            print "# --------\n";
+            print "# " . sprintf("%d", $ikern) . " --------\n";
             my @result = map {
-            	my @elems = split(/[\,\>]/, $_);
-            	$elems[0] = ($elems[0] + 2) / 6;
-            	sprintf("%8d %10s %4d", @elems)
-            	} split(/\r?\n/, `grep -E \"\\.$ikern,\" $infile`);
+                	my ($lkern, $rkern, $len) = split(/[\,\>]/, $_);
+                    my 
+                    @parts = split(/\./, $lkern);
+                    my $lknum = 3**$parts[0] * 2**$parts[1] * $parts[2];
+                    @parts = split(/\./, $rkern);
+                    my $rknum = 3**$parts[0] * 2**$parts[1] * $parts[2];
+	                sprintf("%10s =%7d %8s =%7d %2d", $lkern, $lknum, $rkern, $rknum, $len)
+                } split(/\r?\n/, `grep -E \"\\.$ikern,\" $infile`); # left kernel
             print join("\n", @result) . "\n";
         } # 3-2-free
         $ikern += 2;
