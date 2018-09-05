@@ -36,11 +36,6 @@ tract_4xm1:
 kernels:
 	lynx -dump rails.html | grep ">" | sed -e "s/^ *//" | cut -d " " -f 1 \
 	> kernels.tmp
-#	grep -e ",0" kernels.tmp
-kx:
-	grep -E "\.$(X)," kernels.tmp
-kr2:
-	cut -d ">" -f 2 kernels.tmp | cut -d "." -f 2 | uniq -c
 kerneval:
 	perl kerneval.pl -n 256 kernels.tmp | tee kerneval.tmp
 #------------------
