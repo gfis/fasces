@@ -4,16 +4,24 @@
 # @(#) $Id$
 # 2018-08-17, Georg Fischer 
 #---------------------------------
-N=3290
+N=10000
 K=64
 D=0
 S=4
 I=6
 M=html
 
-all: rails roads
+all: rails kernels kerneval eawefr
 rails: 
 	perl collatz_rails.pl   -n $(N)    -d $(D) -s $(S) -i $(I) -a simple > rails.html
+eawefr: west east free
+west: 
+	perl collatz_rails.pl   -n $(N)    -d $(D) -s $(S) -i $(I) -a west   > west.html
+east: 
+	perl collatz_rails.pl   -n $(N)    -d $(D) -s $(S) -i $(I) -a east   > east.html
+free: 
+	perl collatz_rails.pl   -n $(N)    -d $(D) -s $(S) -i $(I) -a free   > free.html
+
 roads: 
 	perl collatz_roads.pl   -n $(N)    -d $(D) -s $(S) -i $(I) -a contig > roads.html
 txt:
@@ -39,6 +47,9 @@ kernels:
 kerneval:
 	perl kerneval.pl -n 256 kernels.tmp | tee kerneval.tmp
 #------------------
+invar:
+	perl gen_invariants.pl | tee invariants.html
+#------------------
 graph:
 	perl collatz_graph.pl   -n $(N) > graph.html
 patt2:
@@ -47,7 +58,9 @@ patt6:
 	perl collatz_pattern.pl -n 4096    -s 4    -i 6    > patt6.html
 fractal:
 	perl collatz_pattern.pl -n 1000000 -s 3280 -i 4374 > fractal.html
-
+#------------------
+lengths:
+	grep -vE ",[0-5]" kernels.tmp
 #---------------------------------------------------------------
 nodes:
 	echo "364, 182, 91, 274, 137, 412, 206, 103, 310, 155, 466, 233, 700, 350, 175, 526, 263, 790, 395, 1186, 593, 1780, 890, 445, 1336, 668, 334, 167, 502, 251, 754, 377, 1132, 566, 283, 850, 425, 1276, 638, 319, 958, 479, 1438, 719, 2158, 1079, 3238, 1619, 4858, 2429, 7288, 3644, 1822, 911, 2734, 1367, 4102, 2051, 6154, 3077, 9232, 4616, 2308, 1154, 577, 1732, 866, 433, 1300, 650, 325, 976, 488, 244, 122, 61, 184, 92, 46, 23, 70, 35, 106, 53, 160, 80, 40, 20, 10, 5, 16, 8, 4, 2, 1]" > x.tmp

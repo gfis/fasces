@@ -174,7 +174,7 @@ GFis
         } elsif ($action =~ m{west}) {
             $ir = 0;
             while ($ir < scalar(@rail)) {
-            #   print "<td class=\"d4\">&nbsp;$rail[$ir    ]&nbsp;</td>";
+                print "<td class=\"d4\">&nbsp;$rail[$ir    ]&nbsp;</td>";
                 my $class = ($rail[$ir + 1] =~ m{\A0\.0\.}) ? "d5" : "";
                 print "<td class=\"$class\"  >&nbsp;$rail[$ir + 1]&nbsp;</td>"; # kernel
                 $ir += 2;
@@ -346,10 +346,16 @@ sub from_kernel { # for a kernel, return n
 sub go_west {
     # 82=7.1   -> 376=7.0:2, but for
     # 46=1.3   -> 160=1.0:3
-    my ($elem)  = @_;
-    my @kern    = split(/[\.\:]/, &to_kernel($elem));
-    $kern[1] = 0 if $kern[1] eq "";
-    # $kern[2] = 0 if scalar(@kern) == 2;
+    my ($elem) = @_;
+    my $ekern  = &to_kernel($elem);
+    $ekern     =~ m{\A(\d+)};
+    my @kern   = ($1, 0, 0); # 2-3-free, exp2, exp3
+    if ($ekern    =~ m{\.(\d+)}) {
+    	$kern[1]  = $1;
+    }
+    if ($ekern    =~ m{\:(\d+)}) {
+    	$kern[2]  = $1;
+    }
     $kern[2] = $kern[1];
     $kern[1] = 0;
     if (($kern[0] / 2) % 2 == $kern[2] % 2) {
@@ -440,7 +446,8 @@ sub cell_html { # print one table cell
     my $rest = $elem % $incr6;
     my $result = "<td";
     if ($rest == $start4) {
-        $result .= " title=\"$ir:" . &to_kernel($elem) . "\"";
+        # $result .= " title=\"$ir:" . &to_kernel($elem) . "\"";
+        $result .= " title=\"" . &to_kernel($elem) . "\"";
     }
     if ($id ne "") {
         $result .= " id=\"$id\"";
@@ -584,7 +591,6 @@ GFis
 sub print_html_tail {
     return if $mode ne "html";
     print <<"GFis";
-</table>
 </body>
 </html>
 GFis
