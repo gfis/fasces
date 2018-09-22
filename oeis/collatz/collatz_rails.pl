@@ -50,9 +50,13 @@ my $start  = $start4;
 my $incr   = $incr6;
 my $action = "simple";
 my %text   =
-    ( "simple",     "Directory"
-    , "contig",     "Tree"
-    , "west",       "Plan West"
+    ( "simple",     " Detailed Segment Directory"
+    , "comp",       " Compressed Segment Directory"
+    , "contig",     " Tree"
+    , "west",       "s (West)"
+    , "east",       "s (East)"
+    , "free",       "s (2-3-free)"
+    , "crop",       "s (Regional)"
     );
 my $mode   = "html";
 while (scalar(@ARGV) > 0 and ($ARGV[0] =~ m{\A\-})) {
@@ -98,6 +102,14 @@ if (0) { # switch action
     } # while $ffrail
     &print_rails();
 
+} elsif ($action =~ m{comp})   { # like "simple", but compressed segments
+    $ffrail = scalar(@rails); # (is asserted)
+    while ($ffrail < $maxn) {
+        @rails[$ffrail] = &build_rail($ffrail);
+        $ffrail += $incr6;
+    } # while $ffrail
+    &print_compressed();
+
 } elsif ($action =~ m{contig}) { # identify contiguous blocks of start values
     $ffrail = scalar(@rails); # (is asserted)
     @queue  = ($ffrail);
@@ -119,7 +131,7 @@ if (0) { # switch action
     } # while $selem
     &print_rails();
 
-} elsif ($action =~ m{west|east|free}) { # follow railways down to the capital
+} elsif ($action =~ m{west|east|free|crop}) { # follow railways down to the capital
     $ffrail = scalar(@rails); # (is asserted)
     while ($ffrail < $maxn) {
         @rails[$ffrail] = &build_west($ffrail);
@@ -152,58 +164,27 @@ sub print_rails {
         if (! defined($rails[$irail])) {
             $irail = $maxn; # break loop
         } else {
-            &print_rail($irail);
+            &print_1_rail($irail);
         }
         $irail += $incr;
     } # while $irail
     &print_rails_tail();
 } # print_rails
 #----------------
-sub print_west {
-    print <<"GFis";
-<table>
-GFis
+sub print_compressed {
+    # output the resulting array
+    &print_compressed_head();
     my $irail = $start;
     while ($irail < $maxn) {
-        my @rail  = split(/$sep/, $rails[$irail]);
-        print "<tr>"
-            . "<td class=\"\">&nbsp;" . (scalar(@rail) / 2) . "&nbsp;</td>"
-            . "<td class=\"\">&nbsp;" . $irail              . "&nbsp;</td>";
-        my $ir;
-        if (0) {
-        } elsif ($action =~ m{west}) {
-            $ir = 0;
-            while ($ir < scalar(@rail)) {
-                print "<td class=\"d4\">&nbsp;$rail[$ir    ]&nbsp;</td>";
-                my $class = ($rail[$ir + 1] =~ m{\A0\.0\.}) ? "d5" : "";
-                print "<td class=\"$class\"  >&nbsp;$rail[$ir + 1]&nbsp;</td>"; # kernel
-                $ir += 2;
-            } # while $ir
-        } elsif ($action =~ m{east}) {
-            $ir = scalar(@rail) - 2;
-            while ($ir >= 0) {
-            #   print "<td class=\"d4\">&nbsp;$rail[$ir    ]&nbsp;</td>";
-                my $class = ($rail[$ir + 1] =~ m{\.\Z}) ? "arl d5" : "arl";
-                print "<td class=\"$class\"  >&nbsp;$rail[$ir + 1]&nbsp;</td>"; # kernel
-                $ir -= 2;
-            } # while $ir
-        } elsif ($action =~ m{free}) {
-            $ir = scalar(@rail) - 2;
-            while ($ir >= 0) {
-            #   print "<td class=\"d4\">&nbsp;$rail[$ir    ]&nbsp;</td>";
-                if ($rail[$ir + 1] =~ m{\.\Z}) {
-                	print "<td class=\"arl d5\"  >&nbsp;$rail[$ir + 1]&nbsp;</td>"; # kernel
-                }
-                $ir -= 2;
-            } # while $ir
-        } # switch action
-        print "</tr>\n";
+        if (! defined($rails[$irail])) {
+            $irail = $maxn; # break loop
+        } else {
+            &print_1_compressed($irail);
+        }
         $irail += $incr;
     } # while $irail
-    print <<"GFis";
-</table>
-GFis
-} # print_west
+    &print_compressed_tail();
+} # print_compressed
 #----------------
 # termination
 if (0) {
@@ -321,15 +302,19 @@ sub to_kernel { # for n6-2, return the 2-3-free factor and the exponents for 2 a
             $num /= 2;
         } # while 2
         $result = $num;
-        if ($exp2 != 0) {
-            $result .= ".$exp2";
-        }
-        if ($exp3 != 0) {
-            $result .= ":$exp3";
-        }
-        if ($exp2 + $exp3 == 0) {
-            $result .= ".";
-        }
+        if (1) {
+                $result .= ".$exp2:$exp3";
+        } else { # no more
+            if ($exp2 != 0) {
+                $result .= ".$exp2";
+            }
+            if ($exp3 != 0) {
+                $result .= ":$exp3";
+            }
+            if ($exp2 + $exp3 == 0) {
+                $result .= ".";
+            }
+        } # no more
     }
     return $result;
 } # to_kernel
@@ -351,10 +336,10 @@ sub go_west {
     $ekern     =~ m{\A(\d+)};
     my @kern   = ($1, 0, 0); # 2-3-free, exp2, exp3
     if ($ekern    =~ m{\.(\d+)}) {
-    	$kern[1]  = $1;
+        $kern[1]  = $1;
     }
     if ($ekern    =~ m{\:(\d+)}) {
-    	$kern[2]  = $1;
+        $kern[2]  = $1;
     }
     $kern[2] = $kern[1];
     $kern[1] = 0;
@@ -372,7 +357,7 @@ sub enqueue { # queue the parameter
     }
 } # enqueue
 #----------------
-sub print_rail {
+sub print_1_rail {
     my ($index) = @_;
     if (! defined($rails[$index])) {
         $index = ($index + 2) / 6;
@@ -439,7 +424,128 @@ sub print_rail {
             print join($sep, @rail) . "\n";
         } # mode
     } # if defined
-} # print_rail
+} # print_1_rail
+#----------------
+sub print_1_compressed {
+    my ($index) = @_;
+    if (! defined($rails[$index])) {
+        $index = ($index + 2) / 6;
+        if (0) {
+        } elsif ($mode =~ m{html}) {
+            print "<tr><td class=\"arc\">$index</td></tr>\n";
+        } elsif ($mode =~ m{tsv} ) {
+            print "$index\n";
+        } # mode
+    } else {
+        my @rail  = split(/$sep/, $rails[$index]);
+        if ($debug >= 2) {
+            print "<!--print_rail: " . join(";", @rail) . "-->\n";
+        }
+        my $ir;
+        if (0) {
+        } elsif ($mode =~ m{html}) {
+            # print the upper path
+            $ir = 1;
+            print "<tr>"
+                . "<td class=\"arc    \">$rail[0]</td>"
+                . &cell_html(            $rail[1], "bor", $ir, "");
+            if (0) {
+            print &cell_html($rail[$ir], " btr", $ir, "");
+            }
+            $ir += 2;
+            while ($ir < scalar(@rail)) {
+                my $id = "";
+                if (      $rail[$ir    ] % $incr6 == $start4) {
+                    $id = $rail[$ir    ];
+                }
+                if ($ir > 5 and $rail[$ir - 1] % $incr6 == $start4) {
+                    $id = $rail[$ir - 1];
+                    # print STDERR "$id\n";
+                }
+                print &cell_html($rail[$ir], "btr", $ir, $id);
+                $ir += 2;
+            } # while $ir
+            print "</tr>\n";
+
+            my $len = 0;
+            $ir = 5;
+            while ($ir < scalar(@rail)) { # length is number of highlighted elements >= [4]
+                if (      $rail[$ir    ] % $incr6 == $start4) {
+                    $len ++;
+                }
+                $ir ++;
+            } # while len
+            $len = ($len - 1) / 2;
+            print "<tr>"
+                . "<td class=\"arl\">\&nbsp;</td>"
+                . "<td class=\"arr ker\">"
+                . &to_kernel($rail[1]) # $rail[1] #
+                . "\&gt;"
+                . &to_kernel($rail[5])
+                . ",$len</td>";
+            $ir = 2;
+            while ($ir < scalar(@rail)) {
+                print &cell_html($rail[$ir], "bbr", $ir, "");
+                $ir += 2;
+            } # while $ir
+            print "</tr>\n";
+        } elsif ($mode =~ m{tsv} ) {
+            print join($sep, @rail) . "\n";
+        } # mode
+    } # if defined
+} # print_1_compressed
+#----------------
+sub print_west {
+    print <<"GFis";
+<table>
+GFis
+    my $irail = $start;
+    while ($irail < $maxn) {
+        my @rail  = split(/$sep/, $rails[$irail]);
+        print "<tr>"
+            . "<td class=\"\">&nbsp;" . (scalar(@rail) / 2) . "&nbsp;</td>"
+            . "<td class=\"\">&nbsp;" . $irail              . "&nbsp;</td>";
+        my $ir;
+        if (0) {
+        } elsif ($action =~ m{west}) {
+            $ir = 0;
+            while ($ir < scalar(@rail)) {
+                print &cell_html($rail[$ir], "btr", $ir, $ir);
+                $ir += 2;
+            } # while $ir
+        } elsif ($action =~ m{east}) {
+            $ir = scalar(@rail) - 2;
+            while ($ir >= 0) {
+                print &cell_html($rail[$ir], "btr", $ir, $ir);
+                $ir -= 2;
+            } # while $ir
+        } elsif ($action =~ m{free}) {
+            $ir = scalar(@rail) - 2;
+            while ($ir >= 0) {
+            #   print "<td class=\"d4\">&nbsp;$rail[$ir    ]&nbsp;</td>";
+                if ($rail[$ir + 1] =~ m{\.\Z}) {
+                    print "<td class=\"arl d5\"  >&nbsp;$rail[$ir + 1]&nbsp;</td>"; # kernel
+                }
+                $ir -= 2;
+            } # while $ir
+        } elsif ($action =~ m{crop}) {
+            my $region = 728;
+            $ir = scalar(@rail) - 2;
+            while ($ir >= 0) {
+                if ($rail[$ir] <= $region) {
+                    print &cell_html($rail[$ir], "btr" 
+                    . ($rail[$ir] <= 80 ? " d5" : "") , $ir, $ir);
+                }
+                $ir -= 2; 
+            } # while $ir
+        } # switch action
+        print "</tr>\n";
+        $irail += $incr;
+    } # while $irail
+    print <<"GFis";
+</table>
+GFis
+} # print_west
 #----------------
 sub cell_html { # print one table cell
     my ($elem, $border, $ir, $id) = @_;
@@ -476,7 +582,7 @@ sub print_html_head {
 ]>
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-<title>3x+1 Railway $text{$action}</title>
+<title>3x+1 $text{$action}</title>
 <meta name="generator" content="https://github.com/gfis/fasces/blob/master/oeis/collatz/collatz_rails.pl" />
 <meta name="author"    content="Georg Fischer" />
 <style>
@@ -516,7 +622,7 @@ does not work
 </style>
 </head>
 <body>
-<h3>3x+1 Railway $text{$action}</h3>
+<h3>3x+1 $text{$action}</h3>
 GFis
 } # print_html_head
 #----------------
@@ -580,6 +686,66 @@ tree root &lt;-&nbsp;&nbsp;&nbsp;numbers &#x2261;
 GFis
 } # print_rails_head
 #----------------
+sub print_compressed_head {
+    return if $mode ne "html";
+    print <<"GFis";
+<p>
+tree root &lt;-&nbsp;&nbsp;&nbsp;numbers &#x2261;
+<span class="d0">0</span>, <span class="d1">1</span>,
+<span class="d2">2</span>, <span class="d3">3</span>,
+<span class="d4">4</span>, <span class="d5">5</span> mod 6&nbsp;&nbsp;&nbsp;-&gt; infinity
+<br />
+</p>
+<table>
+<tr>
+<td class="arc"> </td>
+<td class="arc">1</td>
+<td class="arc">2</td>
+<td class="arc">3</td>
+<td class="arc">4</td>
+<td class="arc">5</td>
+<td class="arc">6</td>
+<td class="arc">7</td>
+<td class="arc">8</td>
+<td class="arc">9</td>
+<td class="arc">10</td>
+<td class="arc">...</td>
+</tr>
+<!--
+# m m d m d m d m ...
+# d m m d m d m d ...
+-->
+<tr>
+<td class="arc    ">n</td>
+<td class="arr bor"><strong>6n&#8209;2</strong></td>
+<td class="arc btr">&micro;</td>
+<td class="arc btr">&micro;</td>
+<td class="arc btr">&delta;</td>
+<td class="arc btr">&micro;</td>
+<td class="arc btr">&delta;</td>
+<td class="arc btr">&micro;</td>
+<td class="arc btr">&delta;</td>
+<td class="arc btr">&micro;</td>
+<td class="arc btr">&delta;</td>
+<td class="arc    ">...</td>
+</tr>
+<tr>
+<td class="arc    "></td>
+<td class="arr ker"></td>
+<td class="arc bbr">&delta;</td>
+<td class="arc bbr">&micro;</td>
+<td class="arc bbr">&micro;</td>
+<td class="arc bbr">&delta;</td>
+<td class="arc bbr">&micro;</td>
+<td class="arc bbr">&delta;</td>
+<td class="arc bbr">&micro;</td>
+<td class="arc bbr">&delta;</td>
+<td class="arc bbr">&micro;</td>
+<td class="arc    ">...</td>
+</tr>
+GFis
+} # print_compressed_head
+#----------------
 sub print_rails_tail {
     return if $mode ne "html";
     print <<"GFis";
@@ -587,6 +753,10 @@ sub print_rails_tail {
 <p>End of directory</p>
 GFis
 } # print_rails_tail
+#----------------
+sub print_compressed_tail {
+    &print_rails_tail();    
+} # print_compressed_tail
 #----------------
 sub print_html_tail {
     return if $mode ne "html";
@@ -596,29 +766,30 @@ sub print_html_tail {
 GFis
 } # print_html_tail
 #================================
-__DATA__
-<!--build_west1: 82-->
-<!--build_west2: 82     7.1-->
-<!--build_west2: 94     1.4-->
-<!--build_west2: 364    61.-->
-<!--build_west2: 274    23.1-->
-<!--build_west2: 310    13.2-->
-<!--build_west2: 526    11.3-->
-<!--build_west2: 1336   223.-->
-<!--build_west2: 334    7.3-->
-<!--build_west2: 850    71.1-->
-<!--build_west2: 958    5.5-->
-<!--build_west2: 1822   19.4-->
-<!--build_west2: 2308   385.-->
-<!--build_west2: 1732   289.-->
-<!--build_west2: 1300   217.-->
-<!--build_west2: 976    163.-->
-<!--build_west2: 244    41.-->
-<!--build_west2: 184    31.-->
-<!--build_west2: 46     1.3-->
-<!--build_west2: 40     7.-->
-<!--build_west2: 10     1.1-->
-<!--build_west2: 4      1.-->
+__DATA__            
+                 left    kern  col
+<!--build_west1: 82              5-->
+<!--build_west2: 82        7.1   5-->
+<!--build_west2: 94        1.4  11-->
+<!--build_west2: 364      61.0   3-->
+<!--build_west2: 274      23.1   5-->
+<!--build_west2: 310      13.2   7-->
+<!--build_west2: 526      11.3   9-->
+<!--build_west2: 1336    223.0   2-->
+<!--build_west2: 334       7.3   9-->
+<!--build_west2: 850      71.1   5-->
+<!--build_west2: 958       5.5  12-->
+<!--build_west2: 1822     19.4  10-->
+<!--build_west2: 2308    385.0   3-->
+<!--build_west2: 1732    289.0   3-->
+<!--build_west2: 1300    217.0   3-->
+<!--build_west2: 976     163.0   2-->
+<!--build_west2: 244      41.0   3-->
+<!--build_west2: 184      31.0   2-->
+<!--build_west2: 46        1.3   8-->
+<!--build_west2: 40        7.0   2-->
+<!--build_west2: 10        1.1   4-->
+<!--build_west2: 4         1.0  -->
 
 <!--build_west1: 88-->
 <!--build_west2: 88     5:1-->
@@ -630,26 +801,47 @@ __DATA__
 # Railways to capital (-a long)
 #   col1                col3n
 #i  a[i]    kern(a[i])  4a[i+1] kern(4a[i+1])  len
-1   82      0.1.7   ->  376     2.0.7           2   /4 ->
-2   94      0.4.1   ->  1456    5.0.1           5   /4 ->
-3   364     0.0.61  ->  1096    1.0.61          1   /4 ->
-4   274     0.1.23  ->  1240    2.0.23          2   /4 ->
-5   310     0.2.13  ->  2104    3.0.13          3   /4 ->
-6   526     0.3.11  ->  5344    4.0.11          4   /4 ->
-7   1336    0.0.223 ->  1336    0.0.223         0   /4 ->   =
-8   334     0.3.7   ->  3400    4.0.7           4   /4 ->
-9   850     0.1.71  ->  3832    2.0.71          2   /4 ->
-10  958     0.5.5   ->  7288    5.0.5           5   /4 ->   *
-11  1822    0.4.19  ->  9232    4.0.19          4   /4 ->   *
-12  2308    0.0.385 ->  6928    1.0.385         1   /4 ->
-13  1732    0.0.289 ->  5200    1.0.289         1   /4 ->
-14  1300    0.0.217 ->  3904    1.0.217         1   /4 ->
-15  976     0.0.163 ->  976     0.0.163         0   /4 ->   =
-16  244     0.0.41  ->  736     1.0.41          1   /4 ->
-17  184     0.0.31  ->  184     0.0.31          0   /4 ->   =
-18  46      0.3.1   ->  160     3.0.1           3   /4 ->   *
-19  40      0.0.7   ->  40      0.0.7           0   /4 ->   =
-20  10      0.1.1   ->  16      1.0.1           1   /4 ->   *
-21  4       0.0.1   ->  4       0.0.1           0   /4 ->   =
+1   82      7  .1     ->  376     7  :2        2   /4 ->
+2   94      1  .4     ->  1456    1  :5        5   /4 ->
+3   364     61 .0     ->  1096    61 :1        1   /4 ->
+4   274     23 .1     ->  1240    23 :2        2   /4 ->
+5   310     13 .2     ->  2104    13 :3        3   /4 ->
+6   526     11 .3     ->  5344    11 :4        4   /4 ->
+7   1336    223.0     ->  1336    223:0        0   /4 ->   =
+8   334     7  .3     ->  3400    7  :4        4   /4 ->
+9   850     71 .1     ->  3832    71 :2        2   /4 ->
+10  958     5  .5     ->  7288    5  :5        5   /4 ->   *
+11  1822    19 .4     ->  9232    19 :4        4   /4 ->   *
+12  2308    385.0     ->  6928    385:1        1   /4 ->
+13  1732    289.0     ->  5200    289:1        1   /4 ->
+14  1300    217.0     ->  3904    217:1        1   /4 ->
+15  976     163.0     ->  976     163:0        0   /4 ->   =
+16  244     41 .0     ->  736     41 :1        1   /4 ->
+17  184     31 .0     ->  184     31 :0        0   /4 ->   =
+18  46      1  .3     ->  160     1  :3        3   /4 ->   *
+19  40      7  .0     ->  40      7  :0        0   /4 ->   =
+20  10      1  .1     ->  16      1  :1        1   /4 ->   *
+21  4       1  .0     ->  4       1  :0        0   /4 ->   =
 # "*" if 4a[i+1] occurs in column 3 south, i.e.
 # (4a[i+1]-1) / 3 * 2 = a[i]
+#-----------------------------------------------
+[1] = 6n-2;         d6, s4      ; start
+[2b] = 2n-1;        d2, s1      ; all odd
+[2a] = [1]*2;       d12, s8     
+[3a] = [1]*4;       d24, s16    ; *
+[3b] = [2b]*2;      d4, s2
+[4a] = ([3a]-1)/3;  d8, s5
+[4b] = [3b]*2;      d8, s4
+
+[3b]                d12, s10    ; 10,22 mod 24
+#-----------------------------------------------
+bold only
+[3a] = [1]*4;       d24, s16    ; 16,40 mod 48
+[4b]                d24, s4     ; 4,28  mod 48
+[5a]        ;       d48, s10    ; 10    mod 48
+[6b]        ;       d48, s34    ; 34    mod 48 missing: 22,46
+[7a]                d96, s70    
+[8b]                d192, s22
+[9a]                d384, s46
+
+

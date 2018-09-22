@@ -21,6 +21,8 @@ east:
 	perl collatz_rails.pl   -n $(N)    -d $(D) -s $(S) -i $(I) -a east   > east.html
 free: 
 	perl collatz_rails.pl   -n $(N)    -d $(D) -s $(S) -i $(I) -a free   > free.html
+crop: 
+	perl collatz_rails.pl   -n $(N)    -d $(D) -s $(S) -i $(I) -a crop   > crop.html
 
 roads: 
 	perl collatz_roads.pl   -n $(N)    -d $(D) -s $(S) -i $(I) -a contig > roads.html
