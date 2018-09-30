@@ -50,8 +50,8 @@ my $start  = $start4;
 my $incr   = $incr6;
 my $action = "simple";
 my %text   =
-    ( "simple",     " Detailed Segment Directory"
-    , "comp",       " Compressed Segment Directory"
+    ( "simple",     " Detailed Segment Directory D"
+    , "comp",       " Compressed Segment Directory C"
     , "contig",     " Tree"
     , "west",       "s (West)"
     , "east",       "s (East)"
@@ -196,8 +196,7 @@ if (0) {
 #================================
 sub build_rail { # build and return a single rail starting with $selem
     my ($selem) = @_;
-    my @elem    = ($selem, $selem);
-            # 2 parallel lanes: $elem[0] (upper, left), $elem[1] (lower, right)
+    my @elem    = ($selem, $selem); # 2 parallel tracks: $elem[0] (upper, left), $elem[1] (lower, right)
     my $len     = 0;
     my @result  = (($selem + 2) / 6, $selem); # (n, 6*n-2)
     my $state   = "step0";
@@ -213,7 +212,7 @@ sub build_rail { # build and return a single rail starting with $selem
             $elem[1] = $elem[1] * 2;
             $state = "md"; # enter the alternating sequence of steps: md, dm, md, dm ...
         } elsif ($state eq "md") {
-            if (         ($elem[1] - 1) % 3 == 0) {
+            if (           ($elem[1] - 1) % 3 == 0) {
                 $elem[1] = ($elem[1] - 1) / 3;
                 $elem[0] =  $elem[0] * 2;
                 $state = "dm";
@@ -225,7 +224,7 @@ sub build_rail { # build and return a single rail starting with $selem
                 $state = " 1assert3";
             }
         } elsif ($state eq "dm") {
-            if (         ($elem[0] - 1) % 3 == 0) {
+            if (           ($elem[0] - 1) % 3 == 0) {
                 $elem[0] = ($elem[0] - 1) / 3;
                 $elem[1] =  $elem[1] * 2;
                 $state = "md";
@@ -369,54 +368,52 @@ sub print_1_rail {
         } # mode
     } else {
         my @rail  = split(/$sep/, $rails[$index]);
-        if ($debug >= 2) {
-            print "<!--print_rail: " . join(";", @rail) . "-->\n";
-        }
         my $ir;
         if (0) {
         } elsif ($mode =~ m{html}) {
-            # print the upper path
+            # print the northern track
             $ir = 1;
             print "<tr>"
                 . "<td class=\"arc    \">$rail[0]</td>"
                 . &cell_html(            $rail[1], "bor", $ir, "");
-            if (0) {
-            print &cell_html($rail[$ir], " btr", $ir, "");
-            }
             $ir += 2;
+            my $bold;
             while ($ir < scalar(@rail)) {
                 my $id = "";
+            	$bold = "";
                 if (      $rail[$ir    ] % $incr6 == $start4) {
                     $id = $rail[$ir    ];
+                	if ($ir % 4 == 1) {
+                		$bold = " seg";
+                	}
                 }
                 if ($ir > 5 and $rail[$ir - 1] % $incr6 == $start4) {
                     $id = $rail[$ir - 1];
-                    # print STDERR "$id\n";
                 }
-                print &cell_html($rail[$ir], "btr", $ir, $id);
+   	            if ($ir <= 3) {
+  	            	$bold = " sei";
+   	            }
+                print &cell_html($rail[$ir], "btr$bold", $ir, $id);
                 $ir += 2;
             } # while $ir
             print "</tr>\n";
-
-            my $len = 0;
-            $ir = 5;
-            while ($ir < scalar(@rail)) { # length is number of highlighted elements >= [4]
-                if (      $rail[$ir    ] % $incr6 == $start4) {
-                    $len ++;
-                }
-                $ir ++;
-            } # while len
-            $len = ($len - 1) / 2;
+            
+            # print the southern track
             print "<tr>"
-                . "<td class=\"arl\">\&nbsp;</td>"
-                . "<td class=\"arr ker\">"
-                . &to_kernel($rail[1]) # $rail[1] #
-                . "\&gt;"
-                . &to_kernel($rail[5])
-                . ",$len</td>";
+                . "<td class=\"arl\">\&nbsp;</td>";
+            print "<td class=\"arr\">\&nbsp;</td>";
             $ir = 2;
             while ($ir < scalar(@rail)) {
-                print &cell_html($rail[$ir], "bbr", $ir, "");
+            	$bold = "";
+            	if ($rail[$ir] % $incr6 == $start4) {
+	                if ($ir % 4 == 2 and $ir > 5) {
+    	            	$bold = " seg";
+    	            }
+                }
+   	            if ($ir <= 5) {
+   	            	$bold = " sei";
+   	            }
+                print &cell_html($rail[$ir], "bbr$bold", $ir, "");
                 $ir += 2;
             } # while $ir
             print "</tr>\n";
@@ -444,49 +441,20 @@ sub print_1_compressed {
         my $ir;
         if (0) {
         } elsif ($mode =~ m{html}) {
-            # print the upper path
             $ir = 1;
             print "<tr>"
                 . "<td class=\"arc    \">$rail[0]</td>"
-                . &cell_html(            $rail[1], "bor", $ir, "");
-            if (0) {
-            print &cell_html($rail[$ir], " btr", $ir, "");
-            }
-            $ir += 2;
+                . &cell_html(            $rail[$ir], "bor", $ir, "");
+            $ir += 4;
+            my $step = 1;
             while ($ir < scalar(@rail)) {
                 my $id = "";
                 if (      $rail[$ir    ] % $incr6 == $start4) {
                     $id = $rail[$ir    ];
+                    print &cell_html($rail[$ir], "bor seg", $ir, $id);
                 }
-                if ($ir > 5 and $rail[$ir - 1] % $incr6 == $start4) {
-                    $id = $rail[$ir - 1];
-                    # print STDERR "$id\n";
-                }
-                print &cell_html($rail[$ir], "btr", $ir, $id);
-                $ir += 2;
-            } # while $ir
-            print "</tr>\n";
-
-            my $len = 0;
-            $ir = 5;
-            while ($ir < scalar(@rail)) { # length is number of highlighted elements >= [4]
-                if (      $rail[$ir    ] % $incr6 == $start4) {
-                    $len ++;
-                }
-                $ir ++;
-            } # while len
-            $len = ($len - 1) / 2;
-            print "<tr>"
-                . "<td class=\"arl\">\&nbsp;</td>"
-                . "<td class=\"arr ker\">"
-                . &to_kernel($rail[1]) # $rail[1] #
-                . "\&gt;"
-                . &to_kernel($rail[5])
-                . ",$len</td>";
-            $ir = 2;
-            while ($ir < scalar(@rail)) {
-                print &cell_html($rail[$ir], "bbr", $ir, "");
-                $ir += 2;
+                $ir += $step;
+                $step = $step == 1 ? 3 : 1;
             } # while $ir
             print "</tr>\n";
         } elsif ($mode =~ m{tsv} ) {
@@ -617,8 +585,10 @@ does not work
 */
 .d2     { background-color: white          ; color: gray ;                   }
 .d3     { background-color: lemonchiffon   ; color: gray;                    }
-.d4     { background-color: papayawhip     ; color: black;                   font-weight: bold; }
+.d4     { background-color: papayawhip     ; color: black;                   }
 .d5     { background-color: lavender       ; color: gray;                    }
+.seg    { font-weight: bold; }
+.sei    { font-weight: bold; font-style    : italic; }
 </style>
 </head>
 <body>
@@ -628,18 +598,13 @@ GFis
 #----------------
 sub print_rails_head {
     return if $mode ne "html";
+    &print_preface();
     print <<"GFis";
-<p>
-tree root &lt;-&nbsp;&nbsp;&nbsp;numbers &#x2261;
-<span class="d0">0</span>, <span class="d1">1</span>,
-<span class="d2">2</span>, <span class="d3">3</span>,
-<span class="d4">4</span>, <span class="d5">5</span> mod 6&nbsp;&nbsp;&nbsp;-&gt; infinity
-<br />
-</p>
 <table>
 <tr>
 <td class="arc"> </td>
 <td class="arc">1</td>
+<td class="arc"> </td>
 <td class="arc">2</td>
 <td class="arc">3</td>
 <td class="arc">4</td>
@@ -648,54 +613,74 @@ tree root &lt;-&nbsp;&nbsp;&nbsp;numbers &#x2261;
 <td class="arc">7</td>
 <td class="arc">8</td>
 <td class="arc">9</td>
-<td class="arc">10</td>
 <td class="arc">...</td>
+<td class="arc">2*j</td>
+<td class="arc">2*j+1</td>
 </tr>
 <!--
 # m m d m d m d m ...
 # d m m d m d m d ...
 -->
 <tr>
-<td class="arc    ">n</td>
-<td class="arr bor"><strong>6n&#8209;2</strong></td>
-<td class="arc btr">&micro;</td>
-<td class="arc btr">&micro;</td>
-<td class="arc btr">&delta;</td>
-<td class="arc btr">&micro;</td>
-<td class="arc btr">&delta;</td>
-<td class="arc btr">&micro;</td>
-<td class="arc btr">&delta;</td>
-<td class="arc btr">&micro;</td>
-<td class="arc btr">&delta;</td>
-<td class="arc    ">...</td>
-</tr>
-<tr>
-<td class="arc    "></td>
-<td class="arr ker"></td>
-<td class="arc bbr">&delta;</td>
-<td class="arc bbr">&micro;</td>
-<td class="arc bbr">&micro;</td>
-<td class="arc bbr">&delta;</td>
-<td class="arc bbr">&micro;</td>
-<td class="arc bbr">&delta;</td>
-<td class="arc bbr">&micro;</td>
-<td class="arc bbr">&delta;</td>
-<td class="arc bbr">&micro;</td>
-<td class="arc    ">...</td>
+<td class="arc        ">i</td>
+<td class="arr bor    ">6*i&#8209;2</td>
+<td class="arc btr    ">&micro;</td>
+<td class="arc btr seg">&micro;&micro;</td>
+<td class="arc btr    ">&micro;&micro;&delta;</td>
+<td class="arc btr seg">&micro;&micro;&sigma;</td>
+<td class="arc btr    ">&micro;&micro;&sigma;&delta;</td>
+<td class="arc btr seg">&micro;&micro;&sigma;<sup>2</sup></td>
+<td class="arc btr    ">&micro;&micro;&sigma;<sup>2</sup>&delta;</td>
+<td class="arc btr seg">&micro;&micro;&sigma;<sup>3</sup></td>
+<td class="arc btr    ">&micro;&micro;&sigma;<sup>3</sup>&delta;</td>
+<td class="arc        ">...</td>
+<td class="arc btr seg">&micro;&micro;&sigma;<sup>j-1</sup></td>
+<td class="arc btr    ">&micro;&micro;&sigma;<sup>j-1</sup>&delta;</td>
+</tr>                 
+<tr>                  
+<td class="arc        ">&nbsp;</td>
+<td class="arr        ">&nbsp;</td>
+<td class="arc bbr    ">&delta;</td>
+<td class="arc bbr    ">&delta;&micro;</td>
+<td class="arc bbr seg">&delta;&micro;&micro;</td>
+<td class="arc bbr    ">&delta;&micro;&micro;&delta;</td>
+<td class="arc bbr seg">&delta;&micro;&micro;&sigma;</td>
+<td class="arc bbr    ">&delta;&micro;&micro;&sigma;&delta;</td>
+<td class="arc bbr seg">&delta;&micro;&micro;&sigma;<sup>2</sup></td>
+<td class="arc bbr    ">&delta;&micro;&micro;&sigma;<sup>2</sup>&delta;</td>
+<td class="arc bbr seg">&delta;&micro;&micro;&sigma;<sup>3</sup></td>
+<td class="arc        ">...</td>
+<td class="arc bbr    ">&delta;&micro;&micro;&sigma;<sup>j-2</sup>&delta;</td>
+<td class="arc bbr seg">&delta;&micro;&micro;&sigma;<sup>j-1</sup></td>
 </tr>
 GFis
 } # print_rails_head
 #----------------
-sub print_compressed_head {
-    return if $mode ne "html";
+sub print_preface {
     print <<"GFis";
 <p>
-tree root &lt;-&nbsp;&nbsp;&nbsp;numbers &#x2261;
+root &lt;-&nbsp;&nbsp;&nbsp;numbers &#x2261;
 <span class="d0">0</span>, <span class="d1">1</span>,
 <span class="d2">2</span>, <span class="d3">3</span>,
-<span class="d4">4</span>, <span class="d5">5</span> mod 6&nbsp;&nbsp;&nbsp;-&gt; infinity
+<span class="d4">4</span>, <span class="d5">5</span> mod 6&nbsp;&nbsp;&nbsp;-&gt; &#x221e;
 <br />
+<span class="sei">inserted</span> <span class="seg">tree</span> nodes
+<br />
+variable segments: 
+<a href="#16">4</a>,
+<a href="#160">40</a>,
+<a href="#1456">364</a>,
+<a href="#13120">3280</a>,
+<a href="#118096">29524</a> 
+(OEIS <a href="http://oeis.org/A191681">A191681</a>)
 </p>
+GFis
+} # print_preface
+#----------------
+sub print_compressed_head {
+    return if $mode ne "html";
+    &print_preface();
+    print <<"GFis";
 <table>
 <tr>
 <td class="arc"> </td>
@@ -709,39 +694,31 @@ tree root &lt;-&nbsp;&nbsp;&nbsp;numbers &#x2261;
 <td class="arc">8</td>
 <td class="arc">9</td>
 <td class="arc">10</td>
+<td class="arc">11</td>
 <td class="arc">...</td>
+<td class="arc">2*j</td>
+<td class="arc">2*j+1</td>
 </tr>
 <!--
 # m m d m d m d m ...
 # d m m d m d m d ...
 -->
 <tr>
-<td class="arc    ">n</td>
-<td class="arr bor"><strong>6n&#8209;2</strong></td>
-<td class="arc btr">&micro;</td>
-<td class="arc btr">&micro;</td>
-<td class="arc btr">&delta;</td>
-<td class="arc btr">&micro;</td>
-<td class="arc btr">&delta;</td>
-<td class="arc btr">&micro;</td>
-<td class="arc btr">&delta;</td>
-<td class="arc btr">&micro;</td>
-<td class="arc btr">&delta;</td>
-<td class="arc    ">...</td>
-</tr>
-<tr>
-<td class="arc    "></td>
-<td class="arr ker"></td>
-<td class="arc bbr">&delta;</td>
-<td class="arc bbr">&micro;</td>
-<td class="arc bbr">&micro;</td>
-<td class="arc bbr">&delta;</td>
-<td class="arc bbr">&micro;</td>
-<td class="arc bbr">&delta;</td>
-<td class="arc bbr">&micro;</td>
-<td class="arc bbr">&delta;</td>
-<td class="arc bbr">&micro;</td>
-<td class="arc    ">...</td>
+<td class="arc bor    ">i</td>
+<td class="arr bor    ">6*i&#8209;2</td>
+<td class="arc bor    ">&micro;&micro;</td>
+<td class="arc bor    ">&delta;&micro;&micro;</td>
+<td class="arc bor    ">&micro;&micro;&sigma;</td>
+<td class="arc bor    ">&delta;&micro;&micro;&sigma;</td>
+<td class="arc bor    ">&micro;&micro;&sigma;&sigma;</td>
+<td class="arc bor    ">&delta;&micro;&micro;&sigma;&sigma;</td>
+<td class="arc bor    ">&micro;&micro;&sigma;<sup>3</sup></td>
+<td class="arc bor    ">&delta;&micro;&micro;&sigma;<sup>3</sup></td>
+<td class="arc bor    ">&micro;&micro;&sigma;<sup>4</sup></td>
+<td class="arc bor    ">&delta;&micro;&micro;&sigma;<sup>4</sup></td>
+<td class="arc        ">...</td>
+<td class="arc bor    ">&micro;&micro;&sigma;<sup>j-1</sup></td>
+<td class="arc bor    ">&delta;&micro;&micro;&sigma;<sup>j-1</sup></td>
 </tr>
 GFis
 } # print_compressed_head

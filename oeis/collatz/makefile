@@ -4,12 +4,13 @@
 # @(#) $Id$
 # 2018-08-17, Georg Fischer 
 #---------------------------------
-N=10000
+N=30000
 K=64
 D=0
 S=4
 I=6
 M=html
+SRC=comp.html
 
 all: rails kernels kerneval eawefr
 rails: 
@@ -21,9 +22,12 @@ east:
 	perl collatz_rails.pl   -n $(N)    -d $(D) -s $(S) -i $(I) -a east   > east.html
 free: 
 	perl collatz_rails.pl   -n $(N)    -d $(D) -s $(S) -i $(I) -a free   > free.html
+comp: 
+	perl collatz_rails.pl   -n $(N)    -d $(D) -s $(S) -i $(I) -a comp   > comp.html
 crop: 
 	perl collatz_rails.pl   -n $(N)    -d $(D) -s $(S) -i $(I) -a crop   > crop.html
-
+upload:
+	scp $(SRC) gfis@punctum.com:/var/www/html/teherba.org/fasces/oeis/collatz/
 roads: 
 	perl collatz_roads.pl   -n $(N)    -d $(D) -s $(S) -i $(I) -a contig > roads.html
 txt:
