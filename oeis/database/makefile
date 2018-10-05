@@ -6,13 +6,9 @@
 #---------------------------------
 H=4
 MIN=0
-MAX=10000
+MAX=500
 
-all: s8 
-s8:
-	perl higher.pl -h $(H) stripped | sort > s8.tmp
-sub8:
-	perl subseq.pl             s8.tmp > s8.htm
+all: sim2
 sim1:
 	perl similiar_sequences.pl -h $(H) < stripped | sort    > stripsort.tmp
 sim2:
