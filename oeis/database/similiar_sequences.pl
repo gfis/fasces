@@ -1,15 +1,43 @@
 #!perl
 
-# Remove all lower values from stripped
+# Detect similiar OEIS sequences
 # @(#) $Id$
+# 2018-10-05: reads &fmt=text
 # 2018-10-04: copied from subseq.pl
 # 2018-10-01, Georg Fischer 
+#
+# usage:
+#   (1) perl similiar_sequences.pl [-d 0] -h 4 -l 6 < stripped | sort > stripsort.tmp
+#   (2) perl similiar_sequences.pl [-d 0] [-min 0] [-max 999999] -p 2 [-s 4] < stripsort.tmp
+#       -d      debug level, 0 (none), 1 (some), 2 (more)
+#       -h      minimum sequence value where comparision starts 
+#       -l      minimum length for both sequences
+#       -min    minimal sequence number 
+#       -max    maximal sequence number 
+#       -p      there must be values >= 10**p in both sequences to be compared
+#       -s      sleep so many seconds before each wget request 
+#
+# file usage:
+#   <  stripsort        sequence values sorted by subsequence starting with value >= h
+#   <  names            sequence names (titles)
+#   <> ../store         directory for locally saved A*.text and b*.txt files
+#   >  Amin-Amax.html   resulting output
 #---------------------------------
 use strict;
 use integer;
-my $higher = 8;
-my $debug = 0;
+my ($sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst) = localtime (time);
+my $timestamp = sprintf ("%04d-%02d-%02d %02d:%02d:%02d"
+        , $year + 1900, $mon + 1, $mday, $hour, $min, $sec);
 
+# get options
+my $action = 2; # 1 = preprocess for sort, 2 = write HTML list
+my $debug  = 0; # 0 (none), 1 (some), 2 (more)
+my $higher = 4; # minimum sequence value where comparision starts 
+my $minlen = 6; # minimum length for both sequences
+my $minseq = 0;
+my $maxseq = 999999; # all
+my $pow10  = 2; # there must be values >= 10**p in both sequences to be compared
+my $sleep  = 4; # sleep 4 s before all wget requests
 while (scalar(@ARGV) > 0 and ($ARGV[0] =~ m{\A\-})) {
     my $opt = shift(@ARGV);
     if (0) {
@@ -17,31 +45,67 @@ while (scalar(@ARGV) > 0 and ($ARGV[0] =~ m{\A\-})) {
         $debug  = shift(@ARGV);
     } elsif ($opt =~ m{h}) {
         $higher = shift(@ARGV);
+        $action = 1;
+    } elsif ($opt =~ m{l}) {
+        $minlen = shift(@ARGV);
+    } elsif ($opt =~ m{min}) {
+        $minseq = shift(@ARGV);
+    } elsif ($opt =~ m{max}) {
+        $maxseq = shift(@ARGV);
+    } elsif ($opt =~ m{p}) {
+        $pow10  = shift(@ARGV);
+        $action = 2;
+    } elsif ($opt =~ m{s}) {
+        $sleep  = shift(@ARGV);
     } else {
         die "invalid option \"$opt\"\n";
     }
 } # while ARGV
-my ($sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst) 
-        = localtime (time);
-my $timestamp = sprintf ("%04d-%02d-%02d %02d:%02d:%02d"
-        , $year + 1900, $mon + 1, $mday, $hour, $min, $sec);
 
-# read names
+#----------------------------------------------
+# perform one of the actions
+if ($action == 1) { # preprocess for sort
+    # read file "stripped"
+    open(SIP, "<", "stripped") || die "cannot read file \"stripped\"\n";
+    while (<SIP>) {
+        next if m{\A\s*\#};
+        s/\s+\Z//; # chompr
+        my ($seqno, $list) = split(/\s+\,/);
+        my @sequence = split(/\,/, $list);
+        my $ind = 0;
+        while ($ind < scalar(@sequence) and $sequence[$ind] < $higher) { # start point
+            $ind ++;
+        } # while $ind
+        if (scalar(@sequence) - $ind >= $minlen) { # long enough
+            print join(" ", splice(@sequence, $ind)) 
+                . "\t" . join(" ", splice(@sequence, 0, $ind)) 
+                . "\t$seqno\n";
+        } # long enough
+    } # while <>
+    close(SIP);
+    exit(0); # skip the rest
+} # action 1
+#----------------------------------------------
+# else action == 2
+# read file "names"
 my @names;
-my $seqno;
-open(NAM, "<", "names") || die "cannot read \"names\" file\n";
+my $seqno; # is printed behind the loop
+open(NAM, "<", "names") || die "cannot read file \"names\"\n";
 while (<NAM>) {
-	s/\s+\Z//; # chompr
-	next if m{\A\s*\#}; # skip comments
-	my $line = $_;
-	$line =~ m{\A(\w)(\d+)\s+(.*)};
-	$seqno = $2;
-	$names[$seqno] = $3;
+    s/\s+\Z//; # chompr
+    next if m{\A\s*\#}; # skip comments
+    my $line = $_;
+    $line =~ m{\A(\w)(\d+)\s+(.*)};
+    $seqno = $2;
+    $names[$seqno] = $3;
 } # while NAM
 close(NAM);
-print STDERR "$seqno sequences read\n";
-        
-print <<"GFis";
+print STDERR "$seqno sequence names read\n";
+
+# print HTML header
+open(HTM, ">", sprintf("A%06d-A%06d.html", $minseq, $maxseq)) 
+    or die "cannot write HTML file\n";        
+print HTM <<"GFis";
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd" [
@@ -59,19 +123,20 @@ td      { padding-right: 4px; }
 tr,td,th{ text-align: left; vertical-align:top; }
 .arr    { background-color: white          ; color: black; }
 .bor    { border-left  : 1px solid gray    ; border-top   : 1px solid gray ;
-.seg    { font-weight: bold; }
-.sei    { font-weight: bold; font-style    : italic; }
 </style>
 </head>
 <body>
 <h2>Similiar OEIS Sequences</h2>
 <p>
-Generated by <a href="https://github.com/gfis/fasces/blob/master/oeis/database/similiar_sequences.pl">oeis/database/similiar_sequences.pl</a>  $timestamp.<br />
-Questions: email OEIS user <a href="mailto:dr.georg.fischer\@gmail.com">Georg Fischer</a>
+Generated by <a href="https://github.com/gfis/fasces/blob/master/oeis/database/similiar_sequences.pl"
+ target="_new">oeis/database/similiar_sequences.pl</a>  $timestamp.<br />
+Questions: email <a href="https://oeis.org/wiki/User:Georg_Fischer" target="_new">OEIS user</a> 
+<a href="mailto:dr.georg.fischer\@gmail.com">Georg Fischer</a>
 </p>
 <table>
 GFis
 
+# process file stripsort
 my ($omid, $oleft, $oseqno) = ("", "", "Axxxxxx");
 my $count = 0;
 while (<>) {
@@ -86,12 +151,12 @@ while (<>) {
     } # if substring
     ($omid, $oleft, $oseqno) = ($nmid, $nleft, $nseqno);
 } # while <>
-($sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst) 
-        = localtime (time);
+
+# print HTML trailer
+($sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst) = localtime (time);
 $timestamp = sprintf ("%04d-%02d-%02d %02d:%02d:%02d"
         , $year + 1900, $mon + 1, $mday, $hour, $min, $sec);
-
-print <<"GFis";
+print HTM <<"GFis";
 <tr><td class="bor">
 $count pairs - $timestamp
     </td></tr> 
@@ -99,12 +164,18 @@ $count pairs - $timestamp
 </body>
 </html>
 GFis
+close(HTM);
+
+# end main
 #-------------------
 sub check {
-        my ($omid, $oleft, $oseqno, $nmid, $nleft, $nseqno) = @_;
-        if (!(($omid  !~ m{\d\d\d}                ) and ($nmid  !~ m{\d\d\d}                ))) {
-        my $oname = $names[substr($oseqno, 1)];
-        my $nname = $names[substr($nseqno, 1)];
+    my ($omid, $oleft, $oseqno, $nmid, $nleft, $nseqno) = @_;
+    my $ono   = substr($oseqno, 1) + 0;
+    my $nno   = substr($nseqno, 1) + 0;
+    if ($nno >= $minseq and $nno <= $maxseq) {
+        if (!(($omid  !~ m{\d{$pow10}}o           ) and ($nmid  !~ m{\d{$pow10}}o           ))) {
+        my $oname = $names[$ono];
+        my $nname = $names[$nno];
         # print STDERR "names: $oname\n       $nname\n";
         if (  ($oname !~ m{$nseqno}               ) and ($nname !~ m{$oseqno}               ) ) {
         if (  ($oname !~ m{Coxeter}               ) and ($nname !~ m{Coxeter}               ) ) {
@@ -114,7 +185,7 @@ sub check {
             if (($count & 0x7f) == 0) {
                 print STDERR "$count pairs\n";
             }
-            print <<"GFis";
+            print HTM <<"GFis";
 <tr><td class="bor">
     <a href="http://oeis.org/$oseqno" target="_new">$oseqno</a> $oname<br />
     <a href="http://oeis.org/$nseqno" target="_new">$nseqno</a> $nname<br />
@@ -128,7 +199,9 @@ GFis
         } # not some "Coxeter"
         } # not referenced in other name
         } # numbers >= 10 somewhere
+    } # $nseqno in range
 } # check
+#--------------------------------------
 __DATA__
 https://oeis.org/search?q=id:A007079&fmt=text
 # Greetings from The On-Line Encyclopedia of Integer Sequences! http://oeis.org/
