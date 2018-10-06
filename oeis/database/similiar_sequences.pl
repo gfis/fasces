@@ -124,8 +124,12 @@ tr,td,th{ text-align: left; vertical-align:top; }
 .arr    { background-color: white          ; color: black; }
 .bor    { border-left  : 1px solid gray    ; border-top   : 1px solid gray ;  
           border-right : 1px solid gray    ;                                 }
-.ok     { border-left  : 1px solid gray    ; border-right : 1px solid gray ; 
-	      background-color: lightgreen; }
+.ref    { border-left  : 1px solid gray    ; border-right : 1px solid gray ; 
+          background-color: lightgreen; }
+.yel    { border-left  : 1px solid gray    ; border-right : 1px solid gray ; 
+          background-color: greenyellow; }
+.red    { border-left  : 1px solid gray    ; border-right : 1px solid gray ; 
+          background-color: yellow; }
 </style>
 </head>
 <body>
@@ -185,7 +189,7 @@ sub check {
         if (  ($oname !~ m{Coxeter}               ) and ($nname !~ m{Coxeter}               ) ) {
         if (!(($oname =~ m{ Weyl group }i         ) and ($nname =~ m{ Weyl group }i         ))) {
         if (!(($oname =~ m{McKay\-Thompson series}) and ($nname =~ m{McKay\-Thompson series}))) {
-			
+            
             $count ++;
             if (($count & 0x3f) == 0) {
                 print STDERR "$count pairs\n";
@@ -199,7 +203,7 @@ sub check {
     $omid<br />
     $nmid</td></tr> 
 GFis
-			print HTM &compare_content($oseqno, $nseqno);
+            print HTM &compare_content($oseqno, $nseqno);
         } # not both "McKay-Thompson series"
         } # not both " Weyl group "i
         } # not some "Coxeter"
@@ -209,42 +213,57 @@ GFis
 } # check
 #----------------------
 sub compare_content {
-	my ($oseqno, $nseqno) = @_;
-	my $result ="";
-	my $otext = &wget("https://oeis.org/search?q=id:$oseqno\\&fmt=text", "$oseqno.text");
-	my $ntext = &wget("https://oeis.org/search?q=id:$nseqno\\&fmt=text", "$nseqno.text");
-	if ($otext =~ m{$nseqno}) {
-		$result .= &htmlize($nseqno, $otext);
-	} # $nseqno in $obuf
-	if ($ntext =~ m{$oseqno}) {
-		$result .= &htmlize($oseqno, $ntext);
-	} # $oseqno in $nbuf
-	return $result;
+    my ($oseqno, $nseqno) = @_;
+    my $result ="";
+    my $otext = &wget("https://oeis.org/search?q=id:$oseqno\\&fmt=text", "$oseqno.text");
+    my $ntext = &wget("https://oeis.org/search?q=id:$nseqno\\&fmt=text", "$nseqno.text");
+    if ($otext =~ m{$nseqno}) {
+        $result .= &get_refs($nseqno, $otext);
+    } else {
+        $result .= &get_author("yel", $otext);
+    } # $nseqno in $obuf
+    if ($ntext =~ m{$oseqno}) {
+        $result .= &get_refs($oseqno, $ntext);
+    } else {
+        $result .= &get_author("red", $ntext);
+    } # $oseqno in $nbuf
+    return $result;
 } # compare_content
 #----------------------
-sub htmlize {
-	my ($nseqno, $otext) = @_;
-	my @obuf = map { 
-			s{(\A\d{6})}{\<a href\=\"https\:\/\/oeis.org\/search\?q\=id\:$1\" target\=\"_new\"\>$1\<\/a\>}g; 
-			s{(\>$nseqno\<)}{\>\<strong\>$1\<\/strong\>\<}g; 
-			$_ 
-			} grep { m{\A\%} } split(/\r?\n/, $otext);
-	return "<tr><td class=\"ok\">" . join("<br />\n", grep {m{$nseqno}} @obuf) . "</td></tr>\n";
-} # htmlize
+sub get_refs {
+    my ($nseqno, $otext) = @_;
+    my @obuf = map { 
+            s{\>($nseqno)\<}{\>\<strong\>$1\<\/strong\>\<}g; 
+            $_ 
+            } split(/\n/, $otext);
+    return "<tr><td class=\"ref\">" . join("", grep { m{$nseqno} } @obuf) . "</td></tr>\n";
+} # get_refs
+#----------------------
+sub get_author {
+    my ($class, $otext) = @_;
+    my @obuf = split(/\n/, $otext);
+    return "<tr><td class=\"$class\">" . join("", grep { m{^\%A} } @obuf) . "</td></tr>\n";
+} # get_author
 #----------------------
 sub wget {
-	my ($url, $filename) = @_;
-	$filename = "../store/$filename";
-	my $result;
-	if (! -r $filename) {
-		print STDERR "sleeping before wget $filename\n";
-		sleep 4;
-		print STDERR `wget -o log.tmp -O $filename $url`;
-	}
-	open(FIL, "<", $filename) or die "cannot read $filename\n";
-	read(FIL, $result, 100000000); # 100 MB
-	close(FIL);		
-	return $result;
+    my ($url, $filename) = @_;
+    $filename = "../store/$filename";
+    my $result;
+    if (! -r $filename) {
+        print STDERR "sleeping before wget $filename\n";
+        sleep 4;
+        print STDERR `wget -o log.tmp -O $filename $url`;
+    }
+    open(FIL, "<", $filename) or die "cannot read $filename\n";
+    read(FIL, $result, 100000000); # 100 MB
+    close(FIL); 
+    my @buf = map {
+            s{(A\d{6})}
+             {\<a href\=\"https\:\/\/oeis.org\/search\?q\=id\:$1\" target\=\"_new\"\>$1\<\/a\>}g; 
+            $_ 
+            } grep { m{^\%} } split(/\r?\n/, $result);
+    $result = join("<br />\n", @buf);
+    return $result;
 } # wget
 #--------------------------------------
 __DATA__
