@@ -8,7 +8,7 @@
 #
 # usage:
 #   (1) perl similiar_sequences.pl [-d 0] -h 4 -l 6 < stripped | sort > stripsort.tmp
-#   (2) perl similiar_sequences.pl [-d 0] [-min 0] [-max 999999] -p 2 [-s 4] < stripsort.tmp
+#   (2) perl similiar_sequences.pl [-d 0] [-min 0] [-max 999999] -p 2 [-s 8] < stripsort.tmp
 #       -d      debug level, 0 (none), 1 (some), 2 (more)
 #       -h      minimum sequence value where comparision starts 
 #       -l      minimum length for both sequences
@@ -37,7 +37,7 @@ my $minlen = 6; # minimum length for both sequences
 my $minseq = 0;
 my $maxseq = 999999; # all
 my $pow10  = 2; # there must be values >= 10**p in both sequences to be compared
-my $sleep  = 4; # sleep 4 s before all wget requests
+my $sleep  = 8; # sleep 8 s before all wget requests
 while (scalar(@ARGV) > 0 and ($ARGV[0] =~ m{\A\-})) {
     my $opt = shift(@ARGV);
     if (0) {
@@ -97,7 +97,13 @@ while (<NAM>) {
     my $line = $_;
     $line =~ m{\A(\w)(\d+)\s+(.*)};
     $seqno = $2;
-    $names[$seqno] = $3;
+    my $name = $3;
+    $name =~ s{\&}{\&amp\;}g;
+    $name =~ s{\<}{\&lt\;}g;
+    $name =~ s{\>}{\&gt\;}g;
+    $name =~ s{(A\d{6})}
+              {\<a href\=\"https\:\/\/oeis.org\/search\?q\=id\:$1\" target\=\"_new\"\>$1\<\/a\>}g; 
+    $names[$seqno] = $name;
 } # while NAM
 close(NAM);
 print STDERR "$seqno sequence names read\n";
@@ -122,13 +128,13 @@ table   { border-collapse: collapse; }
 td      { padding-right: 4px; }
 tr,td,th{ text-align: left; vertical-align:top; }
 .arr    { background-color: white          ; color: black; }
-.bor    { border-left  : 1px solid gray    ; border-top   : 1px solid gray ;  
-          border-right : 1px solid gray    ;                                 }
-.ref    { border-left  : 1px solid gray    ; border-right : 1px solid gray ; 
+.bor    { border-left  : 2px solid gray    ; border-top   : 2px solid gray ;  
+          border-right : 2px solid gray    ;                                 }
+.ref    { border-left  : 2px solid gray    ; border-right : 2px solid gray ; 
           background-color: lightgreen; }
-.yel    { border-left  : 1px solid gray    ; border-right : 1px solid gray ; 
+.yel    { border-left  : 2px solid gray    ; border-right : 2px solid gray ; 
           background-color: greenyellow; }
-.red    { border-left  : 1px solid gray    ; border-right : 1px solid gray ; 
+.red    { border-left  : 2px solid gray    ; border-right : 2px solid gray ; 
           background-color: yellow; }
 </style>
 </head>
@@ -173,6 +179,7 @@ $count pairs - $timestamp
 </html>
 GFis
 close(HTM);
+print STDERR "$count pairs\n";
 
 # end main
 #-------------------
@@ -218,50 +225,59 @@ sub compare_content {
     my $otext = &wget("https://oeis.org/search?q=id:$oseqno\\&fmt=text", "$oseqno.text");
     my $ntext = &wget("https://oeis.org/search?q=id:$nseqno\\&fmt=text", "$nseqno.text");
     if ($otext =~ m{$nseqno}) {
-        $result .= &get_refs($nseqno, $otext);
+        $result .= &get_refs($oseqno, $nseqno, $otext);
     } else {
-        $result .= &get_author("yel", $otext);
+        $result .= &get_extract($oseqno, "yel", $otext);
     } # $nseqno in $obuf
     if ($ntext =~ m{$oseqno}) {
-        $result .= &get_refs($oseqno, $ntext);
+        $result .= &get_refs($nseqno, $oseqno, $ntext);
     } else {
-        $result .= &get_author("red", $ntext);
+        $result .= &get_extract($nseqno, "red", $ntext);
     } # $oseqno in $nbuf
     return $result;
 } # compare_content
 #----------------------
 sub get_refs {
-    my ($nseqno, $otext) = @_;
+    my ($oseqno, $nseqno, $otext) = @_;
     my @obuf = map { 
             s{\>($nseqno)\<}{\>\<strong\>$1\<\/strong\>\<}g; 
             $_ 
             } split(/\n/, $otext);
-    return "<tr><td class=\"ref\">" . join("", grep { m{$nseqno} } @obuf) . "</td></tr>\n";
+    return "<tr><td class=\"ref\">" 
+    	. "<a href=\"https://oeis.org/search?q=id:$oseqno\" target=\"_new\">$oseqno</a> "
+    	. join("", grep { m{$nseqno} } @obuf) . "</td></tr>\n";
 } # get_refs
 #----------------------
-sub get_author {
-    my ($class, $otext) = @_;
+sub get_extract {
+    my ($oseqno, $class, $otext) = @_;
     my @obuf = split(/\n/, $otext);
-    return "<tr><td class=\"$class\">" . join("", grep { m{^\%A} } @obuf) . "</td></tr>\n";
-} # get_author
+    my $result = join(" ", grep { m{^\%[KOA]} } @obuf);
+	# A004279 %K easy,nonn %O 0,2 %A _N. J. A. Sloane_.
+    $result =~ s{\%A\s*\_([^\_]+)\_}
+    	{\%A \<a href\=\"https:\/\/oeis.org\/wiki\/User\:$1\" target\=\"_new\"\>$1\<\/a\>};
+    $result =~ s{\<br\s*\/\>}{ }g;
+    return "<tr><td class=\"$class\">"
+    	. "<a href=\"https://oeis.org/search?q=id:$oseqno\" target=\"_new\">$oseqno</a> "
+    	. "$result</td></tr>\n";
+} # get_extract
 #----------------------
 sub wget {
     my ($url, $filename) = @_;
     $filename = "../store/$filename";
     my $result;
     if (! -r $filename) {
-        print STDERR "sleeping before wget $filename\n";
-        sleep 4;
+        print STDERR "sleeping $sleep s before wget $filename\n";
+        sleep $sleep;
         print STDERR `wget -o log.tmp -O $filename $url`;
     }
     open(FIL, "<", $filename) or die "cannot read $filename\n";
     read(FIL, $result, 100000000); # 100 MB
     close(FIL); 
     my @buf = map {
-            s{(A\d{6})}
-             {\<a href\=\"https\:\/\/oeis.org\/search\?q\=id\:$1\" target\=\"_new\"\>$1\<\/a\>}g; 
-            $_ 
-            } grep { m{^\%} } split(/\r?\n/, $result);
+        s{^(\%\w)\s+(\w+)\s+}{$1 }; 
+        s{(A\d{6})}{\<a href\=\"https\:\/\/oeis.org\/search\?q\=id\:$1\" target\=\"_new\"\>$1\<\/a\>}g; 
+        $_ 
+        } grep { m{^\%} } split(/\r?\n/, $result);
     $result = join("<br />\n", @buf);
     return $result;
 } # wget
