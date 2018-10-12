@@ -1,16 +1,37 @@
 #!make
 
-# Examine stripped.gz
+# OEIS Sequences A136nnn from Jonathan Wellons
 # @(#) $Id$
-# 2018-10-09: gen_all, my_mails
-# 2018-09-30, Georg Fischer 
+# 2018-10-11, Georg Fischer 
 #---------------------------------
 H=4
 MIN=0
 MAX=10000
 S=8
+CODE=0146
 
-all: 
+all: eval
+#----
+eval:
+	perl a136nnn.pl -c $(CODE)
+#----
+getseq: getseq1 getseq2
+getseq1:
+	rm -f *.tmp
+	grep -E "^A13[67]" ../database/names      > names1.tmp
+	grep -E " and the square of "    names1.tmp > names2.tmp
+	wc -l names2.tmp
+	grep -E "^A13[67]" ../database/stripped   > strip1.tmp
+getseq2:
+	cut -b 1-7 names2.tmp > seqno.tmp
+	grep -f seqno.tmp strip1.tmp > strip2.tmp
+	wc -l strip2.tmp
+getseq3:
+	sed -e "s/Numbers/;/g" -e "s/ and /,/g" -e "s/[Na-z., ]//g" -e "s/;/ /g" \
+		names2.tmp > names3.tmp
+	join names3.tmp strip2.tmp > squaredig.tmp
+#----
+dummy:
 	make regen 2>&1 | tee regen.`date +%Y-%m-%d`.log
 	grep total        regen.`date +%Y-%m-%d`.log
 #----

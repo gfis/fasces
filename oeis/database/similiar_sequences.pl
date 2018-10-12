@@ -182,7 +182,7 @@ $count pairs - $timestamp
 </html>
 GFis
 close(HTM);
-print STDERR "$count pairs total - $timestamp\n";
+print "$range $count pairs total - $timestamp\n";
 
 # end main
 #-------------------
