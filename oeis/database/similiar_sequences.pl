@@ -7,8 +7,11 @@
 # 2018-10-01, Georg Fischer 
 #
 # usage:
-#   (1) perl similiar_sequences.pl [-d 0] -h 4 -l 6 < stripped | sort > stripsort.tmp
-#   (2) perl similiar_sequences.pl [-d 0] [-min 0] [-max 999999] -p 2 [-s 8] < stripsort.tmp
+#   (1) perl similiar_sequences.pl -a prep [-d 0] -h 4 -l 6 < stripped | sort > stripsort.tmp
+#   (2) perl similiar_sequences.pl [-d 0] [-min 0] [-max 999999] -p 2 [-s 8]  < stripsort.tmp
+#   (3) perl similiar_sequences.pl -a index < regen.date.log > index.html
+#   (4) perl similiar_sequences.pl -a wget  < newseq.data.lst
+#       -a      action: "gen"erate HTML list (default), "prep"rocess, "index".html, "wget" only
 #       -d      debug level, 0 (none), 1 (some), 2 (more)
 #       -h      minimum sequence value where comparision starts 
 #       -l      minimum length for both sequences
@@ -30,7 +33,7 @@ my $timestamp = sprintf ("%04d-%02d-%02d %02d:%02d:%02d"
         , $year + 1900, $mon + 1, $mday, $hour, $min, $sec);
 
 # get options
-my $action = 2; # 1 = preprocess for sort, 2 = write HTML list
+my $action = "gen"; # "prep"rocess for sort, "gen"erate HTML lists
 my $debug  = 0; # 0 (none), 1 (some), 2 (more)
 my $higher = 4; # minimum sequence value where comparision starts 
 my $minlen = 6; # minimum length for both sequences
@@ -41,21 +44,21 @@ my $sleep  = 8; # sleep 8 s before all wget requests
 while (scalar(@ARGV) > 0 and ($ARGV[0] =~ m{\A\-})) {
     my $opt = shift(@ARGV);
     if (0) {
-    } elsif ($opt =~ m{d}) {
+    } elsif ($opt =~ m{\-a}) {
+        $action = shift(@ARGV);
+    } elsif ($opt =~ m{\-d}) {
         $debug  = shift(@ARGV);
-    } elsif ($opt =~ m{h}) {
+    } elsif ($opt =~ m{\-h}) {
         $higher = shift(@ARGV);
-        $action = 1;
-    } elsif ($opt =~ m{l}) {
+    } elsif ($opt =~ m{\-l}) {
         $minlen = shift(@ARGV);
-    } elsif ($opt =~ m{min}) {
+    } elsif ($opt =~ m{\-min}) {
         $minseq = shift(@ARGV);
-    } elsif ($opt =~ m{max}) {
+    } elsif ($opt =~ m{\-max}) {
         $maxseq = shift(@ARGV);
-    } elsif ($opt =~ m{p}) {
+    } elsif ($opt =~ m{\-p}) {
         $pow10  = shift(@ARGV);
-        $action = 2;
-    } elsif ($opt =~ m{s}) {
+    } elsif ($opt =~ m{\-s}) {
         $sleep  = shift(@ARGV);
     } else {
         die "invalid option \"$opt\"\n";
@@ -64,7 +67,8 @@ while (scalar(@ARGV) > 0 and ($ARGV[0] =~ m{\A\-})) {
 
 #----------------------------------------------
 # perform one of the actions
-if ($action == 1) { # preprocess for sort
+if (0) {
+} elsif($action =~ m{^prep}) { # preprocess for sort
     # read file "stripped"
     open(SIP, "<", "stripped") || die "cannot read file \"stripped\"\n";
     while (<SIP>) {
@@ -83,10 +87,47 @@ if ($action == 1) { # preprocess for sort
         } # long enough
     } # while <>
     close(SIP);
-    exit(0); # skip the rest
-} # action 1
+    exit(0);
+#----------------------
+} elsif ($action =~ m{^in})   { # generate index.html from regen.data.log
+    print &get_html_head("Similar OEIS Sequences");
+    print <<"GFis";
+<body>
+<h2>Similiar OEIS Sequences</h2>
+GFis
+    my $datetime;
+    while (<>) { # read regen.date.log
+        # A000000-A049999 608 pairs total - 2018-10-11 09:35:26
+        s/\s+\Z//; # chompre
+        if (m{(\w+\-\w+)\s+(\d+)\s+pairs\s+total\D+(.*)}) {
+            my $range = $1;
+            my $count = $2;
+            $datetime = $3;
+            my $wider = $range;
+            $wider =~ s{\-}{ \- };
+            print "<br /><a href=\"http://www.teherba.org/fasces/oeis/database/$range.html\">$wider</a>"
+                . sprintf("%6d pairs\n", $count);
+        } # pairs total
+    } # while <>
+    print <<"GFis";
+<br />
+<br />
+regenerated at $datetime by <a href="https://oeis.org/wiki/User:Georg_Fischer" target="_new">OEIS user</a> 
+<a href="mailto:dr.georg.fischer\@gmail.com">Georg Fischer</a>
+</body>
+</html>
+GFis
+    exit(0);
+#----------------------
+} elsif ($action =~ m{^wget}) { # wget outdated files from newseq.data.lst
+    exit(0);
+
+#----------------------
+} elsif ($action =~ m{^dumm}) { # yet another?preprocess for sort
+
+    exit(0);
 #----------------------------------------------
-# else action == 2
+} # else ($action =~ m{^gen}) { # generate
 # read file "names"
 my @names;
 my $seqno; # is printed behind the loop
@@ -111,36 +152,8 @@ print STDERR "$seqno sequence names read\n";
 # print HTML header
 my $range = sprintf("A%06d-A%06d", $minseq, $maxseq);
 open(HTM, ">", "$range.html") or die "cannot write HTML file\n";        
+print HTM &get_html_head("{$range} - OEIS Similiarities");
 print HTM <<"GFis";
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd" [
-]>
-<html xmlns="http://www.w3.org/1999/xhtml">
-<head>
-<title>$range - OEIS Similiarities</title>
-<meta name="generator" content="https://github.com/gfis/fasces/blob/master/oeis/database/subseq.pl" />
-<meta name="author"    content="Georg Fischer" />
-<style>
-body,table,p,td,th
-        { font-family: Verdana,Arial,sans-serif; }
-table   { border-collapse: collapse; }
-td      { padding-right: 4px; }
-tr,td,th{ text-align: left; vertical-align:top; }
-.arr    { background-color: white          ; color: black; }
-.bor    { border-left  : 2px solid gray    ; border-top   : 2px solid gray ;  
-          border-right : 2px solid gray    ;                                 }
-.ref    { border-left  : 2px solid gray    ; border-right : 2px solid gray ; 
-          background-color: lightgreen; }
-.yel    { border-left  : 2px solid gray    ; border-right : 2px solid gray ; 
-          background-color: greenyellow; }
-.red    { border-left  : 2px solid gray    ; border-right : 2px solid gray ; 
-          background-color: yellow; }
-.more   { color:white  ; background-color: blue; }
-.dead   { color:white  ; background-color: gray   ; }
-.fini   { color:black  ; background-color: turquoise  ; }
-</style>
-</head>
 <body>
 <h2>Similiar OEIS Sequences in the Range $range</h2>
 <p>
@@ -183,8 +196,7 @@ $count pairs - $timestamp
 GFis
 close(HTM);
 print "$range $count pairs total - $timestamp\n";
-
-# end main
+# end action eq "gen"
 #-------------------
 sub check {
     my ($omid, $oleft, $oseqno, $nmid, $nleft, $nseqno) = @_;
@@ -201,7 +213,7 @@ sub check {
         if (!(($oname =~ m{McKay\-Thompson series}) and ($nname =~ m{McKay\-Thompson series}))) {
             
             $count ++;
-            if (($count & 0x7f) == 0) {
+            if (($count & 0xff) == 0) {
                 print STDERR "$count pairs\n";
             }
             my $otext = &wget("https://oeis.org/search?q=id:$oseqno\\&fmt=text", "$oseqno.text");
@@ -301,9 +313,45 @@ sub wget {
     $result = join("<br />\n", @buf);
     return $result;
 } # wget
+#-----------------------------
+sub get_html_head {
+    my ($title) = @_;
+    return <<"GFis";
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd" [
+]>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>$title</title>
+<meta name="generator" content="https://github.com/gfis/fasces/blob/master/oeis/database/subseq.pl" />
+<meta name="author"    content="Georg Fischer" />
+<style>
+body,table,p,td,th
+        { font-family: Verdana,Arial,sans-serif; }
+table   { border-collapse: collapse; }
+td      { padding-right: 4px; }
+tr,td,th{ text-align: left; vertical-align:top; }
+.arr    { background-color: white          ; color: black; }
+.bor    { border-left  : 2px solid gray    ; border-top   : 2px solid gray ;  
+          border-right : 2px solid gray    ;                                 }
+.ref    { border-left  : 2px solid gray    ; border-right : 2px solid gray ; 
+          background-color: lightgreen; }
+.yel    { border-left  : 2px solid gray    ; border-right : 2px solid gray ; 
+          background-color: greenyellow; }
+.red    { border-left  : 2px solid gray    ; border-right : 2px solid gray ; 
+          background-color: yellow; }
+.more   { color:white  ; background-color: blue; }
+.dead   { color:white  ; background-color: gray   ; }
+.fini   { color:black  ; background-color: turquoise  ; }
+</style>
+</head>
+GFis
+} # get_html_head
 #--------------------------------------
 __DATA__
 https://oeis.org/search?q=id:A007079&fmt=text
+
 # Greetings from The On-Line Encyclopedia of Integer Sequences! http://oeis.org/
 
 Search: id:a007079
@@ -343,3 +391,22 @@ Showing 1-1 of 1
 %E A007079 a(11) from _Andrew Howroyd_, Jan 08 2018
 
 # Content is available under The OEIS End-User License Agreement: http://oeis.org/LICENSE
+#----------------------
+regen.date.log:
+
+make[1]: Entering directory '/cygdrive/c/Users/User/work/gits/fasces/oeis/database'
+perl similiar_sequences.pl -p 2 -min 000000 -max 049999 < stripsort.tmp 
+320328 sequence names read
+128 pairs
+256 pairs
+384 pairs
+512 pairs
+A000000-A049999 608 pairs total - 2018-10-11 09:35:26
+perl similiar_sequences.pl -p 2 -min 050000 -max 099999 < stripsort.tmp 
+320328 sequence names read
+128 pairs
+256 pairs
+384 pairs
+512 pairs
+640 pairs
+A050000-A099999 762 pairs total - 2018-10-11 09:35:53

@@ -11,24 +11,27 @@ MAX=10000
 S=8
 
 all: 
-	make regen 2>&1 | tee regen.`date +%Y-%m-%d`.log
-	grep total        regen.`date +%Y-%m-%d`.log
+	# targets: prepare newseq regen (in that order)
 #----
-# get base data files 'names' and 'stripped' and preprocess/sort the latter
-wg_base: wg_stripped wg_names preprocess
-wg_stripped:
+# get base data files 'names' and 'stripped' and 
+# preprocess/sort the latter
+prepare: prep1 prep2 prep3
+prep1:
 	wget https://oeis.org/stripped.gz
 	rm -f stripped
 	gzip -d stripped.gz
-wg_names:
+prep2:
 	wget https://oeis.org/names.gz
 	rm -f names
 	gzip -d names.gz
-preprocess:
-	perl similiar_sequences.pl -h $(H) < stripped | sort    > stripsort.tmp
+prep3:
+	perl similiar_sequences.pl -a prep -h $(H) < stripped | sort    > stripsort.tmp
 #----
 # regenerate lists for all sequences
-regen:	a0 a1 a2 a3
+regen: regen1 index deploy
+regen1:
+	make regen4 2>&1 | tee regen.`date +%Y-%m-%d`.log
+regen4:	a0 a1 a2 a3
 a0:	a00 a05 
 a1:	a10 a15
 a2:	a20 a25
@@ -50,19 +53,23 @@ a30:
 a35:
 	perl similiar_sequences.pl -p 2 -min 350000 -max 399999 < stripsort.tmp 
 #------------
+index:
+	grep total                            regen.`date +%Y-%m-%d`.log
+	perl similiar_sequences.pl -a index < regen.`date +%Y-%m-%d`.log > index.html
+#------------
 deploy: deplin
-	scp A*-A*.html index.html gfis@punctum.com:/var/www/html/teherba.org/fasces/oeis/database
+	scp *.html gfis@punctum.com:/var/www/html/teherba.org/fasces/oeis/database
 deplin:
 	scp index.html gfis@punctum.com:/var/www/html/teherba.org/fasces/oeis/database
 #------------
 # delete sequences modified by me
 # (1) place new reply emails "Re  changes to A067482 - ..." into ../temp
 # (2) make my_mails
-my_mails: mail1 mail2
-mail1:
+newseq: news1 news2
+news1:
 	ls -1 ../temp/*.eml | cut -d" " -f 5 | sort | uniq | tee newseq.`date +%Y-%m-%d`.lst
 	wc -l newseq*.lst
-mail2:
+news2:
 	cat newseq.`date +%Y-%m-%d`.lst | xargs -l -i{} rm -vf ../store/{}.text
 	mv ../temp/*.eml ../archive
 #------------
