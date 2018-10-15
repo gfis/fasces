@@ -6,6 +6,8 @@
 # 2018-10-04: copied from subseq.pl
 # 2018-10-01, Georg Fischer 
 #
+# to do: remove fini, optional listing, count warnings
+#
 # usage:
 #   (1) perl similiar_sequences.pl -a prep [-d 0] -h 4 -l 6 < stripped | sort > stripsort.tmp
 #   (2) perl similiar_sequences.pl [-d 0] [-min 0] [-max 999999] -p 2 [-s 8]  < stripsort.tmp
@@ -120,8 +122,12 @@ GFis
     exit(0);
 #----------------------
 } elsif ($action =~ m{^wget}) { # wget outdated files from newseq.data.lst
+    while (<>) {
+        s/\s+\Z//; # chompr
+        my $oseqno = $_;
+        my $otext = &wget("https://oeis.org/search?q=id:$oseqno\\&fmt=text", "$oseqno.text");
+    } # while <>
     exit(0);
-
 #----------------------
 } elsif ($action =~ m{^dumm}) { # yet another?preprocess for sort
 
@@ -143,7 +149,7 @@ while (<NAM>) {
     $name =~ s{\<}{\&lt\;}g;
     $name =~ s{\>}{\&gt\;}g;
     $name =~ s{(A\d{6})}
-              {\<a href\=\"https\:\/\/oeis.org\/search\?q\=id\:$1\" target\=\"_new\"\>$1\<\/a\>}g; 
+              {\<a href\=\"https\:\/\/oeis.org\/$1\" target\=\"_new\"\>$1\<\/a\>}g; 
     $names[$seqno] = $name;
 } # while NAM
 close(NAM);
@@ -244,23 +250,24 @@ sub compare_content {
     if ($otext =~ m{$nseqno}) {
         $result .= &get_refs($oseqno, $nseqno, $otext);
     } else {
-        $result .= &get_extract($oseqno, "yel", $otext);
+        $result .= &get_extract($oseqno, "gyel", $otext);
     } # $nseqno in $obuf
     if ($ntext =~ m{$oseqno}) {
         $result .= &get_refs($nseqno, $oseqno, $ntext);
     } else {
-        $result .= &get_extract($nseqno, "red", $ntext);
+        $result .= &get_extract($nseqno, "warn", $ntext);
     } # $oseqno in $nbuf
     return $result;
 } # compare_content
 #----------------------
 sub get_bf { # extract the range of the b-file, if any
     my ($oseqno, $otext) = @_;
-    $oseqno =~ s{\D}{}g;
+    my $seqno_A = $oseqno;
+    $seqno_A =~ s{\D}{}g;
     my @obuf = split(/\n/, $otext);
     my $result = join("", grep { m{^\%[H]} and m{\>Table of n\,\s*a\(n\) }} @obuf);
     if ($result =~ m{n\s*\=\s*(\d+)\D+(\d+)}) {
-        $result = " -&gt; <a href=\"https://oeis.org/A$oseqno/b$oseqno.txt\" target=\"_new\">b$oseqno.txt($1..$2)</a>";
+        $result = " -&gt; <a href=\"https://oeis.org/A$seqno_A/b$seqno_A.txt\" target=\"_new\">b$seqno_A.txt($1..$2)</a>";
     } else {
         $result = " (gen. b-file)";
     }
@@ -274,7 +281,7 @@ sub get_refs { # extract any lines which refer the other seqno
             $_ 
             } split(/\n/, $otext);
     return "<tr><td class=\"ref\">" 
-        . "<a href=\"https://oeis.org/search?q=id:$oseqno\" target=\"_new\">$oseqno</a> "
+        . "<a href=\"https://oeis.org/$oseqno\" target=\"_new\">$oseqno</a> "
         . join("", grep { m{$nseqno} } @obuf) . "</td></tr>\n";
 } # get_refs
 #----------------------
@@ -288,8 +295,9 @@ sub get_extract { # extract OFFSET, KEYWORDS and AUTHOR
     $result =~ s{\<br\s*\/\>}{ }g;
     $result =~ s{(\W)more(\W)}{$1\<span class\=\"more\"\>more\<\/span\>$2};
     $result =~ s{(\W)dead(\W)}{$1\<span class\=\"dead\"\>dead\<\/span\>$2};
+    $result =~ s{(\W)fini(\W)}{$1\<span class\=\"fini\"\>fini\<\/span\>$2};
     return "<tr><td class=\"$class\">"
-        . "<a href=\"https://oeis.org/search?q=id:$oseqno\" target=\"_new\">$oseqno</a> "
+        . "<a href=\"https://oeis.org/$oseqno\" target=\"_new\">$oseqno</a> "
         . "$result</td></tr>\n";
 } # get_extract
 #----------------------
@@ -307,7 +315,7 @@ sub wget {
     close(FIL); 
     my @buf = map {
         s{^(\%\w)\s+(\w+)\s+}{$1 }; 
-        s{(A\d{6})}{\<a href\=\"https\:\/\/oeis.org\/search\?q\=id\:$1\" target\=\"_new\"\>$1\<\/a\>}g; 
+        s{(A\d{6})}{\<a href\=\"https\:\/\/oeis.org\/$1\" target\=\"_new\"\>$1\<\/a\>}g; 
         $_ 
         } grep { m{^\%} } split(/\r?\n/, $result);
     $result = join("<br />\n", @buf);
@@ -337,9 +345,9 @@ tr,td,th{ text-align: left; vertical-align:top; }
           border-right : 2px solid gray    ;                                 }
 .ref    { border-left  : 2px solid gray    ; border-right : 2px solid gray ; 
           background-color: lightgreen; }
-.yel    { border-left  : 2px solid gray    ; border-right : 2px solid gray ; 
+.gyel   { border-left  : 2px solid gray    ; border-right : 2px solid gray ; 
           background-color: greenyellow; }
-.red    { border-left  : 2px solid gray    ; border-right : 2px solid gray ; 
+.warn   { border-left  : 2px solid gray    ; border-right : 2px solid gray ; 
           background-color: yellow; }
 .more   { color:white  ; background-color: blue; }
 .dead   { color:white  ; background-color: gray   ; }

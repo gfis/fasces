@@ -57,7 +57,7 @@ index:
 	grep total                            regen.`date +%Y-%m-%d`.log
 	perl similiar_sequences.pl -a index < regen.`date +%Y-%m-%d`.log > index.html
 #------------
-deploy: deplin
+deploy: 
 	scp *.html gfis@punctum.com:/var/www/html/teherba.org/fasces/oeis/database
 deplin:
 	scp index.html gfis@punctum.com:/var/www/html/teherba.org/fasces/oeis/database
@@ -72,6 +72,9 @@ news1:
 news2:
 	cat newseq.`date +%Y-%m-%d`.lst | xargs -l -i{} rm -vf ../store/{}.text
 	mv ../temp/*.eml ../archive
+#------------
+wellons:
+	perl similiar_sequences.pl -a wget < ../A136nnn/seqno.tmp
 #------------
 # old targets
 sim2:
