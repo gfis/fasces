@@ -1,18 +1,20 @@
 #!/bin/make
 
 # makefile for OEIS URL checking
+# 2018-10-16: revived
 # 2009-01-07, Georg Fischer, punctum(at)punctum.com
 # The database files are named like
 #	http://www.research.att.com/~njas/sequences/eisBTfry00000.txt
 #----------------------------------------
-all: do not call make without a target
+all: 
+	# do not call make without a target
 check: down geturls spider eval
 
 geturls:
-	rm -f url*.txt
-	find -name "eisBT*.txt" | xargs -l -ißß perl grepurl.pl ßß >> url1.txt
-	sort -k2 url1.txt | tee url2.txt
-
+	rm -f url*.tmp
+	find ../store -name "*.text" | xargs -l -ißß perl grepurl.pl ßß > url1.tmp
+	sort -k2 url1.tmp | tee url2.tmp
+	wc -l url*.tmp
 testdown:
 	wget -r -l1 -nd --no-parent -A.jpg http://localhost/html/hroschmann.de/
 	ls -al *.jpg

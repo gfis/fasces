@@ -1,19 +1,18 @@
 #!make
 
-# OEIS Sequences A136nnn from Jonathan Wellons
+# "squaredig" OEIS Sequences A136nnn from Jonathan Wellons
 # @(#) $Id$
 # 2018-10-15, Georg Fischer 
 #---------------------------------
-H=4
-MIN=0
-MAX=10000
-S=8
-CODE=0146
+D=0
+MAXIND=1000
+WIDTH=16
+SUBSET=0146
 
 all: 
 #----
 eval:
-	perl a136nnn.pl -c $(CODE)
+	perl squaredig.pl -s $(SUBSET) -n $(MAXIND) -w $(WIDTH) -d $(D)
 #----
 getseq: getseq1 getseq2
 getseq1:
