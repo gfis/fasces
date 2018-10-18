@@ -1,4 +1,12 @@
 # fasces
+## OEIS
+This subfolder contains various Perl scripts for [OEIS](https://oeis.org/) housekeeping projects and for individual sequences, among them
+* broken link detection,
+* coincidence search,
+* mail list crossreference.
+
+The scripts often generate colored HTML, SVG or three.js views, and htey are called by Unix makefiles.
+
 ## Generation and visualization of FASS curves
 
 FASS curves are space-**F**illing, self-**A**voiding, **S**imple and self-**S**imilar curves.
@@ -14,10 +22,3 @@ http://www.teherba.org/index.php/OEIS/FASS_curves.
 Please write to dr point georg point fischer at gmail.com for any comments
 or if you want to participate.
 
-# OEIS
-This subfolder contains various scripts for  [OEIS](https://oeis.org/) housekeeping projects and for individual sequences, among them
-* broken link detection,
-* coincidence search,
-* mail list crossreference.
-
-The scripts often generate colored HTML, SVG or three.js views, and htey are called by Unix makefiles.
