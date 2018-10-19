@@ -9,6 +9,7 @@
 H=4
 MIN=0
 MAX=10000
+MINLEN=8
 S=8
 P=3
 
@@ -18,7 +19,7 @@ new: prepare newseq regen
 #----
 # get base data files 'names' and 'stripped' and 
 # preprocess/sort the latter
-prepare: prep1 prep2 prep3
+prepare: prep1 prep2 prep3 prep4
 prep1:
 	wget https://oeis.org/stripped.gz
 	rm -f stripped
@@ -28,7 +29,9 @@ prep2:
 	rm -f names
 	gzip -d names.gz
 prep3:
-	perl similiar_sequences.pl -a prep -h $(H) < stripped | sort    > stripsort.tmp
+	perl similiar_sequences.pl -a prep -h $(H) -l $(MINLEN) < stripped | sort > stripsort.tmp
+prep4:
+	perl similiar_sequences.pl -a name         < names           > namurl.tmp
 #----
 # regenerate lists for all sequences
 regen: regen1 index deploy
@@ -40,21 +43,21 @@ A100:	A10 A15
 A200:	A20 A25
 A300:	A30 A35
 A00:
-	perl similiar_sequences.pl -p $(P) -min 000000 -max 049999 < stripsort.tmp 
+	perl similiar_sequences.pl -p $(P) -h $(H) -l $(MINLEN) -min 000000 -max 049999 < stripsort.tmp 
 A05:
-	perl similiar_sequences.pl -p $(P) -min 050000 -max 099999 < stripsort.tmp 
+	perl similiar_sequences.pl -p $(P) -h $(H) -l $(MINLEN) -min 050000 -max 099999 < stripsort.tmp 
 A10:
-	perl similiar_sequences.pl -p $(P) -min 100000 -max 149999 < stripsort.tmp 
+	perl similiar_sequences.pl -p $(P) -h $(H) -l $(MINLEN) -min 100000 -max 149999 < stripsort.tmp 
 A15:
-	perl similiar_sequences.pl -p $(P) -min 150000 -max 199999 < stripsort.tmp 
+	perl similiar_sequences.pl -p $(P) -h $(H) -l $(MINLEN) -min 150000 -max 199999 < stripsort.tmp 
 A20:
-	perl similiar_sequences.pl -p $(P) -min 200000 -max 249999 < stripsort.tmp 
+	perl similiar_sequences.pl -p $(P) -h $(H) -l $(MINLEN) -min 200000 -max 249999 < stripsort.tmp 
 A25:
-	perl similiar_sequences.pl -p $(P) -min 250000 -max 299999 < stripsort.tmp 
+	perl similiar_sequences.pl -p $(P) -h $(H) -l $(MINLEN) -min 250000 -max 299999 < stripsort.tmp 
 A30:
-	perl similiar_sequences.pl -p $(P) -min 300000 -max 349999 < stripsort.tmp 
+	perl similiar_sequences.pl -p $(P) -h $(H) -l $(MINLEN) -min 300000 -max 349999 < stripsort.tmp 
 A35:
-	perl similiar_sequences.pl -p $(P) -min 350000 -max 399999 < stripsort.tmp 
+	perl similiar_sequences.pl -p $(P) -h $(H) -l $(MINLEN) -min 350000 -max 399999 < stripsort.tmp 
 #------------
 index:
 	grep warnings                         regen.`date +%Y-%m-%d`.log
@@ -81,5 +84,5 @@ wellons:
 #------------
 # old targets
 sim2:
-	perl similiar_sequences.pl -p $(P) -min $(MIN) -max $(MAX) < stripsort.tmp 
+	perl similiar_sequences.pl -p $(P) -h $(H) -l $(MINLEN) -min $(MIN) -max $(MAX) < stripsort.tmp 
 #------------

@@ -18,17 +18,19 @@ getseq: getseq1 getseq2
 getseq1:
 	rm -f *.tmp
 	grep -E "^A13[67]" ../database/names      > names1.tmp
-	grep -E " and the square of "    names1.tmp > names2.tmp
+	grep -E " and the square of "  names1.tmp > names2.tmp
 	wc -l names2.tmp
 	grep -E "^A13[67]" ../database/stripped   > strip1.tmp
 getseq2:
-	cut -b 1-7 names2.tmp > seqno.tmp
-	grep -f seqno.tmp strip1.tmp > strip2.tmp
+	cut -b 1-7 names2.tmp                     > seqno.tmp
+	grep -f seqno.tmp strip1.tmp              > strip2.tmp
 	wc -l strip2.tmp
 getseq3:
 	sed -e "s/Numbers/;/g" -e "s/ and /,/g" -e "s/[Na-z., ]//g" -e "s/;/ /g" \
-		names2.tmp > names3.tmp
-	join names3.tmp strip2.tmp > squaredig.tmp
+		names2.tmp                            > names3.tmp
+	join names3.tmp strip2.tmp                > squaredig.tmp
+gettext:
+	perl ../database/similiar_sequences.pl -a wget < seqno.tmp
 #----
 polish:
 	perl polish_squaredig.pl < wellons-restored.html 
