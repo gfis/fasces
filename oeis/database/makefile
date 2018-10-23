@@ -13,6 +13,7 @@ MINLEN=8
 S=8
 P=3
 N=1
+D=0
 
 all: 
 	# targets: new = prepare newseq regen (in that order)
@@ -44,21 +45,21 @@ A100:	A10 A15
 A200:	A20 A25
 A300:	A30 A35
 A00:
-	perl simseq.pl -p $(P) -h $(H) -l $(MINLEN) -min 000000 -max 049999 -n $(N) < stripsort.tmp 
+	perl simseq.pl -p $(P) -h $(H) -l $(MINLEN) -min 000000 -max 049999 -n $(N) -d $(D)  < stripsort.tmp 
 A05:
-	perl simseq.pl -p $(P) -h $(H) -l $(MINLEN) -min 050000 -max 099999 -n $(N) < stripsort.tmp 
+	perl simseq.pl -p $(P) -h $(H) -l $(MINLEN) -min 050000 -max 099999 -n $(N) -d $(D)  < stripsort.tmp 
 A10:
-	perl simseq.pl -p $(P) -h $(H) -l $(MINLEN) -min 100000 -max 149999 -n $(N) < stripsort.tmp 
+	perl simseq.pl -p $(P) -h $(H) -l $(MINLEN) -min 100000 -max 149999 -n $(N) -d $(D)  < stripsort.tmp 
 A15:
-	perl simseq.pl -p $(P) -h $(H) -l $(MINLEN) -min 150000 -max 199999 -n $(N) < stripsort.tmp 
+	perl simseq.pl -p $(P) -h $(H) -l $(MINLEN) -min 150000 -max 199999 -n $(N) -d $(D)  < stripsort.tmp 
 A20:
-	perl simseq.pl -p $(P) -h $(H) -l $(MINLEN) -min 200000 -max 249999 -n $(N) < stripsort.tmp 
+	perl simseq.pl -p $(P) -h $(H) -l $(MINLEN) -min 200000 -max 249999 -n $(N) -d $(D)  < stripsort.tmp 
 A25:
-	perl simseq.pl -p $(P) -h $(H) -l $(MINLEN) -min 250000 -max 299999 -n $(N) < stripsort.tmp 
+	perl simseq.pl -p $(P) -h $(H) -l $(MINLEN) -min 250000 -max 299999 -n $(N) -d $(D)  < stripsort.tmp 
 A30:
-	perl simseq.pl -p $(P) -h $(H) -l $(MINLEN) -min 300000 -max 349999 -n $(N) < stripsort.tmp 
+	perl simseq.pl -p $(P) -h $(H) -l $(MINLEN) -min 300000 -max 349999 -n $(N) -d $(D)  < stripsort.tmp 
 A35:
-	perl simseq.pl -p $(P) -h $(H) -l $(MINLEN) -min 350000 -max 399999 -n $(N) < stripsort.tmp 
+	perl simseq.pl -p $(P) -h $(H) -l $(MINLEN) -min 350000 -max 399999 -n $(N) -d $(D)  < stripsort.tmp 
 #------------
 index:
 	grep warnings                         regen.`date +%Y-%m-%d`.log
@@ -79,13 +80,25 @@ news1:
 news2:
 	cat newseq.`date +%Y-%m-%d`.lst | xargs -l -i{} rm -vf ../store/{}.text
 	mv ../temp/*.eml ../archive
+#----
+allseq: archlist alls1 alls2
+archlist:
+	ls -1 ../archive/*.eml | cut -d" " -f 5 | sort | uniq > archlist.tmp
+	wc -l archlist.tmp
+	sed -e "s/A/b/" archlist.tmp > brchlist.tmp
+	wc -l brchlist.tmp
+alls1:
+	cat archlist.tmp | xargs -l -i{} rm -vf ../store/{}.text
+alls2:
+	cat brchlist.tmp | xargs -l -i{} rm -vf ../bfiles/{}.txt
 #------------
 wellons:
 	perl simseq.pl -a wget < ../A136nnn/seqno.tmp
 #------------
 # old targets
+TEST=282876
 test:
-	make A30 N=0
+	perl simseq.pl -p $(P) -h $(H) -l $(MINLEN) -min $(TEST) -max $(TEST) -n 0 -d 1 < stripsort.tmp 
 #------------
 ant:
 	grep -f antti.3x1 stripped > ant.tmp

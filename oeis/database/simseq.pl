@@ -189,7 +189,7 @@ GFis
         }
         $seqno ++;
     } # while seqno
-    print "$seqno sequence names preprocessed\n";
+    print scalar(@nawol) . " sequence names preprocessed\n";
     exit(0);
 #----------------------------------------------
 } # else ($action =~ m{^gen}) { # generate
@@ -234,13 +234,16 @@ if ($readnu) {
     } # while NAU
     close(NAU);
 } # 0
-print "$seqno sequence names read\n";
+print scalar(@names) . " sequence names read\n";
 #--------
 # process file stripsort
-my $is_chosen  = 0; # whether the pair is chosen
+my $IGNORE     = 0;
+my $LISTING    = 1;
+my $WARNING    = 2; 
+my $status     = $IGNORE; # 0 (ignore), 1 (show in list), 2 (warning)
 my $warn_count = 0;
 my ($omid, $oleft, $oseqno) = ("a,a,a", "b,b,b", "Axxxxxx");
-my $count = 0;
+my $count      = 0;
 my @bifurls;  # links to b-files (from %H line)
 my @bifsinds; # starting indices in b-files
 my @bifeinds; # ending   indices in b-files
@@ -249,6 +252,7 @@ my @datsinds; # starting indices in DATA sections, 1st part of OFFSET (%O line)
 my @dateinds; # ending   indices in DATA sections
 my @midsinds; # starting indices of @xmid
 my @mideinds; # ending   indices of @xmid
+my $comment;  # final comment behind the DATA lines
 
 while (<>) {
     s/\s+\Z//; # chompr
@@ -284,6 +288,8 @@ print "$range $count pairs, $warn_count warnings - $timestamp\n";
 sub check {
     my ($omid, $oleft, $oseqno, $nmid, $nleft, $nseqno) = @_;
     @datsinds = (1, 1); # if any is missing
+    my $entry = "";
+    $comment  = ""; # no comment so far
     @bifurls  = ("", ""); # missing
     my $ono   = substr($oseqno, 1) + 0;
     my $nno   = substr($nseqno, 1) + 0;
@@ -296,7 +302,7 @@ sub check {
         if (  ($oname !~ m{Coxeter}               ) and ($nname !~ m{Coxeter}               ) ) {
         if (!(($oname =~ m{ Weyl group }i         ) and ($nname =~ m{ Weyl group }i         ))) {
         if (!(($oname =~ m{McKay\-Thompson series}) and ($nname =~ m{McKay\-Thompson series}))) {
-            $is_chosen = 1;
+            $status = $LISTING;
             $count ++;
             if (($count & 0xff) == 0) {
                 print "$count pairs\n";
@@ -307,7 +313,6 @@ sub check {
             my $ntext   = join("<br />\n", &wget($nseqno));
             $bifurls[0] = &get_bif_range(0, $oseqno, $otext);
             $bifurls[1] = &get_bif_range(1, $nseqno, $ntext);
-            my $entry = "";
             $entry .= &compare_texts($oseqno, $otext, $nseqno, $ntext);
             # determine the starting indices of @xmid
             $midsinds[0] = $datsinds[0] + scalar(split(/\s+/, $oleft));
@@ -331,22 +336,26 @@ sub check {
     <span class="prefor">$nlead a($datsinds[1]) = $nleft</span>
     <span class="narrow"><span class="same">$nmid $bifurls[1]</span>
 GFis
-            if ($is_chosen >= 1) {
-                my $bfcomp = "";
+            if ($status >= $LISTING) {
+                if ($status >= $WARNING) {
+                    $lastwarn = "${oseqno}_$nseqno";
+                    # $lastwarn =~ s{A}{x}g;
+                    $warn_count ++;
+                }
                 if ($colors [0] eq "refn" or  $colors [1] eq "warn") { # not both references
                 if ($bifurls[0] ne ""     and $bifurls[1] ne ""    ) { # non-generated b-files
-                #   $bfcomp = "<br /><span class=\"conc\"><a href=\"\""
+                #   $bfcomp = "<br /><span class=\"comt\"><a href=\"\""
                 #           . " title=\"perl simseq.pl -a bfc $oseqno $nseqno\""
                 #           . " onclick=\"bfc(\'$oseqno $nseqno\');"
                 #           . " return false;\">bfc</a></span>";
-                    $bfcomp = "<br /><span class=\"conc\">"
-                    	. &compare_terms($oseqno, $nseqno)
-                    	. "</span>";
+                    $comment .= "<br /><span class=\"comt\">"
+                        . &compare_terms($oseqno, $nseqno)
+                        . "</span>";
                 } # with bf-file compare
                 } # not both references
                 print HTM <<"GFis";
-<tr id="$oseqno\-$nseqno"><td id="$nseqno" class="bor">
-$entry $bfcomp
+<tr id="${oseqno}_$nseqno"><td id="$nseqno" class="bor">
+$entry $comment
 </td></tr>
 GFis
             } # is_chosen
@@ -399,9 +408,8 @@ sub compare_texts {
             $colors[1] = "refn"; # does not count as warning
         } else {
         }
-        if ($is_chosen >= 1) {
-            $lastwarn = "$oseqno\-$nseqno";
-            $warn_count ++;
+        if ($status >= $LISTING) {
+            $status = $WARNING;
         }
         $result .= &get_extract(1, $nseqno, $colors[1], $ntext);
     } # $oseqno in $nbuf
@@ -412,28 +420,41 @@ sub compare_texts {
 #----------------------
 sub compare_terms { # checks the b-file contents, and compare as much as possible
     my ($oseqno, $nseqno) = @_;
-    my @obifterms = split(/ /, join(" ", &get_bifterms($oseqno, $bifsinds[0], $bifeinds[0])));
-    my @nbifterms = split(/ /, join(" ", &get_bifterms($nseqno, $bifsinds[1], $bifeinds[1])));
+    my @obifterms = &get_bifterms(0, $oseqno, $bifsinds[0], $bifeinds[0]);
+    my @nbifterms = &get_bifterms(1, $nseqno, $bifsinds[1], $bifeinds[1]);
     my $oind = $midsinds[0];
     my $nind = $midsinds[1];
     my $busy = 1;
     while ($busy == 1 and $oind <= $bifeinds[0] and $nind <= $bifeinds[1]) { # compare
+        if ($debug >= 3) {
+            print "[$oind] $obifterms[$oind]?$nbifterms[$nind]; ";
+        }
         if ($obifterms[$oind] != $nbifterms[$nind]) {
             $busy = 0; # break loop
         }
         $oind ++;
         $nind ++;
     } # while comparing
+    if ($debug >= 3) {
+        print "\nbusy=$busy\n"; 
+    }
     $oind --;
     $nind --;
     my $idelta = $midsinds[0] - $midsinds[1];
     my $result = "a(n) = ${oseqno}(n" # a(n) is $nseqno
         . ($idelta == 0 ? "" : $idelta > 0 ? "+$idelta" : $idelta) . ") for " 
-        . ($midsinds[1] - 1) 
-        . " < n <= $nind";
-    if ($busy == 0) { # there was a difference
-        $result .= ", but a($nind) = $nbifterms[$nind] != $obifterms[$oind] = ${oseqno}($oind)";
-    } # difference
+        . ($midsinds[1]) 
+        . " <= n ";
+    if ($busy == 1) { # there was no difference
+        $result .= "<= $nind";
+    } else { # difference
+        $result .=     "< $nind, but a($nind) = $nbifterms[$nind]" 
+            . " differs from ${oseqno}($oind) = $obifterms[$oind]";
+        # difference
+        if ($debug >= 2) {
+            $result .= "; midsinds=" . join(",", @midsinds);    
+        }
+    }
     $result .= ". - ~~~~";
     return $result;
 } # compare_terms
@@ -443,9 +464,14 @@ sub get_bif_range { # extract the range of the b-file, if any
     my $seqno_A = $oseqno; # OEIS seqno minus A
     $seqno_A =~ s{\D}{}g;
     my @obuf = split(/\n/, $otext);
-    my $result = "";	
-    my $bflink = join("", grep { m{^\%[H]} and m{\>Table of n\,\s*a\(n\) }} @obuf);
-    if ($bflink =~ m{n\s*\=\s*(\d+)\D+(\d+)}) { # standard link to b-file
+    my $result = "";    
+    my $bflink = join("", grep(m{\>Table of n\,\s*a\(n\)}
+                        , grep(m{^\%[H]}
+                        , @obuf)));
+    if ($debug >= 1) {
+        print "\%H($oseqno) = \"$bflink\"\n";
+    }
+    if ($bflink =~ m{ n\s*\=\s*(\-?\d+)\s*\.\.\s*(\-?\d+)\<}) { # standard link to b-file
         $bifsinds[$lix] = $1;
         $bifeinds[$lix] = $2;
         $result = " ... <a href=\"https://oeis.org/A$seqno_A/b$seqno_A.txt\""
@@ -465,7 +491,7 @@ sub get_extract { # extract OFFSET, KEYWORDS and AUTHOR
     my $author   = join(" ", grep { m{^\%[A]} } @extract);
     my $keywrd   = join(" ", grep { m{^\%[K]} } @extract);
     my $offset   = join(" ", grep { m{^\%[O]} } @extract);
-    $offset =~ m{(\d+)\,};
+    $offset =~ m{(\-?\d+)\,};
     $datsinds[$lix] = $1;
     $bifsinds[$lix] = $datsinds[$lix];
     # A004279 %K easy,nonn %O 0,2 %A _N. J. A. Sloane_.
@@ -475,11 +501,11 @@ sub get_extract { # extract OFFSET, KEYWORDS and AUTHOR
                 {$1\<span class\=\"more\"\>more\<\/span\>$2};
     if (($keywrd =~ s{(\W)dead(\W)}
                      {$1\<span class\=\"dead\"\>dead\<\/span\>$2}) > 0) {
-        $is_chosen = 0;
+        $status = $IGNORE;
     }
     if (($keywrd =~ s{(\W)fini(\W)}
                      {$1\<span class\=\"fini\"\>fini\<\/span\>$2}) > 0) {
-        $is_chosen = 0;
+        $status = $IGNORE;
     }
     return "<span class=\"$class\">"
         . "<a href=\"https://oeis.org/$seqno\" target=\"_new\">$seqno</a> "
@@ -505,26 +531,39 @@ sub get_refs { # extract any lines which refer the other seqno
 } # get_refs
 #----------------------
 sub get_bifterms {
-    my ($aseqno, $bifsind, $bifeind) = @_;
+    my ($lix, $aseqno, $bifsind, $bifeind) = @_;
     my $bseqno = "b" . substr($aseqno, 1);
     my @pairs = &wget($bseqno);
     my @result = ();
-    if (scalar(@pairs) != $bifeind - $bifsind + 1) {
-        print "** $bseqno: wrong range $bifsind..$bifeind (" 
-        	. scalar(@pairs) . " terms)\n";
+    while (scalar(@result) < $datsinds[$lix]) { # care for offset > 0
+        push(@result, "");
+    } # care for offset
+    my $npair = scalar(@pairs);
+    if ($npair != $bifeind - $bifsind + 1) {
+        print "** $bseqno: wrong range $bifsind..$bifeind ($npair terms)\n";
+        $comment .= "<br /><span class=\"err\">$bseqno: wrong range $bifsind..$bifeind ($npair terms)</span>";
     } 
-    { # range ok
-        my $ind = 0;
-        while ($ind < scalar(@pairs)) {
-            my ($n, $an) = split(/ /, $pairs[$ind]);
-            if ($n != $bifsind) {
-                print "** $bseqno: non-sequential index n=$n\n";
-                push(@result, $an);
-            }
-            $bifsind ++;
-            $ind ++;
-        } # while $ind
-    } # range ok
+    while (substr($pairs[0], 0, 1) eq "-") { # care for offset < 0
+        print "** $bseqno: negative offset in \"$pairs[0]\"\n";
+        $comment .= "<br /><span class=\"err\">$bseqno:  negative offset in \"$pairs[0]\"</span>";
+    	shift(@pairs); # remove negative indices
+    	$bifsinds[$lix] ++;
+    	$bifsind ++;
+    } # while negative
+    my $ind = 0;
+    while ($ind < scalar(@pairs)) {
+        my ($n, $an) = split(/ +/, $pairs[$ind]);
+        if ($n != $bifsind) {
+            print "** $bseqno: non-sequential index n=$n\n";
+            $comment .= "<br /><span class=\"err\">$bseqno: non-sequential index n=$n</span>";
+        }
+        push(@result, $an);
+        if ($debug >= 3) {
+            print "push($n, $an), pairs[$ind]=\"$pairs[$ind]\"\n";
+        }
+        $bifsind ++;
+        $ind ++;
+    } # while $ind
     return @result;
 } # get_bifterms
 #----------------------
@@ -573,6 +612,9 @@ sub wget {
                 s{\s\s+}{ }; # single space
                 $_
             } split(/\r?\n/, $buffer);
+        if ($debug >= 3) {
+            print "wget: ". join("/", @result) . "\n";
+        } 
     } else {
         die "wrong parameter in \"\&wget($seqno)\"\n";
     }
@@ -603,7 +645,8 @@ tr,td,th{ text-align: left; vertical-align:top; }
           border-right : 2px solid gray    ;                                 }
 .refp   { background-color: lightgreen;    } /* refers to the partner */
 .warn   { background-color: yellow;        } /* no reference to the partner and newer */
-.conc   { background-color: #fff0f0;       } /* lightred like in hiistory, for conclusion */
+.comt   { background-color: peachpuff;     } /* lightpink; #fff0f0; a lightred like in history, for conclusion */
+.err    { background-color: red; color: white; } /* for errors */
 .refn   { background-color: greenyellow;   } /* no reference to the partner */
 .more   { color:white  ; background-color: blue;      }
 .dead   { color:white  ; background-color: gray;      }
