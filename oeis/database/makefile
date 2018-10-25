@@ -16,8 +16,8 @@ N=1
 D=0
 
 all: 
-	# targets: new = prepare newseq regen (in that order)
-new: prepare newseq regen
+	# targets: new = prepare newseq archlist regen (in that order)
+new: prepare newseq archlist regen
 #----
 # get base data files 'names' and 'stripped' and 
 # preprocess/sort the latter
@@ -79,7 +79,7 @@ news1:
 	wc -l newseq*.lst
 news2:
 	cat newseq.`date +%Y-%m-%d`.lst | xargs -l -i{} rm -vf ../store/{}.text
-	mv ../temp/*.eml ../archive
+	mv ../temp/*.eml ../archive || :
 #----
 allseq: archlist alls1 alls2
 archlist:

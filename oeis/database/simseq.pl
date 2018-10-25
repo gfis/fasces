@@ -2,6 +2,7 @@
 
 # Detect similiar OEIS sequences
 # @(#) $Id$
+# 2018-10-24: &compare_terms, &repair_starts
 # 2018-10-20: bfc.cmd incorporated
 # 2018-10-17: titles on Axxxxxx, extract always; avoid dead and fini
 # 2018-10-16: count warnings
@@ -239,7 +240,7 @@ print scalar(@names) . " sequence names read\n";
 # process file stripsort
 my $IGNORE     = 0;
 my $LISTING    = 1;
-my $WARNING    = 2; 
+my $WARNING    = 2;
 my $status     = $IGNORE; # 0 (ignore), 1 (show in list), 2 (warning)
 my $warn_count = 0;
 my ($omid, $oleft, $oseqno) = ("a,a,a", "b,b,b", "Axxxxxx");
@@ -309,6 +310,8 @@ sub check {
             }
             @bifsinds   = (1, 1);
             @bifeinds   = (0, 0); # no b-files known
+            ($omid, $oleft, $nmid, $nleft) = &repair_starts
+            ($omid, $oleft, $nmid, $nleft);
             my $otext   = join("<br />\n", &wget($oseqno));
             my $ntext   = join("<br />\n", &wget($nseqno));
             $bifurls[0] = &get_bif_range(0, $oseqno, $otext);
@@ -343,15 +346,9 @@ GFis
                     $warn_count ++;
                 }
                 if ($colors [0] eq "refn" or  $colors [1] eq "warn") { # not both references
-                if ($bifurls[0] ne ""     and $bifurls[1] ne ""    ) { # non-generated b-files
-                #   $bfcomp = "<br /><span class=\"comt\"><a href=\"\""
-                #           . " title=\"perl simseq.pl -a bfc $oseqno $nseqno\""
-                #           . " onclick=\"bfc(\'$oseqno $nseqno\');"
-                #           . " return false;\">bfc</a></span>";
                     $comment .= "<br /><span class=\"comt\">"
-                        . &compare_terms($oseqno, $nseqno)
-                        . "</span>";
-                } # with bf-file compare
+                    	. &compare_terms($oseqno, $nseqno)
+                    	. "</span>";
                 } # not both references
                 print HTM <<"GFis";
 <tr id="${oseqno}_$nseqno"><td id="$nseqno" class="bor">
@@ -367,7 +364,26 @@ GFis
     } # $nseqno in range
 } # check
 #----------------------
-sub strong_last {
+sub repair_starts { # shift the start of the coinciding terms downwards from mid to left
+    my ($omid, $oleft, $nmid, $nleft) = @_;
+    my @omids  = split(/\s+/, $omid );
+    my @olefts = split(/\s+/, $oleft);
+    my @nmids  = split(/\s+/, $nmid );
+    my @nlefts = split(/\s+/, $nleft);
+    my $ollen  = scalar(@olefts);
+    my $nllen  = scalar(@nlefts);
+    while ($ollen > 0 and $nllen > 0 and $olefts[$ollen - 1] == $nlefts[$nllen - 1]) { # shift
+        unshift(@omids, pop(@olefts));
+        unshift(@nmids, pop(@nlefts));
+        $ollen  = scalar(@olefts);
+        $nllen  = scalar(@nlefts);
+    } # while shifting
+    return ( join(" ", @omids), join(" ", @olefts)
+           , join(" ", @nmids), join(" ", @nlefts)
+           );
+} # repair_starts
+#----------------------
+sub strong_last { # emphasize last coinciding term
     my ($omid, $nmid) = @_;
     my @omids = split(/\s+/, $omid);
     my @nmids = split(/\s+/, $nmid);
@@ -419,42 +435,49 @@ sub compare_texts {
 } # compare_texts
 #----------------------
 sub compare_terms { # checks the b-file contents, and compare as much as possible
+    #   $bfcomp = "<br /><span class=\"comt\"><a href=\"\""
+    #           . " title=\"perl simseq.pl -a bfc $oseqno $nseqno\""
+    #           . " onclick=\"bfc(\'$oseqno $nseqno\');"
+    #           . " return false;\">bfc</a></span>";
     my ($oseqno, $nseqno) = @_;
-    my @obifterms = &get_bifterms(0, $oseqno, $bifsinds[0], $bifeinds[0]);
-    my @nbifterms = &get_bifterms(1, $nseqno, $bifsinds[1], $bifeinds[1]);
-    my $oind = $midsinds[0];
-    my $nind = $midsinds[1];
-    my $busy = 1;
-    while ($busy == 1 and $oind <= $bifeinds[0] and $nind <= $bifeinds[1]) { # compare
-        if ($debug >= 3) {
-            print "[$oind] $obifterms[$oind]?$nbifterms[$nind]; ";
-        }
-        if ($obifterms[$oind] != $nbifterms[$nind]) {
-            $busy = 0; # break loop
-        }
-        $oind ++;
-        $nind ++;
-    } # while comparing
-    if ($debug >= 3) {
-        print "\nbusy=$busy\n"; 
-    }
-    $oind --;
-    $nind --;
     my $idelta = $midsinds[0] - $midsinds[1];
     my $result = "a(n) = ${oseqno}(n" # a(n) is $nseqno
-        . ($idelta == 0 ? "" : $idelta > 0 ? "+$idelta" : $idelta) . ") for " 
-        . ($midsinds[1]) 
-        . " <= n ";
-    if ($busy == 1) { # there was no difference
-        $result .= "<= $nind";
-    } else { # difference
-        $result .=     "< $nind, but a($nind) = $nbifterms[$nind]" 
-            . " differs from ${oseqno}($oind) = $obifterms[$oind]";
-        # difference
-        if ($debug >= 2) {
-            $result .= "; midsinds=" . join(",", @midsinds);    
+            . ($idelta == 0 ? "" : $idelta > 0 ? "+$idelta" : $idelta) . ") for ";
+    if ($bifurls[0] ne ""     and $bifurls[1] ne ""    ) { # non-generated b-files
+        my @obifterms = &get_bifterms(0, $oseqno, $bifsinds[0], $bifeinds[0]);
+        my @nbifterms = &get_bifterms(1, $nseqno, $bifsinds[1], $bifeinds[1]);
+        my $oind = $midsinds[0];
+        my $nind = $midsinds[1];
+        my $busy = 1;
+        while ($busy == 1 and $oind <= $bifeinds[0] and $nind <= $bifeinds[1]) { # compare
+            if ($debug >= 3) {
+                print "[$oind] $obifterms[$oind]?$nbifterms[$nind]; ";
+            }
+            if ($obifterms[$oind] != $nbifterms[$nind]) {
+                $busy = 0; # break loop
+            }
+            $oind ++;
+            $nind ++;
+        } # while comparing
+        if ($debug >= 3) {
+            print "\nbusy=$busy\n";
         }
-    }
+        $oind --;
+        $nind --;
+        $result .= "$midsinds[1] <= n ";
+        if ($busy == 1) { # there was no difference
+            $result .= "\&lt;= $nind";
+        } else { # difference
+            $result .= "\&lt; $nind, but a($nind) = $nbifterms[$nind]"
+                . " differs from ${oseqno}($oind) = $obifterms[$oind]";
+            if ($debug >= 2) {
+                $result .= "; midsinds=" . join(",", @midsinds);
+            }
+        } # difference
+        # with bf-file compare
+    } else { # no b-file compare
+        $result .= "n \&gt;= " . ($midsinds[1]);
+    } # no b-file compare
     $result .= ". - ~~~~";
     return $result;
 } # compare_terms
@@ -464,7 +487,7 @@ sub get_bif_range { # extract the range of the b-file, if any
     my $seqno_A = $oseqno; # OEIS seqno minus A
     $seqno_A =~ s{\D}{}g;
     my @obuf = split(/\n/, $otext);
-    my $result = "";    
+    my $result = "";
     my $bflink = join("", grep(m{\>Table of n\,\s*a\(n\)}
                         , grep(m{^\%[H]}
                         , @obuf)));
@@ -542,13 +565,13 @@ sub get_bifterms {
     if ($npair != $bifeind - $bifsind + 1) {
         print "** $bseqno: wrong range $bifsind..$bifeind ($npair terms)\n";
         $comment .= "<br /><span class=\"err\">$bseqno: wrong range $bifsind..$bifeind ($npair terms)</span>";
-    } 
+    }
     while (substr($pairs[0], 0, 1) eq "-") { # care for offset < 0
         print "** $bseqno: negative offset in \"$pairs[0]\"\n";
         $comment .= "<br /><span class=\"err\">$bseqno:  negative offset in \"$pairs[0]\"</span>";
-    	shift(@pairs); # remove negative indices
-    	$bifsinds[$lix] ++;
-    	$bifsind ++;
+        shift(@pairs); # remove negative indices
+        $bifsinds[$lix] ++;
+        $bifsind ++;
     } # while negative
     my $ind = 0;
     while ($ind < scalar(@pairs)) {
@@ -614,7 +637,7 @@ sub wget {
             } split(/\r?\n/, $buffer);
         if ($debug >= 3) {
             print "wget: ". join("/", @result) . "\n";
-        } 
+        }
     } else {
         die "wrong parameter in \"\&wget($seqno)\"\n";
     }
