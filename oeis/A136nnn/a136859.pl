@@ -5,7 +5,7 @@
 # 2018-10-25, Georg Fischer
 #
 # Usage:
-#   perl a136859.pl -c digits -m max -w width -b seqno -d debug -p proof
+#   perl a136859.pl -c digits -w width -d debug 
 #--------------------------------------------
 use strict;
 use integer;
@@ -22,7 +22,7 @@ my $digits = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzäö";
 #                       1         2         3         4         5         6
 my $debug  = 0; # 0 (none), 1 (some), 2 (more)
 my $code   = "0146"; # digits which may occur
-my $maxind = 1000; # generate so many terms
+my $maxind = 100000000; # generate so many terms
 my $bseqno = "b136808";
 my $proof  = 0;
 my $maxwidth  = 25; # very wide
@@ -64,22 +64,24 @@ while ($width <= $maxwidth) {
         $old2->bmul($old);
         my $old2w = substr($old2, - $width);
         if ($old2w !~ m{[$rest]}o) { # last block of square is allowed
-	        my $result = sprintf("%3d %2d %16s %32s", $ind, $width, $old, $old2);
-	        $ind ++;
-            print "$result"; #  +";
-            # print sprintf(" %10s %20s ", &to_base($old), &to_base($old2));
-            print " " . (($old2 !~ m{[$rest]}o) ? " + " : "   ") . $old2w;;
+        	if ($old !~ m{^0}) {
+		        my $result = sprintf("%d\t%20s", $ind, $old);
+        	    print $result; #  +";
+            	print " " . (($old2 !~ m{[$rest]}o) ? " + " : "   "); 
+            	$old2 =~ s{$old2w\Z}{ $old2w};
+            	print sprintf("%40s", $old2);
+            	# print sprintf(" %10s %20s ", &to_base($old), &to_base($old2));
+            	my $occur = join("", sort(split(//, $old2)));
+            	# print " $occur ";
+            	$occur =~ s{((\d)\2+)}{\2}g;
+	            print " $occur\n";
+		        $ind ++;
+            }
             if ($old2w != 0) {
                 push(@news, $old);
-                # print " push $old";
-            } else {
-                # print " null";
             }
-            print "\n";
-            # last block of square
         } else {
-            # print "-\n";
-        }
+        } # last block of square
     } # foreach @olds
     @olds = ();
     foreach my $dig(@digs) {

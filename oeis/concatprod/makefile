@@ -1,8 +1,8 @@
 #!make
 
-# OEIS Sequences A136nnn from Jonathan Wellons
+# OEIS Sequences A116094-A116224 by Giovanni Resta
 # @(#) $Id$
-# 2018-10-11, Georg Fischer 
+# 2018-10-31, Georg Fischer 
 #---------------------------------
 H=4
 MIN=0
@@ -10,26 +10,32 @@ MAX=10000
 S=8
 CODE=0146
 
-all: eval
+all: getseq
 #----
-eval:
-	perl a136nnn.pl -c $(CODE)
-#----
-getseq: getseq1 getseq2 getseq3
+getseq: getseq1 getseq2
 getseq1:
 	rm -f *.tmp
-	grep -E "^A13[67]" ../database/names      > names1.tmp
-	grep -E " and the square of "    names1.tmp > names2.tmp
-	wc -l names2.tmp
-	grep -E "^A13[67]" ../database/stripped   > strip1.tmp
+	# grep -i " n such that the concatenation of n with " ../database/names | tee names1.tmp
+	grep -i " n such that n concatenated with "         ../database/names | tee names2.tmp
+	wc -l names*.tmp
+	grep -E "^A116[012]" ../database/stripped   > strip1.tmp
 getseq2:
 	cut -b 1-7 names2.tmp > seqno.tmp
 	grep -f seqno.tmp strip1.tmp > strip2.tmp
 	wc -l strip2.tmp
+dupl:
+	cut -b 8- strip2.tmp | sort | uniq -c | grep -v "   1 " | sed -e "s/  */ /g" \
+	| cut -d" " -f 3- | tee dupl1.tmp
+	grep -f dupl1.tmp strip2.tmp | sort -k2 | cut -b 1-8,10-50 \
+	| sed -e "s/\(^A[0-9]*\)/<a href=\"https:\/\/oeis.org\/\\1\" target=\"_new\">\\1<\/a> /" \
+	| sed -e "s/$$/ .../" -e "s/^/ /" | tee dupl2.tmp
 getseq3:
 	sed -e "s/Numbers/;/g" -e "s/ and /,/g" -e "s/[Na-z., ]//g" -e "s/;/ /g" \
 		names2.tmp > names3.tmp
 	join names3.tmp strip2.tmp > squaredig.tmp
+getseq4:
+	grep -i " n such that n concatenated with " ../database/names \
+	| grep -E "square|product" | tee names4.tmp
 #----
 wget_bf:
 	cut -b 1-7 squaredig.tmp | sed -e "s/A/b/" > bseqno.tmp

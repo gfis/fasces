@@ -92,14 +92,8 @@ alls1:
 alls2:
 	cat brchlist.tmp | xargs -l -i{} rm -vf ../bfiles/{}.txt
 #------------
-wellons:
-	perl simseq.pl -a wget < ../A136nnn/seqno.tmp
-#------------
 # old targets
 TEST=282876
 test:
 	perl simseq.pl -p $(P) -h $(H) -l $(MINLEN) -min $(TEST) -max $(TEST) -n 0 -d 1 < stripsort.tmp 
 #------------
-ant:
-	grep -f antti.3x1 stripped > ant.tmp
-	uedit64 ant.tmp

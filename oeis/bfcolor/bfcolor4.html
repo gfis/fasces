@@ -1,0 +1,865 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"
+[
+]>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta name="generator" content=
+"HTML Tidy for Cygwin (vers 25 March 2009), see www.w3.org" />
+<title>b136872</title>
+<meta name="generator" content=
+"https://github.com/gfis/fasces/blob/master/oeis/database/bfcolor.pl" />
+<meta name="author" content="Georg Fischer" />
+<meta name="date" content="2018-10-31" />
+<style type="text/css">
+/*<![CDATA[*/
+body,table,p,td,th
+        { font-family: Lucida console,monospace; font-weight: normal; }
+table   { border-collapse: collapse; }
+td      { padding-right: 4px; }
+tr,td,th{ text-align: left; vertical-align:top; }
+.c0     { color: #000000;  background-color: #FFFF00 ; }
+.c1     { color: #000000;  background-color: #00FF00 ; }
+.c2     { color: #000000;  background-color: #FF0000 ; }
+.c3     { color: #FFFF00;  background-color: #0000FF ; }
+.c4     { color: #FFFFFF;  background-color: #FF00FF ; }
+.c5     { color: #FFFFFF;  background-color: #008000 ; }
+.c6     { color: #FFFF00;  background-color: #800080 ; }
+.c7     { color: #000000;  background-color: #00FFFF ; }
+.c8     { color: #FF0000;  background-color: #C0C0C0 ; }
+.c9     { color: #FFFFFF;  background-color: #000000 ; }
+/*]]>*/
+</style>
+</head>
+<body>
+<h2>Colorized b-files</h2>
+<!--
+<p align="right"><span class="c0">00</span><span class=
+"c1">11</span><span class="c2">22</span><span class=
+"c3">33</span><span class="c4">44</span><span class=
+"c5">55</span><span class="c6">66</span><span class=
+"c7">77</span><span class="c8">88</span><span class=
+"c9">99</span></p>
+-->
+<table><tr>
+<td>
+<h4>b136872</h4>
+<pre>
+    1 <span class="c0">0</span>
+    2 <span class="c1">1</span>
+    3 <span class="c1">1</span><span class="c0">0</span>
+    4 <span class="c1">1</span><span class="c0">00</span>
+    5 <span class="c1">1</span><span class="c0">000</span>
+    6 <span class="c1">1</span><span class="c0">0000</span>
+    7 <span class="c1">1</span><span class="c0">00000</span>
+    8 <span class="c8">8</span><span class=
+"c7">77</span><span class="c5">5</span><span class=
+"c0">0</span><span class="c1">1</span>
+    9 <span class="c1">1</span><span class="c0">000000</span>
+   10 <span class="c1">1</span><span class=
+"c0">00</span><span class="c8">8</span><span class=
+"c7">7</span><span class="c5">5</span><span class="c1">1</span>
+   11 <span class="c8">8</span><span class=
+"c7">77</span><span class="c5">5</span><span class=
+"c0">0</span><span class="c1">1</span><span class="c0">0</span>
+   12 <span class="c1">1</span><span class="c0">0000000</span>
+   13 <span class="c1">1</span><span class=
+"c0">000</span><span class="c7">77</span><span class=
+"c5">5</span><span class="c1">1</span>
+   14 <span class="c1">1</span><span class=
+"c0">00</span><span class="c8">8</span><span class=
+"c7">7</span><span class="c5">5</span><span class=
+"c1">1</span><span class="c0">0</span>
+   15 <span class="c8">8</span><span class=
+"c7">77</span><span class="c5">5</span><span class=
+"c0">0</span><span class="c1">1</span><span class="c0">00</span>
+   16 <span class="c1">1</span><span class="c0">00000000</span>
+   17 <span class="c1">1</span><span class=
+"c0">000</span><span class="c7">77</span><span class=
+"c5">5</span><span class="c1">1</span><span class="c0">0</span>
+   18 <span class="c1">1</span><span class=
+"c0">00</span><span class="c5">5</span><span class=
+"c0">0</span><span class="c7">77</span><span class=
+"c5">5</span><span class="c1">1</span>
+   19 <span class="c1">1</span><span class=
+"c0">00</span><span class="c8">8</span><span class=
+"c7">7</span><span class="c5">5</span><span class=
+"c1">1</span><span class="c0">00</span>
+   20 <span class="c8">8</span><span class=
+"c7">77</span><span class="c5">5</span><span class=
+"c0">0</span><span class="c1">1</span><span class="c0">000</span>
+   21 <span class="c1">1</span><span class="c0">000000000</span>
+   22 <span class="c1">1</span><span class=
+"c0">000</span><span class="c7">77</span><span class=
+"c5">5</span><span class="c1">1</span><span class="c0">00</span>
+   23 <span class="c1">1</span><span class=
+"c0">00</span><span class="c5">5</span><span class=
+"c0">0</span><span class="c7">77</span><span class=
+"c5">5</span><span class="c1">1</span><span class="c0">0</span>
+   24 <span class="c1">1</span><span class=
+"c0">00</span><span class="c8">8</span><span class=
+"c7">7</span><span class="c5">5</span><span class=
+"c1">1</span><span class="c0">000</span>
+   25 <span class="c1">1</span><span class=
+"c0">00</span><span class="c8">88</span><span class=
+"c1">1</span><span class="c5">55</span><span class=
+"c0">0</span><span class="c1">1</span>
+   26 <span class="c8">8</span><span class=
+"c7">77</span><span class="c5">5</span><span class=
+"c0">0</span><span class="c1">1</span><span class="c0">0000</span>
+   27 <span class="c1">1</span><span class="c0">0000000000</span>
+   28 <span class="c1">1</span><span class=
+"c0">000</span><span class="c7">77</span><span class=
+"c5">5</span><span class="c1">1</span><span class="c0">000</span>
+   29 <span class="c1">1</span><span class=
+"c0">00</span><span class="c5">5</span><span class=
+"c0">0</span><span class="c7">77</span><span class=
+"c5">5</span><span class="c1">1</span><span class="c0">00</span>
+   30 <span class="c1">1</span><span class=
+"c0">00</span><span class="c5">5</span><span class=
+"c0">0</span><span class="c7">77</span><span class=
+"c5">55</span><span class="c0">0</span><span class="c1">1</span>
+   31 <span class="c1">1</span><span class=
+"c0">00</span><span class="c8">8</span><span class=
+"c7">7</span><span class="c5">5</span><span class=
+"c1">1</span><span class="c0">0000</span>
+   32 <span class="c1">1</span><span class=
+"c0">00</span><span class="c8">88</span><span class=
+"c1">1</span><span class="c5">55</span><span class=
+"c0">0</span><span class="c1">1</span><span class="c0">0</span>
+   33 <span class="c1">1</span><span class=
+"c0">0</span><span class="c8">8</span><span class=
+"c7">7</span><span class="c0">00</span><span class=
+"c5">5</span><span class="c7">77</span><span class=
+"c5">5</span><span class="c1">1</span>
+   34 <span class="c8">8</span><span class=
+"c7">7</span><span class="c0">0</span><span class=
+"c7">7</span><span class="c1">1</span><span class=
+"c8">8</span><span class="c1">1</span><span class=
+"c8">8</span><span class="c5">5</span><span class=
+"c0">0</span><span class="c1">1</span>
+   35 <span class="c8">8</span><span class=
+"c7">77</span><span class="c5">5</span><span class=
+"c0">0</span><span class="c1">1</span><span class="c0">00000</span>
+   36 <span class="c1">1</span><span class="c0">00000000000</span>
+   37 <span class="c1">1</span><span class=
+"c0">000</span><span class="c7">77</span><span class=
+"c5">5</span><span class="c1">1</span><span class="c0">0000</span>
+   38 <span class="c1">1</span><span class=
+"c0">00</span><span class="c5">5</span><span class=
+"c0">0</span><span class="c7">77</span><span class=
+"c5">5</span><span class="c1">1</span><span class="c0">000</span>
+   39 <span class="c1">1</span><span class=
+"c0">00</span><span class="c5">5</span><span class=
+"c0">0</span><span class="c7">77</span><span class=
+"c5">55</span><span class="c0">0</span><span class=
+"c1">1</span><span class="c0">0</span>
+   40 <span class="c1">1</span><span class=
+"c0">00</span><span class="c8">8</span><span class=
+"c7">7</span><span class="c5">5</span><span class=
+"c1">1</span><span class="c0">00000</span>
+   41 <span class="c1">1</span><span class=
+"c0">00</span><span class="c8">88</span><span class=
+"c1">1</span><span class="c5">55</span><span class=
+"c0">0</span><span class="c1">1</span><span class="c0">00</span>
+   42 <span class="c1">1</span><span class=
+"c0">0</span><span class="c8">8</span><span class=
+"c7">7</span><span class="c0">00</span><span class=
+"c5">5</span><span class="c7">77</span><span class=
+"c5">5</span><span class="c1">1</span><span class="c0">0</span>
+   43 <span class="c1">1</span><span class=
+"c0">0</span><span class="c8">888</span><span class=
+"c0">0</span><span class="c7">7</span><span class=
+"c1">1</span><span class="c8">8</span><span class=
+"c1">1</span><span class="c5">5</span><span class="c1">1</span>
+   44 <span class="c7">7</span><span class=
+"c0">0</span><span class="c7">7</span><span class=
+"c1">111</span><span class="c8">8</span><span class=
+"c0">0</span><span class="c8">8</span><span class=
+"c7">7</span><span class="c5">5</span><span class="c1">1</span>
+   45 <span class="c7">7</span><span class=
+"c5">55</span><span class="c0">0</span><span class=
+"c8">88</span><span class="c0">0</span><span class=
+"c7">7</span><span class="c5">5</span><span class=
+"c0">00</span><span class="c1">1</span>
+   46 <span class="c8">8</span><span class=
+"c7">7</span><span class="c0">0</span><span class=
+"c7">7</span><span class="c1">1</span><span class=
+"c8">8</span><span class="c1">1</span><span class=
+"c8">8</span><span class="c5">5</span><span class=
+"c0">0</span><span class="c1">1</span><span class="c0">0</span>
+   47 <span class="c8">8</span><span class=
+"c7">77</span><span class="c5">5</span><span class=
+"c0">0</span><span class="c1">1</span><span class=
+"c0">000000</span>
+   48 <span class="c8">88</span><span class=
+"c0">0</span><span class="c7">7</span><span class=
+"c8">8</span><span class="c1">1</span><span class=
+"c0">00</span><span class="c5">5</span><span class=
+"c0">00</span><span class="c1">1</span>
+   49 <span class="c8">88</span><span class=
+"c7">7</span><span class="c5">5</span><span class=
+"c8">8</span><span class="c5">5</span><span class=
+"c7">77</span><span class="c5">55</span><span class=
+"c0">0</span><span class="c1">1</span>
+   50 <span class="c1">1</span><span class="c0">000000000000</span>
+   51 <span class="c1">1</span><span class=
+"c0">000</span><span class="c5">5</span><span class=
+"c0">00</span><span class="c7">777</span><span class=
+"c5">5</span><span class="c0">0</span><span class="c1">1</span>
+   52 <span class="c1">1</span><span class=
+"c0">000</span><span class="c7">77</span><span class=
+"c5">5</span><span class="c0">0</span><span class=
+"c8">8</span><span class="c5">5</span><span class=
+"c0">00</span><span class="c1">1</span>
+   53 <span class="c1">1</span><span class=
+"c0">000</span><span class="c7">77</span><span class=
+"c5">5</span><span class="c1">1</span><span class="c0">00000</span>
+   54 <span class="c1">1</span><span class=
+"c0">00</span><span class="c5">5</span><span class=
+"c0">0</span><span class="c7">77</span><span class=
+"c5">5</span><span class="c1">1</span><span class="c0">0000</span>
+   55 <span class="c1">1</span><span class=
+"c0">00</span><span class="c5">5</span><span class=
+"c0">0</span><span class="c7">77</span><span class=
+"c5">55</span><span class="c0">0</span><span class=
+"c1">1</span><span class="c0">00</span>
+   56 <span class="c1">1</span><span class=
+"c0">00</span><span class="c7">77</span><span class=
+"c5">55</span><span class="c8">8</span><span class=
+"c1">1</span><span class="c7">7</span><span class=
+"c5">5</span><span class="c0">0</span><span class="c1">1</span>
+   57 <span class="c1">1</span><span class=
+"c0">00</span><span class="c8">8</span><span class=
+"c7">7</span><span class="c5">5</span><span class=
+"c1">1</span><span class="c0">000000</span>
+   58 <span class="c1">1</span><span class=
+"c0">00</span><span class="c8">88</span><span class=
+"c1">1</span><span class="c5">55</span><span class=
+"c0">0</span><span class="c1">1</span><span class="c0">000</span>
+   59 <span class="c1">1</span><span class=
+"c0">0</span><span class="c8">8</span><span class=
+"c7">7</span><span class="c0">00</span><span class=
+"c5">5</span><span class="c7">77</span><span class=
+"c5">5</span><span class="c1">1</span><span class="c0">00</span>
+   60 <span class="c1">1</span><span class=
+"c0">0</span><span class="c8">888</span><span class=
+"c0">0</span><span class="c7">7</span><span class=
+"c1">1</span><span class="c8">8</span><span class=
+"c1">1</span><span class="c5">5</span><span class=
+"c1">1</span><span class="c0">0</span>
+   61 <span class="c7">7</span><span class=
+"c0">0</span><span class="c7">7</span><span class=
+"c1">111</span><span class="c8">8</span><span class=
+"c0">0</span><span class="c8">8</span><span class=
+"c7">7</span><span class="c5">5</span><span class=
+"c1">1</span><span class="c0">0</span>
+   62 <span class="c7">7</span><span class=
+"c1">1</span><span class="c7">77</span><span class=
+"c1">1</span><span class="c5">5</span><span class=
+"c1">1</span><span class="c8">8</span><span class=
+"c0">0</span><span class="c8">8</span><span class=
+"c7">7</span><span class="c5">5</span><span class="c1">1</span>
+   63 <span class="c7">7</span><span class=
+"c5">55</span><span class="c0">0</span><span class=
+"c8">88</span><span class="c0">0</span><span class=
+"c7">7</span><span class="c5">5</span><span class=
+"c0">00</span><span class="c1">1</span><span class="c0">0</span>
+   64 <span class="c7">7</span><span class=
+"c5">5</span><span class="c8">88</span><span class=
+"c0">0</span><span class="c7">7</span><span class=
+"c0">0</span><span class="c8">8</span><span class=
+"c1">1</span><span class="c5">55</span><span class=
+"c0">0</span><span class="c1">1</span>
+   65 <span class="c8">8</span><span class=
+"c7">7</span><span class="c0">0</span><span class=
+"c1">1</span><span class="c0">0</span><span class=
+"c1">1</span><span class="c7">7</span><span class=
+"c8">8</span><span class="c1">1</span><span class=
+"c8">8</span><span class="c1">1</span><span class=
+"c5">5</span><span class="c1">1</span>
+   66 <span class="c8">8</span><span class=
+"c7">7</span><span class="c0">0</span><span class=
+"c7">7</span><span class="c1">1</span><span class=
+"c8">8</span><span class="c1">1</span><span class=
+"c8">8</span><span class="c5">5</span><span class=
+"c0">0</span><span class="c1">1</span><span class="c0">00</span>
+   67 <span class="c8">8</span><span class=
+"c7">77</span><span class="c5">5</span><span class=
+"c0">0</span><span class="c1">1</span><span class=
+"c0">0000000</span>
+   68 <span class="c8">88</span><span class=
+"c0">0</span><span class="c7">7</span><span class=
+"c8">8</span><span class="c1">1</span><span class=
+"c0">00</span><span class="c5">5</span><span class=
+"c0">00</span><span class="c1">1</span><span class="c0">0</span>
+   69 <span class="c8">88</span><span class=
+"c7">7</span><span class="c5">5</span><span class=
+"c8">8</span><span class="c5">5</span><span class=
+"c7">77</span><span class="c5">55</span><span class=
+"c0">0</span><span class="c1">1</span><span class="c0">0</span>
+   70 <span class="c1">1</span><span class=
+"c0">0000000000000</span>
+   71 <span class="c1">1</span><span class=
+"c0">000000</span><span class="c7">777</span><span class=
+"c8">8</span><span class="c5">5</span><span class=
+"c0">0</span><span class="c1">1</span>
+   72 <span class="c1">1</span><span class=
+"c0">000</span><span class="c5">5</span><span class=
+"c0">00</span><span class="c7">777</span><span class=
+"c5">5</span><span class="c0">0</span><span class=
+"c1">1</span><span class="c0">0</span>
+   73 <span class="c1">1</span><span class=
+"c0">000</span><span class="c5">5</span><span class=
+"c0">00</span><span class="c7">7</span><span class=
+"c8">8</span><span class="c0">00</span><span class=
+"c5">5</span><span class="c0">0</span><span class="c1">1</span>
+   74 <span class="c1">1</span><span class=
+"c0">000</span><span class="c7">77</span><span class=
+"c5">5</span><span class="c0">0</span><span class=
+"c8">8</span><span class="c5">5</span><span class=
+"c0">00</span><span class="c1">1</span><span class="c0">0</span>
+   75 <span class="c1">1</span><span class=
+"c0">000</span><span class="c7">77</span><span class=
+"c5">5</span><span class="c1">1</span><span class=
+"c0">000000</span>
+   76 <span class="c1">1</span><span class=
+"c0">00</span><span class="c5">5</span><span class=
+"c0">0</span><span class="c7">77</span><span class=
+"c5">5</span><span class="c1">1</span><span class="c0">00000</span>
+   77 <span class="c1">1</span><span class=
+"c0">00</span><span class="c5">5</span><span class=
+"c0">0</span><span class="c7">77</span><span class=
+"c5">55</span><span class="c0">0</span><span class=
+"c1">1</span><span class="c0">000</span>
+   78 <span class="c1">1</span><span class=
+"c0">00</span><span class="c7">77</span><span class=
+"c5">55</span><span class="c8">8</span><span class=
+"c1">1</span><span class="c7">7</span><span class=
+"c5">5</span><span class="c0">0</span><span class=
+"c1">1</span><span class="c0">0</span>
+   79 <span class="c1">1</span><span class=
+"c0">00</span><span class="c8">8</span><span class=
+"c7">7</span><span class="c5">5</span><span class=
+"c1">1</span><span class="c0">0000000</span>
+   80 <span class="c1">1</span><span class=
+"c0">00</span><span class="c8">88</span><span class=
+"c1">1</span><span class="c5">55</span><span class=
+"c0">0</span><span class="c1">1</span><span class="c0">0000</span>
+   81 <span class="c1">1</span><span class=
+"c0">0</span><span class="c7">7</span><span class=
+"c5">5</span><span class="c0">0</span><span class=
+"c7">7</span><span class="c1">11</span><span class=
+"c8">8</span><span class="c7">7</span><span class=
+"c8">8</span><span class="c1">1</span><span class=
+"c5">5</span><span class="c1">1</span>
+   82 <span class="c1">1</span><span class=
+"c0">0</span><span class="c8">8</span><span class=
+"c1">1</span><span class="c7">7</span><span class=
+"c1">1</span><span class="c8">8</span><span class=
+"c5">5</span><span class="c7">77</span><span class=
+"c5">55</span><span class="c0">0</span><span class="c1">1</span>
+   83 <span class="c1">1</span><span class=
+"c0">0</span><span class="c8">8</span><span class=
+"c7">7</span><span class="c0">00</span><span class=
+"c5">5</span><span class="c7">77</span><span class=
+"c5">5</span><span class="c1">1</span><span class="c0">000</span>
+   84 <span class="c1">1</span><span class=
+"c0">0</span><span class="c8">888</span><span class=
+"c0">0</span><span class="c7">7</span><span class=
+"c1">1</span><span class="c8">8</span><span class=
+"c1">1</span><span class="c5">5</span><span class=
+"c1">1</span><span class="c0">00</span>
+   85 <span class="c7">7</span><span class=
+"c0">0</span><span class="c7">7</span><span class=
+"c1">111</span><span class="c8">8</span><span class=
+"c0">0</span><span class="c8">8</span><span class=
+"c7">7</span><span class="c5">5</span><span class=
+"c1">1</span><span class="c0">00</span>
+   86 <span class="c7">7</span><span class=
+"c0">0</span><span class="c7">7</span><span class=
+"c8">8</span><span class="c5">5</span><span class=
+"c0">00</span><span class="c5">5</span><span class=
+"c8">8</span><span class="c7">77</span><span class=
+"c5">5</span><span class="c0">0</span><span class="c1">1</span>
+   87 <span class="c7">7</span><span class=
+"c1">1</span><span class="c7">77</span><span class=
+"c1">1</span><span class="c5">5</span><span class=
+"c1">1</span><span class="c8">8</span><span class=
+"c0">0</span><span class="c8">8</span><span class=
+"c7">7</span><span class="c5">5</span><span class=
+"c1">1</span><span class="c0">0</span>
+   88 <span class="c7">7</span><span class=
+"c5">55</span><span class="c0">0</span><span class=
+"c8">88</span><span class="c0">0</span><span class=
+"c7">7</span><span class="c5">5</span><span class=
+"c0">00</span><span class="c1">1</span><span class="c0">00</span>
+   89 <span class="c7">7</span><span class=
+"c5">5</span><span class="c8">88</span><span class=
+"c0">0</span><span class="c7">7</span><span class=
+"c0">0</span><span class="c8">8</span><span class=
+"c1">1</span><span class="c5">55</span><span class=
+"c0">0</span><span class="c1">1</span><span class="c0">0</span>
+   90 <span class="c8">8</span><span class=
+"c7">7</span><span class="c0">0</span><span class=
+"c1">1</span><span class="c0">0</span><span class=
+"c1">1</span><span class="c7">7</span><span class=
+"c8">8</span><span class="c1">1</span><span class=
+"c8">8</span><span class="c1">1</span><span class=
+"c5">5</span><span class="c1">1</span><span class="c0">0</span>
+   91 <span class="c8">8</span><span class=
+"c7">7</span><span class="c0">0</span><span class=
+"c1">11</span><span class="c5">555</span><span class=
+"c0">0</span><span class="c7">7</span><span class=
+"c8">8</span><span class="c1">1</span><span class=
+"c5">5</span><span class="c1">1</span>
+   92 <span class="c8">8</span><span class=
+"c7">7</span><span class="c0">0</span><span class=
+"c7">7</span><span class="c1">1</span><span class=
+"c8">8</span><span class="c1">1</span><span class=
+"c8">8</span><span class="c5">5</span><span class=
+"c0">0</span><span class="c1">1</span><span class="c0">000</span>
+   93 <span class="c8">8</span><span class=
+"c7">7</span><span class="c1">1</span><span class=
+"c0">0</span><span class="c7">7</span><span class=
+"c8">8</span><span class="c7">7</span><span class=
+"c0">0</span><span class="c8">8</span><span class=
+"c1">1</span><span class="c5">55</span><span class=
+"c0">0</span><span class="c1">1</span>
+   94 <span class="c8">8</span><span class=
+"c7">77</span><span class="c5">5</span><span class=
+"c0">0</span><span class="c1">1</span><span class=
+"c0">00000000</span>
+   95 <span class="c8">8</span><span class=
+"c7">7</span><span class="c8">8</span><span class=
+"c5">5</span><span class="c0">0</span><span class=
+"c8">8</span><span class="c7">7</span><span class=
+"c0">0</span><span class="c8">8</span><span class=
+"c0">0</span><span class="c8">8</span><span class=
+"c7">7</span><span class="c5">5</span><span class="c1">1</span>
+   96 <span class="c8">88</span><span class=
+"c0">0</span><span class="c7">7</span><span class=
+"c8">8</span><span class="c1">1</span><span class=
+"c0">00</span><span class="c5">5</span><span class=
+"c0">00</span><span class="c1">1</span><span class="c0">00</span>
+   97 <span class="c8">88</span><span class=
+"c0">0</span><span class="c8">8</span><span class=
+"c0">0</span><span class="c5">5</span><span class=
+"c7">7777</span><span class="c5">5</span><span class=
+"c0">00</span><span class="c1">1</span>
+   98 <span class="c8">88</span><span class=
+"c1">1</span><span class="c5">5</span><span class=
+"c1">1</span><span class="c5">5</span><span class=
+"c7">7</span><span class="c8">88</span><span class=
+"c7">7</span><span class="c8">8</span><span class=
+"c1">1</span><span class="c5">5</span><span class="c1">1</span>
+   99 <span class="c8">88</span><span class=
+"c7">7</span><span class="c5">5</span><span class=
+"c8">8</span><span class="c1">1</span><span class=
+"c5">55</span><span class="c0">0</span><span class=
+"c5">5</span><span class="c0">000</span><span class="c1">1</span>
+  100 <span class="c8">88</span><span class=
+"c7">7</span><span class="c5">5</span><span class=
+"c8">8</span><span class="c5">5</span><span class=
+"c7">77</span><span class="c5">55</span><span class=
+"c0">0</span><span class="c1">1</span><span class="c0">00</span>
+</pre>
+</td><td>
+<h4>b136822</h4>
+<pre>
+    1 <span class="c0">0</span>
+    2 <span class="c1">1</span>
+    3 <span class="c5">5</span>
+    4 <span class="c1">1</span><span class="c0">0</span>
+    5 <span class="c1">11</span>
+    6 <span class="c1">1</span><span class="c5">5</span>
+    7 <span class="c5">5</span><span class="c0">0</span>
+    8 <span class="c1">1</span><span class="c0">00</span>
+    9 <span class="c1">1</span><span class=
+"c0">0</span><span class="c1">1</span>
+   10 <span class="c1">1</span><span class=
+"c0">0</span><span class="c5">5</span>
+   11 <span class="c1">11</span><span class="c0">0</span>
+   12 <span class="c1">1</span><span class=
+"c5">5</span><span class="c0">0</span>
+   13 <span class="c5">5</span><span class="c0">00</span>
+   14 <span class="c5">5</span><span class=
+"c0">0</span><span class="c1">1</span>
+   15 <span class="c5">5</span><span class=
+"c0">0</span><span class="c5">5</span>
+   16 <span class="c1">1</span><span class="c0">000</span>
+   17 <span class="c1">1</span><span class=
+"c0">00</span><span class="c1">1</span>
+   18 <span class="c1">1</span><span class=
+"c0">00</span><span class="c5">5</span>
+   19 <span class="c1">1</span><span class=
+"c0">0</span><span class="c1">1</span><span class="c0">0</span>
+   20 <span class="c1">1</span><span class=
+"c0">0</span><span class="c1">11</span>
+   21 <span class="c1">1</span><span class=
+"c0">0</span><span class="c5">5</span><span class="c0">0</span>
+   22 <span class="c1">11</span><span class="c0">00</span>
+   23 <span class="c1">11</span><span class=
+"c0">0</span><span class="c1">1</span>
+   24 <span class="c1">11</span><span class=
+"c0">0</span><span class="c5">5</span>
+   25 <span class="c1">1</span><span class=
+"c5">5</span><span class="c0">00</span>
+   26 <span class="c5">5</span><span class="c0">000</span>
+   27 <span class="c5">5</span><span class=
+"c0">00</span><span class="c1">1</span>
+   28 <span class="c5">5</span><span class=
+"c0">00</span><span class="c5">5</span>
+   29 <span class="c5">5</span><span class=
+"c0">0</span><span class="c1">1</span><span class="c0">0</span>
+   30 <span class="c5">5</span><span class=
+"c0">0</span><span class="c1">11</span>
+   31 <span class="c5">5</span><span class=
+"c0">0</span><span class="c1">1</span><span class="c5">5</span>
+   32 <span class="c5">5</span><span class=
+"c0">0</span><span class="c5">5</span><span class="c0">0</span>
+   33 <span class="c1">1</span><span class="c0">0000</span>
+   34 <span class="c1">1</span><span class=
+"c0">000</span><span class="c1">1</span>
+   35 <span class="c1">1</span><span class=
+"c0">000</span><span class="c5">5</span>
+   36 <span class="c1">1</span><span class=
+"c0">00</span><span class="c1">1</span><span class="c0">0</span>
+   37 <span class="c1">1</span><span class=
+"c0">00</span><span class="c1">11</span>
+   38 <span class="c1">1</span><span class=
+"c0">00</span><span class="c5">5</span><span class="c0">0</span>
+   39 <span class="c1">1</span><span class=
+"c0">0</span><span class="c1">1</span><span class="c0">00</span>
+   40 <span class="c1">1</span><span class=
+"c0">0</span><span class="c1">1</span><span class=
+"c0">0</span><span class="c5">5</span>
+   41 <span class="c1">1</span><span class=
+"c0">0</span><span class="c1">11</span><span class="c0">0</span>
+   42 <span class="c1">1</span><span class=
+"c0">0</span><span class="c5">5</span><span class="c0">00</span>
+   43 <span class="c1">11</span><span class="c0">000</span>
+   44 <span class="c1">11</span><span class=
+"c0">00</span><span class="c1">1</span>
+   45 <span class="c1">11</span><span class=
+"c0">00</span><span class="c5">5</span>
+   46 <span class="c1">11</span><span class=
+"c0">0</span><span class="c1">1</span><span class="c0">0</span>
+   47 <span class="c1">11</span><span class=
+"c0">0</span><span class="c5">5</span><span class="c0">0</span>
+   48 <span class="c1">11</span><span class=
+"c2">2</span><span class="c0">0</span><span class="c5">5</span>
+   49 <span class="c1">1</span><span class=
+"c5">5</span><span class="c0">000</span>
+   50 <span class="c1">1</span><span class=
+"c5">5</span><span class="c0">00</span><span class="c5">5</span>
+   51 <span class="c5">5</span><span class="c0">0000</span>
+   52 <span class="c5">5</span><span class=
+"c0">000</span><span class="c1">1</span>
+   53 <span class="c5">5</span><span class=
+"c0">000</span><span class="c5">5</span>
+   54 <span class="c5">5</span><span class=
+"c0">00</span><span class="c1">1</span><span class="c0">0</span>
+   55 <span class="c5">5</span><span class=
+"c0">00</span><span class="c1">11</span>
+   56 <span class="c5">5</span><span class=
+"c0">00</span><span class="c1">1</span><span class="c5">5</span>
+   57 <span class="c5">5</span><span class=
+"c0">00</span><span class="c5">5</span><span class="c0">0</span>
+   58 <span class="c5">5</span><span class=
+"c0">0</span><span class="c1">1</span><span class="c0">00</span>
+   59 <span class="c5">5</span><span class=
+"c0">0</span><span class="c1">1</span><span class=
+"c0">0</span><span class="c1">1</span>
+   60 <span class="c5">5</span><span class=
+"c0">0</span><span class="c1">1</span><span class=
+"c0">0</span><span class="c5">5</span>
+   61 <span class="c5">5</span><span class=
+"c0">0</span><span class="c1">11</span><span class="c0">0</span>
+   62 <span class="c5">5</span><span class=
+"c0">0</span><span class="c1">1</span><span class=
+"c5">5</span><span class="c0">0</span>
+   63 <span class="c5">5</span><span class=
+"c0">0</span><span class="c5">5</span><span class="c0">00</span>
+   64 <span class="c1">1</span><span class="c0">00000</span>
+   65 <span class="c1">1</span><span class=
+"c0">0000</span><span class="c1">1</span>
+   66 <span class="c1">1</span><span class=
+"c0">0000</span><span class="c5">5</span>
+   67 <span class="c1">1</span><span class=
+"c0">000</span><span class="c1">1</span><span class="c0">0</span>
+   68 <span class="c1">1</span><span class=
+"c0">000</span><span class="c1">11</span>
+   69 <span class="c1">1</span><span class=
+"c0">000</span><span class="c5">5</span><span class="c0">0</span>
+   70 <span class="c1">1</span><span class=
+"c0">00</span><span class="c1">1</span><span class="c0">00</span>
+   71 <span class="c1">1</span><span class=
+"c0">00</span><span class="c1">1</span><span class=
+"c0">0</span><span class="c1">1</span>
+   72 <span class="c1">1</span><span class=
+"c0">00</span><span class="c1">1</span><span class=
+"c0">0</span><span class="c5">5</span>
+   73 <span class="c1">1</span><span class=
+"c0">00</span><span class="c1">11</span><span class="c0">0</span>
+   74 <span class="c1">1</span><span class=
+"c0">00</span><span class="c5">5</span><span class="c0">00</span>
+   75 <span class="c1">1</span><span class=
+"c0">00</span><span class="c5">5</span><span class=
+"c0">0</span><span class="c5">5</span>
+   76 <span class="c1">1</span><span class=
+"c0">0</span><span class="c1">1</span><span class="c0">000</span>
+   77 <span class="c1">1</span><span class=
+"c0">0</span><span class="c1">1</span><span class=
+"c0">00</span><span class="c1">1</span>
+   78 <span class="c1">1</span><span class=
+"c0">0</span><span class="c1">1</span><span class=
+"c0">00</span><span class="c5">5</span>
+   79 <span class="c1">1</span><span class=
+"c0">0</span><span class="c1">1</span><span class=
+"c0">0</span><span class="c5">5</span><span class="c0">0</span>
+   80 <span class="c1">1</span><span class=
+"c0">0</span><span class="c1">11</span><span class="c0">00</span>
+   81 <span class="c1">1</span><span class=
+"c0">0</span><span class="c1">11</span><span class=
+"c0">0</span><span class="c5">5</span>
+   82 <span class="c1">1</span><span class=
+"c0">0</span><span class="c5">5</span><span class="c0">000</span>
+   83 <span class="c1">1</span><span class=
+"c0">0</span><span class="c5">5</span><span class=
+"c0">00</span><span class="c1">1</span>
+   84 <span class="c1">11</span><span class="c0">0000</span>
+   85 <span class="c1">11</span><span class=
+"c0">000</span><span class="c1">1</span>
+   86 <span class="c1">11</span><span class=
+"c0">000</span><span class="c5">5</span>
+   87 <span class="c1">11</span><span class=
+"c0">00</span><span class="c1">1</span><span class="c0">0</span>
+   88 <span class="c1">11</span><span class=
+"c0">00</span><span class="c5">5</span><span class="c0">0</span>
+   89 <span class="c1">11</span><span class=
+"c0">0</span><span class="c1">1</span><span class="c0">00</span>
+   90 <span class="c1">11</span><span class=
+"c0">0</span><span class="c5">5</span><span class="c0">00</span>
+   91 <span class="c1">11</span><span class=
+"c2">2</span><span class="c0">0</span><span class=
+"c5">5</span><span class="c0">0</span>
+   92 <span class="c1">1</span><span class=
+"c5">5</span><span class="c0">0000</span>
+   93 <span class="c1">1</span><span class=
+"c5">5</span><span class="c0">000</span><span class="c5">5</span>
+   94 <span class="c1">1</span><span class=
+"c5">5</span><span class="c0">00</span><span class=
+"c5">5</span><span class="c0">0</span>
+   95 <span class="c5">5</span><span class="c0">00000</span>
+   96 <span class="c5">5</span><span class=
+"c0">0000</span><span class="c1">1</span>
+   97 <span class="c5">5</span><span class=
+"c0">0000</span><span class="c5">5</span>
+   98 <span class="c5">5</span><span class=
+"c0">000</span><span class="c1">1</span><span class="c0">0</span>
+   99 <span class="c5">5</span><span class=
+"c0">000</span><span class="c1">11</span>
+  100 <span class="c5">5</span><span class=
+"c0">000</span><span class="c1">1</span><span class="c5">5</span>
+</td><td>
+
+
+<h4>b136854</h4>
+<pre>
+    1 <span class="c0">0</span>
+    2 <span class="c1">1</span>
+    3 <span class="c1">1</span><span class="c0">0</span>
+    4 <span class="c1">1</span><span class="c0">00</span>
+    5 <span class="c1">1</span><span class="c0">000</span>
+    6 <span class="c1">1</span><span class="c0">0000</span>
+    7 <span class="c1">1</span><span class="c0">00000</span>
+    8 <span class="c1">1</span><span class=
+"c0">00</span><span class="c5">5</span><span class=
+"c0">0</span><span class="c1">1</span>
+    9 <span class="c1">1</span><span class="c0">000000</span>
+   10 <span class="c1">1</span><span class=
+"c0">00</span><span class="c5">5</span><span class=
+"c0">0</span><span class="c1">1</span><span class="c0">0</span>
+   11 <span class="c1">1</span><span class="c0">0000000</span>
+   12 <span class="c1">1</span><span class=
+"c0">000</span><span class="c5">5</span><span class=
+"c0">00</span><span class="c1">1</span>
+   13 <span class="c1">1</span><span class=
+"c0">00</span><span class="c5">5</span><span class=
+"c0">0</span><span class="c1">1</span><span class="c0">00</span>
+   14 <span class="c1">1</span><span class="c0">00000000</span>
+   15 <span class="c1">1</span><span class=
+"c0">000</span><span class="c5">5</span><span class=
+"c0">00</span><span class="c1">1</span><span class="c0">0</span>
+   16 <span class="c1">1</span><span class=
+"c0">00</span><span class="c5">5</span><span class=
+"c0">0</span><span class="c1">1</span><span class="c0">000</span>
+   17 <span class="c1">1</span><span class="c0">000000000</span>
+   18 <span class="c1">1</span><span class=
+"c0">0000</span><span class="c5">5</span><span class=
+"c0">000</span><span class="c1">1</span>
+   19 <span class="c1">1</span><span class=
+"c0">000</span><span class="c5">5</span><span class=
+"c0">00</span><span class="c1">1</span><span class="c0">00</span>
+   20 <span class="c1">1</span><span class=
+"c0">00</span><span class="c5">5</span><span class=
+"c0">0</span><span class="c1">1</span><span class="c0">0000</span>
+   21 <span class="c1">1</span><span class="c0">0000000000</span>
+   22 <span class="c1">1</span><span class=
+"c0">0000</span><span class="c5">5</span><span class=
+"c0">000</span><span class="c1">1</span><span class="c0">0</span>
+   23 <span class="c1">1</span><span class=
+"c0">000</span><span class="c5">5</span><span class=
+"c0">00</span><span class="c1">1</span><span class="c0">000</span>
+   24 <span class="c1">1</span><span class=
+"c0">00</span><span class="c5">5</span><span class=
+"c0">0</span><span class="c1">1</span><span class="c0">00000</span>
+   25 <span class="c1">1</span><span class="c0">00000000000</span>
+   26 <span class="c1">1</span><span class=
+"c0">00000</span><span class="c5">5</span><span class=
+"c0">0000</span><span class="c1">1</span>
+   27 <span class="c1">1</span><span class=
+"c0">0000</span><span class="c5">5</span><span class=
+"c0">000</span><span class="c1">1</span><span class="c0">00</span>
+   28 <span class="c1">1</span><span class=
+"c0">000</span><span class="c5">5</span><span class=
+"c0">00</span><span class="c1">1</span><span class="c0">0000</span>
+   29 <span class="c1">1</span><span class=
+"c0">00</span><span class="c5">5</span><span class=
+"c0">0</span><span class="c1">1</span><span class=
+"c0">000000</span>
+   30 <span class="c1">1</span><span class="c0">000000000000</span>
+   31 <span class="c1">1</span><span class=
+"c0">00000</span><span class="c5">5</span><span class=
+"c0">0000</span><span class="c1">1</span><span class="c0">0</span>
+   32 <span class="c1">1</span><span class=
+"c0">0000</span><span class="c5">5</span><span class=
+"c0">000</span><span class="c1">1</span><span class="c0">000</span>
+   33 <span class="c1">1</span><span class=
+"c0">000</span><span class="c5">5</span><span class=
+"c0">00</span><span class="c1">1</span><span class=
+"c0">00000</span>
+   34 <span class="c1">1</span><span class=
+"c0">00</span><span class="c5">5</span><span class=
+"c0">0</span><span class="c1">1</span><span class=
+"c0">0000000</span>
+   35 <span class="c1">1</span><span class=
+"c0">0000000000000</span>
+   36 <span class="c1">1</span><span class=
+"c0">000000</span><span class="c5">5</span><span class=
+"c0">00000</span><span class="c1">1</span>
+   37 <span class="c1">1</span><span class=
+"c0">00000</span><span class="c5">5</span><span class=
+"c0">0000</span><span class="c1">1</span><span class="c0">00</span>
+   38 <span class="c1">1</span><span class=
+"c0">0000</span><span class="c5">5</span><span class=
+"c0">000</span><span class="c1">1</span><span class=
+"c0">0000</span>
+   39 <span class="c1">1</span><span class=
+"c0">000</span><span class="c5">5</span><span class=
+"c0">00</span><span class="c1">1</span><span class=
+"c0">000000</span>
+   40 <span class="c1">1</span><span class=
+"c0">00</span><span class="c5">5</span><span class=
+"c0">0</span><span class="c1">1</span><span class=
+"c0">00000000</span>
+   41 <span class="c1">1</span><span class=
+"c0">00000000000000</span>
+   42 <span class="c1">1</span><span class=
+"c0">000000</span><span class="c5">5</span><span class=
+"c0">00000</span><span class="c1">1</span><span class="c0">0</span>
+   43 <span class="c1">1</span><span class=
+"c0">00000</span><span class="c5">5</span><span class=
+"c0">0000</span><span class="c1">1</span><span class=
+"c0">000</span>
+   44 <span class="c1">1</span><span class=
+"c0">0000</span><span class="c5">5</span><span class=
+"c0">000</span><span class="c1">1</span><span class=
+"c0">00000</span>
+   45 <span class="c1">1</span><span class=
+"c0">000</span><span class="c5">5</span><span class=
+"c0">00</span><span class="c1">1</span><span class=
+"c0">0000000</span>
+   46 <span class="c1">1</span><span class=
+"c0">00</span><span class="c5">5</span><span class=
+"c0">0</span><span class="c1">1</span><span class=
+"c0">000000000</span>
+
+
+
+
+</td><td>
+<h4>b116229</h4>
+<pre>
+    1 <span class="c8">8</span>
+    2 <span class="c9">9</span><span class="c8">8</span>
+    3 <span class="c9">99</span><span class="c8">8</span>
+    4 <span class="c9">999</span><span class="c8">8</span>
+    5 <span class="c9">9999</span><span class="c8">8</span>
+    6 <span class="c9">99999</span><span class="c8">8</span>
+    7 <span class="c9">999999</span><span class="c8">8</span>
+    8 <span class="c9">9999999</span><span class="c8">8</span>
+    9 <span class="c9">99999999</span><span class="c8">8</span>
+   10 <span class="c9">999999999</span><span class="c8">8</span>
+   11 <span class="c3">3</span><span class=
+"c6">6</span><span class="c3">3</span><span class=
+"c6">6</span><span class="c3">3</span><span class=
+"c6">6</span><span class="c3">3</span><span class=
+"c6">6</span><span class="c3">3</span><span class=
+"c6">6</span><span class="c1">1</span>
+   12 <span class="c4">4</span><span class=
+"c5">5</span><span class="c4">4</span><span class=
+"c5">5</span><span class="c4">4</span><span class=
+"c5">5</span><span class="c4">4</span><span class=
+"c5">5</span><span class="c4">4</span><span class=
+"c5">5</span><span class="c2">2</span>
+   13 <span class="c5">5</span><span class=
+"c4">4</span><span class="c5">5</span><span class=
+"c4">4</span><span class="c5">5</span><span class=
+"c4">4</span><span class="c5">5</span><span class=
+"c4">4</span><span class="c5">5</span><span class=
+"c4">4</span><span class="c3">3</span>
+   14 <span class="c6">6</span><span class=
+"c3">3</span><span class="c6">6</span><span class=
+"c3">3</span><span class="c6">6</span><span class=
+"c3">3</span><span class="c6">6</span><span class=
+"c3">3</span><span class="c6">6</span><span class=
+"c3">3</span><span class="c4">4</span>
+   15 <span class="c7">7</span><span class=
+"c2">2</span><span class="c7">7</span><span class=
+"c2">2</span><span class="c7">7</span><span class=
+"c2">2</span><span class="c7">7</span><span class=
+"c2">2</span><span class="c7">7</span><span class=
+"c2">2</span><span class="c5">5</span>
+   16 <span class="c8">8</span><span class=
+"c1">1</span><span class="c8">8</span><span class=
+"c1">1</span><span class="c8">8</span><span class=
+"c1">1</span><span class="c8">8</span><span class=
+"c1">1</span><span class="c8">8</span><span class=
+"c1">1</span><span class="c6">6</span>
+   17 <span class="c9">9</span><span class=
+"c0">0</span><span class="c9">9</span><span class=
+"c0">0</span><span class="c9">9</span><span class=
+"c0">0</span><span class="c9">9</span><span class=
+"c0">0</span><span class="c9">9</span><span class=
+"c0">0</span><span class="c7">7</span>
+   18 <span class="c9">9999999999</span><span class="c8">8</span>
+   19 <span class="c9">99999999999</span><span class="c8">8</span>
+   20 <span class="c9">999999999999</span><span class="c8">8</span>
+
+
+
+
+
+
+
+
+
+
+
+
+</td></tr></table>
+</body>
+</html>
