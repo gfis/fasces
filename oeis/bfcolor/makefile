@@ -5,7 +5,7 @@
 # 2018-10-31, Georg Fischer 
 #---------------------------------
 
-all: bfcolors
+all: bfcolor1
 #------------
 bfcolors:
 	make bfcolor1 FILE=b136942
@@ -16,7 +16,7 @@ bfcolors:
 	make bfcolor1 FILE=b116130
 	make bfcolor1 FILE=b116229
 bfcolor1:
-	perl bfcolor.pl -b $(FILE) \
+	perl bfcolorize.pl -b $(FILE) \
 	| tidy --quiet yes --replace-color yes -o $(FILE).html
 #------------
 deploy: 

@@ -12,30 +12,40 @@ CODE=0146
 
 all: getseq
 #----
-getseq: getseq1 getseq2
+getseq: getseq0 getseq1 getseq2 getseq3 dupl
+getseq0:
+	grep -iE " n such that (n|the) concatenat" ../database/names \
+	| grep -E "square|product" \
+	| grep -vE "prime|biperiod|perfect|\\*" \
+	| tee names0.tmp
+	grep -E "^A11[56]" ../database/stripped > strip1.tmp
 getseq1:
-	rm -f *.tmp
-	# grep -i " n such that the concatenation of n with " ../database/names | tee names1.tmp
-	grep -i " n such that n concatenated with "         ../database/names | tee names2.tmp
-	wc -l names*.tmp
-	grep -E "^A116[012]" ../database/stripped   > strip1.tmp
+	sed -e "s/the concatenation of n/n concatenated/" names0.tmp \
+	| sed -e "s/ itself / n+0 /" \
+	| sed -e "s/ is a square/ gives a square/" \
+	| sed -e "s/Numbers n such that n concatenated with/n \/\//" \
+	| sed -e "s/gives the product of two numbers which differ by \([0-9]*\)./= m * (m+\\1)/" \
+	| sed -e "s/gives a square./= m * (m+0)/" \
+	| tee names1.tmp
 getseq2:
-	cut -b 1-7 names2.tmp > seqno.tmp
-	grep -f seqno.tmp strip1.tmp > strip2.tmp
+	cut -b 1-7 names1.tmp > seqno.tmp
+	grep -f seqno.tmp strip1.tmp \
+	| sed -e "s/,//" > strip2.tmp
 	wc -l strip2.tmp
+getseq3:
+	sed -e "s/^//" names1.tmp > names3.tmp
+	join names3.tmp strip2.tmp > concatprod.tmp
+	cut -b 1-80 concatprod.tmp \
+	| sed -e "s/^/ /" | sed -e "s/$$/.../" \
+	| tee ccp.tmp
 dupl:
 	cut -b 8- strip2.tmp | sort | uniq -c | grep -v "   1 " | sed -e "s/  */ /g" \
 	| cut -d" " -f 3- | tee dupl1.tmp
-	grep -f dupl1.tmp strip2.tmp | sort -k2 | cut -b 1-8,10-50 \
-	| sed -e "s/\(^A[0-9]*\)/<a href=\"https:\/\/oeis.org\/\\1\" target=\"_new\">\\1<\/a> /" \
-	| sed -e "s/$$/ .../" -e "s/^/ /" | tee dupl2.tmp
-getseq3:
-	sed -e "s/Numbers/;/g" -e "s/ and /,/g" -e "s/[Na-z., ]//g" -e "s/;/ /g" \
-		names2.tmp > names3.tmp
-	join names3.tmp strip2.tmp > squaredig.tmp
-getseq4:
-	grep -i " n such that n concatenated with " ../database/names \
-	| grep -E "square|product" | tee names4.tmp
+	grep -f dupl1.tmp concatprod.tmp | sort -k9 \
+	| cut -b 1-80 \
+	| sed -e "s/^/ /" | sed -e "s/$$/.../" \
+	| tee dupl2.tmp
+# | sed -e "s/\(^A[0-9]*\)/<a href=\"https:\/\/oeis.org\/\\1\" target=\"_new\">\\1<\/a> /" 
 #----
 wget_bf:
 	cut -b 1-7 squaredig.tmp | sed -e "s/A/b/" > bseqno.tmp
