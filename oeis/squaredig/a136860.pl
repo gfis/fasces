@@ -49,60 +49,62 @@ while (scalar(@ARGV) > 0 and ($ARGV[0] =~ m{\A\-})) {
 } # while ARGV
 
 my $rest  = "0123456789";
-my @digs  = split(//, $code);
+my @digs1 = split(//, $code);
 $rest =~ s{[$code]}{}g;
-print "digs=$code, rest=$rest\n";
+print "# digs1=$code, rest=$rest\n";
 my $pdig  = qr("\A[$code]+\Z");
 my @digs2 = ();
 my @olds  = ();
-for (my $i = 0; $i < scalar(@digs); $i ++) {
-	for (my $j = 0; $j < scalar(@digs); $j ++) {
-    	push(@digs2, $digs[$i] . $digs[$j]);
-    	push(@olds , $digs[$i] . $digs[$j]);
-	} # for j
+for (my $i = 0; $i < scalar(@digs1); $i ++) {
+    for (my $j = 0; $j < scalar(@digs1); $j ++) {
+        push(@digs2, $digs1[$i] . $digs1[$j]);
+        push(@olds , $digs1[$i] . $digs1[$j]);
+    } # for j
 } # for i
-
+if ($debug >= 1) {
+	print "# olds = (" . join(",", @olds) . ")\n";
+}
+my $ind = 0;
 my $width = 1;
 while ($width <= $maxwidth) {
     my @news = ();
-    my $ind = 1;
-    foreach my $old(@olds) { # allowed so far
-        my $squold  = Math::BigInt->new($old);
-        my $bold    = Math::BigInt->copy($squold);
-        $squold->bsqrt();
-   		if ($debug >= 1) {
-    		print "sqrt($old) = $squold";
-    	}
-    	if ($squold !~ m{[$rest]}o) { # sqrt contains allowed digits
-   			if ($debug >= 1) {
-	    		print " ! ";
-	    	}
-    		my $powold = Math::BigInt->new($squold);
-    		$powold->bmul($squold);
-    		if (($bold->bcmp($powold)) == 0) { # sqrt of a square
-    			print "sqrt($old) = $squold" if $debug == 0;
-    			print " + ";
-    			print "\n"  if $debug == 0;
-	   		} # if sqrt of a square
-			foreach my $dig2 (@digs2) {
-				my $new = "$old$dig2";
-				push(@news, $new);
-    			if ($debug >= 2) {
-    				print " $new";
-    			}
-			} # foreach $dig2
-     	} # if sqrt contains allowed digits
-   		if ($debug >= 1) {
-    		print "\n";
-    	}
-    	@olds = ();
-        foreach my $new(@news) {
-            push(@olds, $new);
-        } # foreach @news
+    foreach my $old (@olds) { # allowed so far
+    	my $bold   = Math::BigInt->new($old); # = $old as BigInt
+        my $squold = Math::BigInt->copy($bold)->bsqrt($bold);
+        if ($squold !~ m{[$rest]}o) { # sqrt contains allowed digits
+            my $powold = Math::BigInt->new($squold);
+            $powold->bmul($squold);
+            my $bdiff = $bold->copy();
+            $bdiff->bsub($powold);
+            if ($debug >= 1) {
+                print "# sqrt($old) = $squold rest $bdiff ! ";
+            }
+            if ($bdiff->is_zero()) { # sqrt of a square
+                if ($debug >= 1){
+                	print " +\n";
+                }
+            	$ind ++;
+                print "$ind $squold $bold\n"; # b-file line
+                # if sqrt of a square
+            } else {
+	            if ($debug >= 1) {
+    	            print "\n";
+        	    }
+            }
+            foreach my $dig2 (@digs2) {
+            	if ($old !~ m{\A0+\Z}) { # not all zeroes
+                	push(@news, $old . $dig2);
+            	}
+            } # foreach $dig2
+            # if sqrt contains allowed digits
+        } else {
+	        if ($debug >= 2) {
+    	        print "# sqrt($old) = $squold\n";
+        	}
+		}
     } # foreach @olds
-    if (1) { # yet
-        # $width = $maxwidth;
-    } 
+    @olds = @news;
+    @news = ();
     $width ++;
 } # while
 #--------
@@ -118,3 +120,36 @@ sub to_base { my ($num)  = @_;
 } # to_base
 #--------
 __DATA__
+C:\Users\User\work\gits\fasces\oeis\squaredig>perl a136860.pl
+# digs1=01467, rest=23589
+# sqrt(00) = 0 +
+# sqrt(01) = 1 +
+# sqrt(16) = 4 +
+# sqrt(0100) = 10 +
+# sqrt(1600) = 40 +
+# sqrt(010000) = 100 +
+# sqrt(160000) = 400 +
+# sqrt(01000000) = 1000 +
+# sqrt(01147041) = 1071 +
+# sqrt(16000000) = 4000 +
+# sqrt(60466176) = 7776 +
+# sqrt(0100000000) = 10000 +
+# sqrt(0114704100) = 10710 +
+# sqrt(0116014441) = 10771 +
+# sqrt(1600000000) = 40000 +
+# sqrt(6046617600) = 77760 +
+# sqrt(010000000000) = 100000 +
+# sqrt(011400046441) = 106771 +
+# sqrt(011401114176) = 106776 +
+# sqrt(011470410000) = 107100 +
+# sqrt(011601444100) = 107710 +
+# sqrt(160000000000) = 400000 +
+# sqrt(604661760000) = 777600 +
+# sqrt(01000000000000) = 1000000 +
+# sqrt(01014141646116) = 1007046 +
+# sqrt(01140004644100) = 1067710 +
+# sqrt(01140111417600) = 1067760 +
+# sqrt(01147041000000) = 1071000 +
+# sqrt(01160144410000) = 1077100 +
+# sqrt(01161601106176) = 1077776 +
+# sqrt(16000000000000) = 4000000 +
