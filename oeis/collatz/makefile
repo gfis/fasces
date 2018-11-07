@@ -26,7 +26,7 @@ comp:
 	perl collatz_rails.pl   -n $(N)    -d $(D) -s $(S) -i $(I) -a comp   > comp.html
 crop: 
 	perl collatz_rails.pl   -n $(N)    -d $(D) -s $(S) -i $(I) -a crop   > crop.html
-upload:
+deploy:
 	scp $(SRC) gfis@punctum.com:/var/www/html/teherba.org/fasces/oeis/collatz/
 roads: 
 	perl collatz_roads.pl   -n $(N)    -d $(D) -s $(S) -i $(I) -a contig > roads.html
@@ -71,3 +71,19 @@ lengths:
 nodes:
 	echo "364, 182, 91, 274, 137, 412, 206, 103, 310, 155, 466, 233, 700, 350, 175, 526, 263, 790, 395, 1186, 593, 1780, 890, 445, 1336, 668, 334, 167, 502, 251, 754, 377, 1132, 566, 283, 850, 425, 1276, 638, 319, 958, 479, 1438, 719, 2158, 1079, 3238, 1619, 4858, 2429, 7288, 3644, 1822, 911, 2734, 1367, 4102, 2051, 6154, 3077, 9232, 4616, 2308, 1154, 577, 1732, 866, 433, 1300, 650, 325, 976, 488, 244, 122, 61, 184, 92, 46, 23, 70, 35, 106, 53, 160, 80, 40, 20, 10, 5, 16, 8, 4, 2, 1]" > x.tmp
 	grep -f x.tmp A070165.txt | tee nodes.tmp
+#------------------
+once: once0 once1 once2 once3
+once0:
+	lynx -dump --width=300 comp.html | grep -v "[a-zA-Z]" | grep -E "[0-9]" \
+	| sed -e "s/\[[0-9]*\]//g" -e "s/^ *//" -e "s/  */ /g" \
+	| cut -d" " -f2- > once0.tmp
+once1:
+	cut -d" " -f1  once0.tmp \
+	| sort -n | uniq -c > once1u.tmp
+	grep -v "  1 "        once1u.tmp | tee once1.tmp
+once2:
+	cut -d" " -f2- once0.tmp | sed -e "s/ /\\n/g" \
+	| sort -n | uniq -c > once2u.tmp
+	grep -v "  1 "        once2u.tmp | tee once2.tmp
+once3:
+	sort -n once1u.tmp once2u.tmp | uniq -c | grep -v "  2 " || :

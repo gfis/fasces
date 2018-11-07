@@ -1,10 +1,11 @@
 ==Introduction==
-Collatz sequences are sequences of non-negative integer numbers with a simple construction rule: 
-:Even elements are halved, and odd elements are multiplied by 3 and then incremented by 1. 
-Since decades it is unknown whether the final cyle 4 - 2 - 1 is always reached for any start value. This problem is the '''Collatz conjecture''', for which the [https://en.wikipedia.org/wiki/Collatz_conjecture english Wikipedia] states: 
+'''Collatz sequences''' (also called  ''trajectories'') are sequences of integer numbers &gt; 0. For any start value &gt; 0 the elements of the sequence are constructed with two simple rules:
+# Even numbers are halved.
+# Odd numbers are multiplied by 3 and then incremented by 1. 
+Since decades it is unknown whether the final cyle 4 - 2 - 1 is always reached for all start values. This problem is the '''Collatz conjecture''', for which the [https://en.wikipedia.org/wiki/Collatz_conjecture english Wikipedia] states: 
 : It is also known as the 3n + 1 conjecture, the Ulam conjecture (after Stanisław Ulam), Kakutani's problem (after Shizuo Kakutani), the Thwaites conjecture (after Sir Bryan Thwaites), Hasse's algorithm (after Helmut Hasse), or the Syracuse problem; the sequence of numbers involved is referred to as the hailstone sequence or hailstone numbers (because the values are usually subject to multiple descents and ascents like hailstones in a cloud), or as wondrous numbers.
 
-Straightforward visualizations of the Collatz sequences no obvious structure. The sequences for the first dozen of start values are rather short, but the sequence for 27 suddenly has 112 elements. 
+Straightforward visualizations of Collatz sequences show no obvious structure. The sequences for the first dozen of start values are rather short, but the sequence for 27 suddenly has 112 elements. 
 ===References===
 * Jeffry C. Lagarias, Ed.: ''The Ultimate Challenge: The 3x+1 Problem'', Amer. Math. Soc., 2010, ISBN 978-8218-4940-8. [http://www.ams.org/bookpages/mbk-78 MBK78]
 * OEIS A07165: [http://oeis.org/A070165/a070165.txt  File of first 10K Collatz sequences], ascending start values, with lengths
@@ -13,8 +14,8 @@ Straightforward visualizations of the Collatz sequences no obvious structure. Th
 When all Collatz sequences are read backwards, they form the '''Collatz graph''' starting with 1, 2, 4, 8 ... . At each node m > 4 in the graph, the path from the root (4) can be continued
 * always to m * 2, and 
 * to (m - 1) / 3 if m &#x2261; 1 mod 3.  
-The Collatz conjecture claims that the graphs contains all numbers, and that - except for the leading cycle 1 - 2 - 4 - 1 - 2 - 4 ... - it has the form of a tree (without cycles). We will not consider the trivial cycle, and we start the graph with node 4, the ''root''. 
-Moreover, a trivial path starts when m &#x2261; 0 mod 3. We call such a path  a ''sprout'', and it contains duplications only. A sprout must be added to the graph for any node divisible by 3, therefore we will not consider them for the moment.
+The Collatz conjecture claims that the graphs contains all numbers, and that - except for the trivial, leading cycle 1 - 2 - 4 - 1 - 2 - 4 ... - it has the form of a tree (without cycles). We will not consider the trivial cycle, and we start the graph with node 4, the '''root'''. 
+Moreover, another trivial type of path starts when m &#x2261; 0 mod 3. We call such a path  a ''sprout'', and it contains duplications only. A sprout must be added to the graph for any node divisible by 3, therefore we will not consider them for the moment.
 ===Graph Operations===
 Following [http://dx.doi.org/10.1155/2014/756917 Trümper], we use abbreviations for the elementary operations which transform a node (element, number) in the Collatz graph according to the following table (T1):
 {| class="wikitable" style="text-align:center"
@@ -22,9 +23,9 @@ Following [http://dx.doi.org/10.1155/2014/756917 Trümper], we use abbreviations
 |-
 | d       || down      || -1            ||  m &#x21a6; m / 2           || m &#x2261; 0 mod 2  
 |-
-| u       || up        || -1            ||  m &#x21a6; 3 * m + 1       || (none)              
+| u       || up        || -1            ||  m &#x21a6; 3 * m + 1       || (m &#x2261; 1 mod 2)              
 |-
-| s := ud || spike     || -2            ||  m &#x21a6; (m / 2) * 3 + 1 || m &#x2261; 0 mod 2             
+| s := ud || spike     || -2            ||  m &#x21a6; (3 * m + 1) / 2) || m &#x2261; 1 mod 2             
 |-
 | &delta; || divide    || +1            ||  m &#x21a6; (m - 1) / 3     || m &#x2261; 1 mod 3     
 |-
@@ -38,12 +39,33 @@ The &sigma; operation, applied to numbers of the form 6 * m - 2, has an interest
  (6 * (3 * n) - 2) &sigma; = 4 * 3 * n - 2 =  6 * (2 * n) - 2
 In other words, as long as m contains a factor 3, the &sigma; operation maintains the form 6 * x - 2, and it  replaces the factor 3 by 2 (it "squeezes" a 3 into a 2). In the opposite direction, the s operation replaces a factor 2 in m by 3. 
 <!--
+=== Trivial paths===
+There are two types of paths whose descriptions are very simple:
+ (n = 2<sup>k</sup>) ddd ... d 8 d 4 d 2 d 1  - powers of 2
+ (n &#x2261; 0 mod 3) uuu ... u (n * 2<sup>k</sup>) ... - multiples of 3
 ===Kernels===
 By the ''kernel'' of a number n = 6 * m - 2 we denote the "2-3-free" factor of m, that is the factor which remains when all powers of 2 and 3 have been removed from m. 
 * The kernel is not affected by &sigma; and s operations.
 -->
+===Motivation: Patterns in sequences with the same length===
+A closer look at the Collatz sequences shows a lot of pairs of adjacent start values which have the same sequence length, for example (from [https://oeis.org/A070165 OEIS A070165]):
+ 142/104: 142 d  71 u 214 d 107 u 322 d 161 u 484 d  242 d 121 u 364 ] 182, 91, ... 4, 2, 1
+ 143/104: 143 u 430 d 215 u 646 d 323 u 970 d 485 u 1456 d 728 d 364 ] 182, 91, ... 4, 2, 1
+            +1  *6+4    +1  *6+4    +1  *6+4    +1   *6+4  *6+2    +0    +0 ...
+The third line tells how the second line could be computed from the first. 
+Walking from right to left, the step pattern is:
+ &delta; &micro; &micro; &delta; &micro; &delta; &micro; &delta; &micro; 
+ &micro; &micro; &delta; &micro; &delta; &micro; &delta; &micro; &delta;
+The alternating pattern of operations can be continued to the left with 4 additional pairs of steps:
+  q? u [ 62 d  31 u  94 d  47 u 142 d ...
+ 126 d [ 63 u 190 d  95 u 286 d 143 u ...
+         +1  *6+4    +1  *6+4    +1  
+The pattern stops here since there is no number q such that q * 3 + 1 = 62. 
+
 ==Segment Construction==
-We will now construct special subsets of paths in the Collatz graph which we call ''segments''. They lead away from the root, and they always start with a node m &#x2261; -2 mod 6. Then they split and follow two subpaths in a prescribed sequence of operations. The segment construction process is stopped when the next node in one of the two subpaths becomes divisible by 3, resp. when a &delta; operation is no more possible. We assemble the segments as rows of an infinite array <nowiki>C[i,j]</nowiki>, the so-called ''segment directory''. The columns in one row i of C are constructed as described in the following table (T2):
+These patterns lead us to the construction of special subsets of paths in the Collatz graph which we call ''segments''. They lead away from the root, and they always start with a node m &#x2261; -2 mod 6. Then they split and follow two subpaths in a prescribed sequence of operations. The segment construction process is stopped when the next node in one of the two subpaths becomes divisible by 3, resp. when a &delta; operation is no more possible. We assemble the segments as rows of an infinite array <nowiki>C[i,j]</nowiki>, the so-called ''segment directory''. 
+: Informally, and in the two examples above, we consider the terms betweeen the square brackets. For the moment, we only take those which are which are &#x2261; 4 mod 6 (for "compressed" segments, below there are also "detailed" segments where we take all). We start at the right and with the lower line, and we interleave the terms &#x2261; 4 mod 6 of the two lines to get a segment. 
+The columns in one row i of the array C are constructed as described in the following table (T2):
 {| class="wikitable" style="text-align:left"
 !Column j                 !! Operation                !! Formula                  !! Condition            !! Sequence          
 |-
@@ -68,9 +90,53 @@ We will now construct special subsets of paths in the Collatz graph which we cal
 | ... || ... || ... || ... || ... 
 |-
 |}
-The first column(s) <nowiki>C[i,1]</nowiki> will be denoted as the ''left part'' of the segment (or of the whole directory), while the columns <nowiki>C[i,j], j &gt; 1</nowiki> will be the ''right part''. 
-::It is easy to create a '''[http://www.teherba.org/fasces/oeis/collatz/comp.html segment directory]''' (up to 30000) by a [https://github.com/gfis/fasces/blob/master/oeis/collatz/collatz_rails.pl Perl program].
+The first column(s) <nowiki>C[i,1]</nowiki> will be denoted as the '''left side''' of the segment (or of the whole directory), while the columns <nowiki>C[i,j], j &gt; 1</nowiki> will be the '''right part'''. The first few lines of the segment directory are the following:
 
+<table style="border-collapse: collapse; ">
+<tr>
+<td style="text-align:center"> </td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">2</td>
+<td style="text-align:center">3</td>
+<td style="text-align:center">4</td>
+<td style="text-align:center">5</td>
+<td style="text-align:center">6</td>
+<td style="text-align:center">7</td>
+<td style="text-align:center">8</td>
+<td style="text-align:center">9</td>
+<td style="text-align:center">10</td>
+<td style="text-align:center">11</td>
+<td style="text-align:center">...</td>
+<td style="text-align:center">2*j</td>
+<td style="text-align:center">2*j+1</td>
+</tr>
+<tr>
+<td style="border:1px solid gray;text-align:right" >&nbsp;&nbsp;i&nbsp;&nbsp;</td>
+<td style="border:1px solid gray;text-align:right" >6*i&#8209;2</td>
+<td style="border:1px solid gray;text-align:right" >&micro;&micro;</td>
+<td style="border:1px solid gray;text-align:right" >&delta;&micro;&micro;</td>
+<td style="border:1px solid gray;text-align:right" >&micro;&micro;&sigma;</td>
+<td style="border:1px solid gray;text-align:right" >&delta;&micro;&micro;&sigma;</td>
+<td style="border:1px solid gray;text-align:right" >&micro;&micro;&sigma;&sigma;</td>
+<td style="border:1px solid gray;text-align:right" >&delta;&micro;&micro;&sigma;&sigma;</td>
+<td style="border:1px solid gray;text-align:right" >&micro;&micro;&sigma;<sup>3</sup></td>
+<td style="border:1px solid gray;text-align:right" >&delta;&micro;&micro;&sigma;<sup>3</sup></td>
+<td style="border:1px solid gray;text-align:right" >&micro;&micro;&sigma;<sup>4</sup></td>
+<td style="border:1px solid gray;text-align:right" >&delta;&micro;&micro;&sigma;<sup>4</sup></td>
+<td style="border:1px solid gray;text-align:right" >...</td>
+<td style="border:1px solid gray;text-align:right" >&micro;&micro;&sigma;<sup>j-1</sup></td>
+<td style="border:1px solid gray;text-align:right" >&delta;&micro;&micro;&sigma;<sup>j-1</sup></td>
+</tr>
+<tr><td>&nbsp;&nbsp;1&nbsp;&nbsp;</td><td style="border:1px solid gray;text-align:right" >&nbsp; 4&nbsp;</td><td style="border:1px solid gray;text-align:right" >&nbsp;16&nbsp;</td><td style="border:1px solid gray;text-align:right"  title="1.0:0" id="4" class="d4 bor seg">&nbsp;4&nbsp;</td><td style="border:1px solid gray;text-align:right"  title="1.1:0" id="10" class="d4 bor seg">&nbsp;10&nbsp;</td></tr>
+<tr><td>&nbsp;&nbsp;2&nbsp;&nbsp;</td><td style="border:1px solid gray;text-align:right" >&nbsp;10&nbsp;</td><td style="border:1px solid gray;text-align:right" >&nbsp;40&nbsp;</td></tr>
+<tr><td>&nbsp;&nbsp;3&nbsp;&nbsp;</td><td style="border:1px solid gray;text-align:right" >&nbsp;16&nbsp;</td><td style="border:1px solid gray;text-align:right" >&nbsp;64&nbsp;</td></tr>
+<tr><td>&nbsp;&nbsp;4&nbsp;&nbsp;</td><td style="border:1px solid gray;text-align:right" >&nbsp;22&nbsp;</td><td style="border:1px solid gray;text-align:right" >&nbsp;88&nbsp;</td><td style="border:1px solid gray;text-align:right"  title="5.0:0" id="28" class="d4 bor seg">&nbsp;28&nbsp;</td><td style="border:1px solid gray;text-align:right"  title="5.1:0" id="58" class="d4 bor seg">&nbsp;58&nbsp;</td></tr>
+<tr><td>&nbsp;&nbsp;5&nbsp;&nbsp;</td><td style="border:1px solid gray;text-align:right" >&nbsp;28&nbsp;</td><td style="border:1px solid gray;text-align:right" >&nbsp;112&nbsp;</td></tr>
+<tr><td>&nbsp;&nbsp;6&nbsp;&nbsp;</td><td style="border:1px solid gray;text-align:right" >&nbsp;34&nbsp;</td><td style="border:1px solid gray;text-align:right" >&nbsp;136&nbsp;</td></tr>
+<tr><td>&nbsp;&nbsp;7&nbsp;&nbsp;</td><td style="border:1px solid gray;text-align:right" >&nbsp;40&nbsp;</td><td style="border:1px solid gray;text-align:right" >&nbsp;160&nbsp;</td><td style="border:1px solid gray;text-align:right"  title="1.0:2" id="52" class="d4 bor seg">&nbsp;52&nbsp;</td><td style="border:1px solid gray;text-align:right"  title="1.1:2" id="106" class="d4 bor seg">&nbsp;106&nbsp;</td><td style="border:1px solid gray;text-align:right"  title="1.1:1" id="34" class="d4 bor seg">&nbsp;34&nbsp;</td><td style="border:1px solid gray;text-align:right"  title="1.2:1" id="70" class="d4 bor seg">&nbsp;70&nbsp;</td><td style="border:1px solid gray;text-align:right"  title="1.2:0" id="22" class="d4 bor seg">&nbsp;22&nbsp;</td><td style="border:1px solid gray;text-align:right"  title="1.3:0" id="46" class="d4 bor seg">&nbsp;46&nbsp;</td></tr>
+</table>
+There is a more elaborated '''[http://www.teherba.org/fasces/oeis/collatz/comp.html segment directory] with 5000 rows'''.
+===Properties of the segment directory===
 We make a number of claims for segments:
 * (C1) All nodes in the segment directory are of the form 6 * n - 2.
 : This follows from the formula for columns <nowiki>C[i,1..3]</nowiki>, and for any higher column numbers from the 3-by-2 replacement property of the &sigma; operation. 
@@ -78,7 +144,9 @@ We make a number of claims for segments:
 : At some point the &sigma; operations will have replaced all factors 3 by 2.
 * (C3) All nodes in the right part of a segment have the form 6 * (3<sup>n</sup> * 2<sup>m</sup> * f) - 2 with the same "3-2-free" factor f.
 : This follows from the operations for columns <nowiki>C[i,1..3]</nowiki>, and from the fact that the &sigma; operation maintains this property. 
-* (C4) All nodes in the right part of a segment are different.
+* (C4) All nodes in the right part of a particular segment are 
+** different among themselves, and 
+** different from the left side of that segment (except for the first segment for the root 4).
 : For <nowiki>C[i,1..2]</nowiki> we see that the values modulo 24 are different. For the remaining columns, we see that the exponents of the factors 2 and 3 are different. They are shifted by the &sigma; operations, but they alternate, for example (in the segment with left part 40):
  160 = 6 * (3<sup>3</sup> * 2<sup>0</sup> * 1) - 2
   52 = 6 * (3<sup>2</sup> * 2<sup>0</sup> * 1) - 2
@@ -87,7 +155,7 @@ We make a number of claims for segments:
   70 = 6 * (3<sup>1</sup> * 2<sup>2</sup> * 1) - 2
   22 = 6 * (3<sup>0</sup> * 2<sup>2</sup> * 1) - 2
   46 = 6 * (3<sup>0</sup> * 2<sup>3</sup> * 1) - 2
-* (C5) There is no cycle in a segment.
+* (C5) There is no cycle in a segment (except for the first segment for the root 4).
 ===Segment Lengths===
 The segment directory is obviously very structured. The lengths of the compressed segments follow the pattern
  4 2 2 4 2 2 L<sub>1</sub> 2 2 4 2 2 4 2 2 L<sub>2</sub> 2 2 4 2 2 ...
@@ -111,15 +179,18 @@ We can always exclude the first and the third element remaining so far by lookin
 * (C6) There is no limit on the length of a segment.
 : We only need to take a segment which, in its right part, has a factor of 3 with a sufficiently high power, and the &sigma; operations will stretch out the segment accordingly.
 Therefore we can continue the modulus table above indefinitely, which leads us to the claim:
-* (C7) '''All numbers of the form 6 * n - 2 occur exactly once''' in the right part of the segment directory.
+* (C7) '''All numbers of the form 6 * n - 2 occur exactly once''' in the right part of the segment directory, and once as a left side. There is a bijective mapping between the left sides and the elements of the right parts.
 : The sequences defined by the columns in the right part all have different modulus conditions. Therefore they are all disjoint. 
-==Segment Connectivity Sieve==
-The segments represent small trees with two branches. We now start an ''Gedankenexperiment'' analogous to [https://en.wikipedia.org/wiki/Hilbert%27s_paradox_of_the_Grand_Hotel Hilbert's hotel]. We consider simultaneously all rows i &gt; 1 (omitting the root) in C which fulfill some modularity condition (the ''source'' row in C), and we ''attach'' (identify, connect) them to their unique occurrence in the right part of C (''target'' row and column). 
-: A technical implementation of the process (which is impossible for infinite sets) would perhaps replace the target node by a pointer to the source segment. 
-We ''sieve'' the segments: Once we have attached a set of segments, we strike it out of the list still to be examined.  The attachment rules are shown in the following table (T4):
+==Forest directory==
+We construct a ''forest directory'' F which initially is a copy of the segment directory C. F lists all the small trees with two branches which are represented by the right parts in the segment directory. These trees are ''labelled'' by the left sides. 
+Then we start a ''gedankenexperiment'' analogous to [https://en.wikipedia.org/wiki/Hilbert%27s_paradox_of_the_Grand_Hotel Hilbert's hotel]. We consider simultaneously all rows i &gt; 1 (omitting the root segment) in F which fulfill some modularity condition (the ''source'' row in F), and we ''attach'' (identify, connect) them to their unique occurrence in the right part of F (''target'' row and column). 
+* (C8) The attachment process does not create any new cycle (in addition to the one in the root segment).
+: Let tree t1 with label n1 and right part R1 be attached to node n1 in the right part R2 of the unique tree t2 which is labelled by n2. t1 and t2 are disjoint trees, therefore the result of such a single attachment step is a tree again (t2', still labelled by n2). 
+: A technical implementation of the process (which is impossible for infinite sets) would perhaps replace the target node by a pointer to the source tree. 
+We ''sieve'' the trees in F: Whenever we attach t1 to n1 in t2, we remove the row for n1 resp. t1 in F.  The attachment rules are shown in the following table (T4):
 {| class="wikitable" style="text-align:left"
 |-
-!Source Row i        !! Target Row !! Column               !! Remaining Rows                !! Fraction
+!Source Row i        !! Target Row !! Target Column        !! Remaining Rows                !! Fraction
 |-                      
 |i &#x2261; 3 mod 4  ||((i -  3) /  4) * 3<sup>0</sup> + 1 || 2||i &#x2261; 0, 1, 2 mod 4       ||3/4
 |-                                                             
@@ -144,43 +215,22 @@ We ''sieve'' the segments: Once we have attached a set of segments, we strike it
 | ...                ||  ...                               ||  ... || ...                       || ...
 |-                      
 |}
-The ellipsis row of this table could be explained in terms of i, but it should be obvious how it can be constructed. The residues of 2<sup>k</sup> in the first column are 3 * 2<sup>k-2</sup>, 1 * 2<sup>k-2</sup> in an alternating sequence. The additive constants in the second column are the indexes of the variable length segments with left parts (4), 40, 364, 3280, 29524 ([http://oeis.org/A191681 OEIS A191681]) mentioned above. They are repeated 4 times since the corresponding lengths "jump" by 4.
-====Example====
-82 is a node with a long Collatz sequence. The following list (L1) shows - via the highlighted numbers - how segments are attached:
-           1     2     3     4     5     6     7     8     9    10    11    12 
- C[ 14]   '''82'''   328 
- C[ 16]   '''94'''   376   124   250    '''82'''   166
- C[ 61]  '''364'''  1456   484   970   322   646   214   430   142   286    '''94'''   190 
- C[ 46]  '''274'''  1096   '''364'''   730 
- C[ 52]  '''310'''  1240   412   826   '''274'''   550 
- C[ 88]  '''526'''  2104   700  1402  466  934  '''310'''  622 
- C[223] '''1336'''  5344  1780  3562  1186  2374   790  1582   '''526'''  1054 
- C[ 56]  '''334'''  '''1336 '''
- C[142]  '''850'''  3400  1132  2266   754  1510   502  1006   '''334'''   670 
- C[160]  '''958'''  3832  1276  2554   '''850'''  1702 
- C[304] '''1822'''  7288  2428  4858  1618  3238  1078  2158   718  1438   478   '''958 '''
- C[385] '''2308'''  9232  3076  6154  2050  4102  1366  2734   910  '''1822 '''
- C[289] '''1732'''  6928  '''2308'''  4618 
- C[217] '''1300'''  5200  '''1732'''  3466 
- C[163]  '''976'''  3904  '''1300'''  2602 
- C[ 41]  '''244'''   '''976 '''
- C[ 31]  '''184'''   736   '''244'''   490 
- C[  8]   '''46'''   '''184 '''
- C[  7]   '''40'''   160    52   106    34    70    22    '''46 '''
- C[  2]   '''10'''    '''40 '''
- C[  1]    '''4'''    16     4    '''10 '''
-===Segment Tree===
-* (C8) The process does not create any cycle.
-: All involved subtrees are disjoint. The process attaches trees to other trees, the results are trees again. 
-* (C9) Any source row will finally be attached to the tree starting at the root segment.
-: Similiar to the arguments for coverage, we have to apply the rules from table T4 one after the other up to a sufficiently high row (corresponding to a sufficiently long variable segment). 
+It should be obvious how the next rows of this table should be filled: The residues of 2<sup>k</sup> in the first column are 3 * 2<sup>k-2</sup>, 1 * 2<sup>k-2</sup> in an alternating sequence. The additive constants in the second column are the indexes of the variable length segments with left parts (4), 40, 364, 3280, 29524 ([http://oeis.org/A191681 OEIS A191681]) mentioned above. They are repeated 4 times since the corresponding lengths "jump" by 4.
+It should be noted that it does not matter in which order the single attachment steps are performed.
+===Tree connectivity===
+* (C9) The tree of any source row with arbitrarily large left side n1 will eventually be be attached to another tree which contains n1 in its node set.
+: Similiar to the arguments for coverage of segments, we have to apply the rules from table T4 one after the other up to a sufficiently high row (corresponding to a sufficiently long variable segment). 
+* (C9a) In the end, all subtrees will be attached to the root segment.
+: Suppose there is a set U of subtrees left which are not connected to the root segment. We consider the subtree t in U  with the smallest label. We know that it should have been attached - to where? Either to the root segment, or to another tree in U. ''Is this  already a contradiction?'' 
+:If not, then in both cases the number of trees is reduced by 1. We repeat the argument until there is only one subtree t left in U. The label of t is not contained in t's node set, so it must be contained in the node set of the tree already attached to the root segment, and that is the node where t must also be attached.
+: And if U is infinite? Then the two trees attached to the root segment would have a finite number of nodes. Then they have leaves which have no tree attached to them. But by T4 we could always determine the subtree which should have been attached, so we have a contradiction.
+We denote the final tree resulting from the sieving process by '''compressed tree'''.
+==The Collatz Tree==
+* (C10) The compressed tree is a subgraph of the Collatz graph.
+: The edges of the compressed tree carry combined operations &micro;&micro;, &delta;&micro;&micro; and &sigma; = &delta;&micro;. 
+So far, numbers of the form x &#x2261; 0, 1, 2, 3, 5 mod 6 are missing from the compressed tree. 
 
-==Collatz Tree==
-* (C10) The segment tree is a subgraph of the Collatz graph.
-: The edges of the segment tree carry combined operations &micro;&micro;, &delta;&micro;&micro; and &sigma; = &delta;&micro;. 
-So far, numbers of the form x &#x2261; 0, 1, 2, 3, 5 mod 6 are missing from the segment tree. 
-
-We insert intermediate nodes into the segment tree by applying operations on the left parts of the segments as shown in the following table (T5):
+We insert intermediate nodes into the compressed tree by applying operations on the left parts of the segments as shown in the following table (T5):
 {| class="wikitable" style="text-align:left"
 |-
 ! Operation            !! Condition             !! Resulting Nodes !! Remaining Nodes
@@ -201,6 +251,6 @@ The first three rows in T5 care for the intermediate nodes at the beginning of t
 We call such a construction a ''detailed segment'' (in contrast to the ''compressed segments'' described above). 
 :: A '''[http://www.teherba.org/fasces/oeis/collatz/rails.html detailed segment directory]''' can  be created by the same [https://github.com/gfis/fasces/blob/master/oeis/collatz/collatz_rails.pl Perl program]. In that directory, the two subpaths of a segment are shown in two lines. Only the highlighted nodes are unique.
 
-* (C11) The connectivity of the segment tree remains unaffected by the insertions.
-* (C12) With the insertions of T5, the segment tree covers the whole Collatz graph.
-* (C13) '''The Collatz graph is a tree''' (except for the trivial cycle).
+* (C11) The connectivity of the compressed tree remains unaffected by the insertions.
+* (C12) With the insertions of T5, the compressed tree covers the whole Collatz graph.
+* (C13) '''The Collatz graph is a tree''' (except for the trivial cycle 4-2-1).

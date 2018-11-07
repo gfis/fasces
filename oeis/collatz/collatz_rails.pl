@@ -3,7 +3,8 @@
 # https://github.com/gfis/fasces/blob/master/oeis/collatz/collatz_rails.pl
 # Print a directory of railways in the Collatz graph
 # @(#) $Id$
-# 2018-09-05: new kernel format; -a west|east|free
+# 2018-11-06: links on all numbers for comp
+# 2018-09-05: new kernel format; -a west|east|free|comp
 # 2018-08-30, Georg Fischer: derived from collatz_roads.pl
 #
 # The algorithm is the same as in collatz_roads.pl,
@@ -39,7 +40,10 @@
 #--------------------------------------------------------
 use strict;
 use integer;
-#----------------
+
+my ($sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst) = localtime (time);
+my $timestamp = sprintf ("%04d-%02d-%02d %02d:%02d:%02d"
+        , $year + 1900, $mon + 1, $mday, $hour, $min, $sec);#----------------
 # get commandline options
 my $sep    = "\t";
 my $debug  = 0;
@@ -380,39 +384,39 @@ sub print_1_rail {
             my $bold;
             while ($ir < scalar(@rail)) {
                 my $id = "";
-            	$bold = "";
+                $bold = "";
                 if (      $rail[$ir    ] % $incr6 == $start4) {
                     $id = $rail[$ir    ];
-                	if ($ir % 4 == 1) {
-                		$bold = " seg";
-                	}
+                    if ($ir % 4 == 1) {
+                        $bold = " seg";
+                    }
                 }
                 if ($ir > 5 and $rail[$ir - 1] % $incr6 == $start4) {
                     $id = $rail[$ir - 1];
                 }
-   	            if ($ir <= 3) {
-  	            	$bold = " sei";
-   	            }
+                if ($ir <= 3) {
+                    $bold = " sei";
+                }
                 print &cell_html($rail[$ir], "btr$bold", $ir, $id);
                 $ir += 2;
             } # while $ir
             print "</tr>\n";
-            
+
             # print the southern track
             print "<tr>"
                 . "<td class=\"arl\">\&nbsp;</td>";
             print "<td class=\"arr\">\&nbsp;</td>";
             $ir = 2;
             while ($ir < scalar(@rail)) {
-            	$bold = "";
-            	if ($rail[$ir] % $incr6 == $start4) {
-	                if ($ir % 4 == 2 and $ir > 5) {
-    	            	$bold = " seg";
-    	            }
+                $bold = "";
+                if ($rail[$ir] % $incr6 == $start4) {
+                    if ($ir % 4 == 2 and $ir > 5) {
+                        $bold = " seg";
+                    }
                 }
-   	            if ($ir <= 5) {
-   	            	$bold = " sei";
-   	            }
+                if ($ir <= 5) {
+                    $bold = " sei";
+                }
                 print &cell_html($rail[$ir], "bbr$bold", $ir, "");
                 $ir += 2;
             } # while $ir
@@ -443,8 +447,8 @@ sub print_1_compressed {
         } elsif ($mode =~ m{html}) {
             $ir = 1;
             print "<tr>"
-                . "<td class=\"arc    \">$rail[0]</td>"
-                . &cell_html(            $rail[$ir], "bor", $ir, "");
+                . "<td class=\"arc\">$rail[0]</td>"
+                . &cell_html(        $rail[$ir], "bor", $ir, "");
             $ir += 4;
             my $step = 1;
             while ($ir < scalar(@rail)) {
@@ -501,10 +505,10 @@ GFis
             $ir = scalar(@rail) - 2;
             while ($ir >= 0) {
                 if ($rail[$ir] <= $region) {
-                    print &cell_html($rail[$ir], "btr" 
+                    print &cell_html($rail[$ir], "btr"
                     . ($rail[$ir] <= 80 ? " d5" : "") , $ir, $ir);
                 }
-                $ir -= 2; 
+                $ir -= 2;
             } # while $ir
         } # switch action
         print "</tr>\n";
@@ -521,7 +525,7 @@ sub cell_html { # print one table cell
     my $result = "<td";
     if ($rest == $start4) {
         # $result .= " title=\"$ir:" . &to_kernel($elem) . "\"";
-        $result .= " title=\"" . &to_kernel($elem) . "\"";
+        # $result .= " title=\"" . &to_kernel($elem) . "\"";
     }
     if ($id ne "") {
         $result .= " id=\"$id\"";
@@ -531,11 +535,10 @@ sub cell_html { # print one table cell
     if ($border ne "") {
         $result .= " $border";
     }
-    $result .= "\">";
     if ($ir == 1) { # start element
-        $result .= "\&nbsp;<a href=\"\#$elem\">$elem</a>\&nbsp;"; # to be able to search for " 84 "
+        $result .= "\" id=\"A$elem\"><a href=\"\#$elem\">$elem</a>"; 
     } else {
-        $result .=                     "\&nbsp;$elem\&nbsp;";
+        $result .=               "\"><a href=\"\#A$elem\">$elem</a>"; 
     }
     $result .= "</td>";
     return $result;
@@ -636,8 +639,8 @@ sub print_rails_head {
 <td class="arc        ">...</td>
 <td class="arc btr seg">&micro;&micro;&sigma;<sup>j-1</sup></td>
 <td class="arc btr    ">&micro;&micro;&sigma;<sup>j-1</sup>&delta;</td>
-</tr>                 
-<tr>                  
+</tr>
+<tr>
 <td class="arc        ">&nbsp;</td>
 <td class="arr        ">&nbsp;</td>
 <td class="arc bbr    ">&delta;</td>
@@ -659,20 +662,13 @@ GFis
 sub print_preface {
     print <<"GFis";
 <p>
-root &lt;-&nbsp;&nbsp;&nbsp;numbers &#x2261;
-<span class="d0">0</span>, <span class="d1">1</span>,
-<span class="d2">2</span>, <span class="d3">3</span>,
-<span class="d4">4</span>, <span class="d5">5</span> mod 6&nbsp;&nbsp;&nbsp;-&gt; &#x221e;
+Generated with 
+<a href="https://github.com/gfis/fasces/blob/master/oeis/collatz/collatz_rails.pl">Perl</a> 
+at $timestamp; 
+-&gt; <a href="http://www.teherba.org/index.php/OEIS/3x%2B1_Problem">Article about 3x+1 problem</a> 
+ of <a href="mailto:Georg.Fischer\@t-online.de">Georg Fischer</a>
 <br />
-<span class="sei">inserted</span> <span class="seg">tree</span> nodes
-<br />
-variable segments: 
-<a href="#16">4</a>,
-<a href="#160">40</a>,
-<a href="#1456">364</a>,
-<a href="#13120">3280</a>,
-<a href="#118096">29524</a> 
-(OEIS <a href="http://oeis.org/A191681">A191681</a>)
+<a href="#more">More information</a>
 </p>
 GFis
 } # print_preface
@@ -727,12 +723,32 @@ sub print_rails_tail {
     return if $mode ne "html";
     print <<"GFis";
 </table>
-<p>End of directory</p>
+<p id="more">End of directory</p>
+<p>
+Root &lt;-&nbsp;&nbsp;&nbsp;numbers &#x2261;
+<span class="d0">0</span>, <span class="d1">1</span>,
+<span class="d2">2</span>, <span class="d3">3</span>,
+<span class="d4">4</span>, <span class="d5">5</span> mod 6&nbsp;&nbsp;&nbsp;-&gt; &#x221e;
+\&nbsp;\&nbsp;\&nbsp;\&nbsp;
+<span class="sei">Inserted</span> <span class="seg">tree</span> nodes 
+<br />
+Longest segments:
+<a href="#16">4</a>,
+<a href="#160">40</a>,
+<a href="#1456">364</a>,
+<a href="#13120">3280</a>,
+<a href="#118096">29524</a>
+(OEIS <a href="http://oeis.org/A191681">A191681</a>)
+</p>
+<p>
+The links on the left side (column 1) jump to the segment which contains that number in its right part. Successive klicks will finally reach the root 4.
+The links on the right part numbers jump to the corresponding segment.
+</p>
 GFis
 } # print_rails_tail
 #----------------
 sub print_compressed_tail {
-    &print_rails_tail();    
+    &print_rails_tail();
 } # print_compressed_tail
 #----------------
 sub print_html_tail {
@@ -743,7 +759,7 @@ sub print_html_tail {
 GFis
 } # print_html_tail
 #================================
-__DATA__            
+__DATA__
                  left    kern  col
 <!--build_west1: 82              5-->
 <!--build_west2: 82        7.1   5-->
@@ -804,7 +820,7 @@ __DATA__
 #-----------------------------------------------
 [1] = 6n-2;         d6, s4      ; start
 [2b] = 2n-1;        d2, s1      ; all odd
-[2a] = [1]*2;       d12, s8     
+[2a] = [1]*2;       d12, s8
 [3a] = [1]*4;       d24, s16    ; *
 [3b] = [2b]*2;      d4, s2
 [4a] = ([3a]-1)/3;  d8, s5
@@ -817,7 +833,7 @@ bold only
 [4b]                d24, s4     ; 4,28  mod 48
 [5a]        ;       d48, s10    ; 10    mod 48
 [6b]        ;       d48, s34    ; 34    mod 48 missing: 22,46
-[7a]                d96, s70    
+[7a]                d96, s70
 [8b]                d192, s22
 [9a]                d384, s46
 
