@@ -12,7 +12,8 @@ I=6
 M=html
 SRC=comp.html
 
-all: rails kernels kerneval eawefr
+all: comp  
+old:rails kernels kerneval eawefr
 rails: 
 	perl collatz_rails.pl   -n $(N)    -d $(D) -s $(S) -i $(I) -a simple > rails.html
 eawefr: west east free

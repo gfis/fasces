@@ -11,7 +11,13 @@
 # only the layout of the output is changed.
 #------------------------------------------------------
 # Usage:
-#   perl collatz_rails.pl [-n maxn] [-d debug] > rails.html
+#   perl collatz_rails.pl [-n maxn] [-d debug] [-s 4] [-i 6] [-a comp] > comp.html
+#       -n	maximum start value
+#       -s	
+#       -i  elements of the form n*i + s
+#       -d  debug level: 0 (none), 1 (some), 2 (more)
+#       -a  type of directory to be produced: simple, comp(ressed), 
+#             contig(uous), west, east, free, crop
 #
 # Construction of rails:
 # A "rail" is a sequence of pairs
@@ -47,12 +53,12 @@ my $timestamp = sprintf ("%04d-%02d-%02d %02d:%02d:%02d"
 # get commandline options
 my $sep    = "\t";
 my $debug  = 0;
-my $maxn   = 512; # max. start value
+my $maxn   = 30000; # max. start value
 my $start4 = 4;
 my $incr6  = 6;
 my $start  = $start4;
 my $incr   = $incr6;
-my $action = "simple";
+my $action = "comp";
 my %text   =
     ( "simple",     " Detailed Segment Directory D"
     , "comp",       " Compressed Segment Directory C"
@@ -538,7 +544,11 @@ sub cell_html { # print one table cell
     if ($ir == 1) { # start element
         $result .= "\" id=\"A$elem\"><a href=\"\#$elem\">$elem</a>"; 
     } else {
-        $result .=               "\"><a href=\"\#A$elem\">$elem</a>"; 
+    	if ($elem < $maxn) {
+        	$result .=           "\"><a href=\"\#A$elem\">$elem</a>"; 
+    	} else {
+        	$result .=           "\">$elem"; 
+    	}
     }
     $result .= "</td>";
     return $result;
@@ -664,9 +674,10 @@ sub print_preface {
 <p>
 Generated with 
 <a href="https://github.com/gfis/fasces/blob/master/oeis/collatz/collatz_rails.pl">Perl</a> 
-at $timestamp; 
--&gt; <a href="http://www.teherba.org/index.php/OEIS/3x%2B1_Problem">Article about 3x+1 problem</a> 
- of <a href="mailto:Georg.Fischer\@t-online.de">Georg Fischer</a>
+at $timestamp;<br /> 
+-&gt; <a href="http://www.teherba.org/index.php/OEIS/3x%2B1_Problem">Article 
+about the 3x+1 problem</a> 
+ from <a href="mailto:Georg.Fischer\@t-online.de">Georg Fischer</a>
 <br />
 <a href="#more">More information</a>
 </p>
@@ -741,7 +752,10 @@ Longest segments:
 (OEIS <a href="http://oeis.org/A191681">A191681</a>)
 </p>
 <p>
-The links on the left side (column 1) jump to the segment which contains that number in its right part. Successive klicks will finally reach the root 4.
+The links on the left side (column 1) jump to the segment 
+which contains that number in its right part, if
+that segment was calculated. 
+Successive klicks on the top left element will finally reach the root 4.
 The links on the right part numbers jump to the corresponding segment.
 </p>
 GFis
@@ -836,5 +850,55 @@ bold only
 [7a]                d96, s70
 [8b]                d192, s22
 [9a]                d384, s46
-
-
+#--------------------------------------------------
+Col. source   target row
+2   			<
+	16@3    	@1
+    40@7    	@2
+    64@11   	@3
+    88@15   	@4
+3   			< (=)
+	 4@1    	@1 = !
+    28@5    	@4
+    52@9    	@7
+    76@13   	@10
+4				<
+	10@2		@1
+	58@10		@4
+	106@18		@7
+	154@26		@10
+5				>
+	34@6		@7
+	82@14		@16
+	130@22		@25
+	178@30		@34
+6				<
+   	70@12		@7  
+   	166@28		@16 
+   	262@44		@25 
+   	358@60		@34 
+7				>
+	22@4		@7
+	118@20		@34
+	214@36		@61
+	310@52		@88
+8				<
+	46@8		@7
+	238@40		@34
+	430@72		@61
+	622@104		@88
+9				>
+	142@24		@61
+	334@56		@142
+	526@88		@223
+	718@120		@304
+10				>
+	286@48		@61
+	670@112		@142
+	1054@176	@223
+	1438@240   	@304 	
+11				>
+	94@16		@61
+	478@80		@304
+	862@144    	@547
+	1246@208    @790	
