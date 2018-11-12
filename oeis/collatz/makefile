@@ -88,3 +88,6 @@ once2:
 	grep -v "  1 "        once2u.tmp | tee once2.tmp
 once3:
 	sort -n once1u.tmp once2u.tmp | uniq -c | grep -v "  2 " || :
+#-----------------------
+coin:
+	perl mod_coin.pl | tee coin2.txt
