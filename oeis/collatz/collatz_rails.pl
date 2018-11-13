@@ -3,6 +3,7 @@
 # https://github.com/gfis/fasces/blob/master/oeis/collatz/collatz_rails.pl
 # Print a directory of railways in the Collatz graph
 # @(#) $Id$
+# 2018-11-12: mark supersegments
 # 2018-11-06: links on all numbers for comp
 # 2018-09-05: new kernel format; -a west|east|free|comp
 # 2018-08-30, Georg Fischer: derived from collatz_roads.pl
@@ -537,7 +538,18 @@ sub cell_html { # print one table cell
         $result .= " id=\"$id\"";
         # print STDERR "id2: $id\n";
     }
-    $result .= " class=\"d$rest";
+    if (0) {
+    } elsif (1 and $elem % 7776 - 7776 == -3110) {
+    	$result .= " class=\"super5";
+    } elsif (1 and $elem % 1296 - 1296 ==  -518) {
+    	$result .= " class=\"super4"; 
+    } elsif (1 and $elem %  216 -  216 ==   -86) {
+    	$result .= " class=\"super3";
+    } elsif (1 and $elem %   36 -  36  ==   -14) {
+    	$result .= " class=\"super2";
+    } else {
+    	$result .= " class=\"d$rest";
+    }
     if ($border ne "") {
         $result .= " $border";
     }
@@ -600,6 +612,10 @@ does not work
 .d3     { background-color: lemonchiffon   ; color: gray;                    }
 .d4     { background-color: papayawhip     ; color: black;                   }
 .d5     { background-color: lavender       ; color: gray;                    }
+.super2 { background-color: yellow         ; color: black                    }
+.super3 { background-color: orange         ; color: white                    }
+.super4 { background-color: crimson        ; color: white                    }
+.super5 { background-color: aqua           ; color: black                    }
 .seg    { font-weight: bold; }
 .sei    { font-weight: bold; font-style    : italic; }
 </style>

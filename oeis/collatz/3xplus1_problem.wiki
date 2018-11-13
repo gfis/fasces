@@ -1,11 +1,11 @@
 ==Abstract==
-Small, finite trees with two branches are constructed with the operations defined by Collatz for his 3x+1 problem, These trees are connected to form bigger graphs in an iterative process. It is shown that this process finally builds a single graph which is a tree except for one cycle at the root. This graph is then embedded into the Collatz graph, and it is thereby shown that the latter is also a tree except for the cycle 4-2-1.
+Small, finite trees with two branches are constructed with the operations defined by Collatz for his 3x+1 problem. These trees are connected to form bigger graphs in an iterative process. It is shown that this process finally builds a single graph which is a tree except for one cycle at the root. This graph is then embedded into the Collatz graph, and it is thereby shown that the latter is also a tree except for the cycle 4-2-1.
 ==Introduction==
 '''Collatz sequences''' (also called  ''trajectories'') are sequences of integer numbers &gt; 0. For any start value &gt; 0 the elements of the sequence are constructed with two simple rules:
 # Even numbers are halved.
 # Odd numbers are multiplied by 3 and then incremented by 1.
-Since decades it is unknown whether the final cyle 4 - 2 - 1 is always reached for all start values. This problem is the '''Collatz conjecture''', for which the [https://en.wikipedia.org/wiki/Collatz_conjecture english Wikipedia] states:
-: It is also known as the 3n + 1 conjecture, the Ulam conjecture (after Stanisław Ulam), Kakutani's problem (after Shizuo Kakutani), the Thwaites conjecture (after Sir Bryan Thwaites), Hasse's algorithm (after Helmut Hasse), or the Syracuse problem; the sequence of numbers involved is referred to as the hailstone sequence or hailstone numbers (because the values are usually subject to multiple descents and ascents like hailstones in a cloud), or as wondrous numbers.
+Since decades it is unknown whether the final cyle 4 - 2 - 1 is always reached for all start values. This problem is the '''Collatz conjecture''', for which the [https://en.wikipedia.org/wiki/Collatz_conjecture English Wikipedia] states:
+: It is also known as the 3n + 1 conjecture, the Ulam conjecture (after Stanis&#x0142;aw Ulam), Kakutani's problem (after Shizuo Kakutani), the Thwaites conjecture (after Sir Bryan Thwaites), Hasse's algorithm (after Helmut Hasse), or the Syracuse problem; the sequence of numbers involved is referred to as the hailstone sequence or hailstone numbers (because the values are usually subject to multiple descents and ascents like hailstones in a cloud), or as wondrous numbers.
 
 Simple visualizations of Collatz sequences show no obvious structure. The sequences for the first dozen of start values are rather short, but the sequence for 27 suddenly has 112 elements.
 <p align="right">''Da sieht man den Wald vor lauter B&auml;men nicht.''<br />German proverb: ''You cannot see the wood for the trees.''
@@ -21,7 +21,7 @@ When all Collatz sequences are read backwards, they form the '''Collatz graph'''
 * to (m - 1) / 3 if m &#x2261; 1 mod 3.
 
 The Collatz conjecture claims that the graphs contains all numbers, and that - except for the leading cycle 1 - 2 - 4 - 1 - 2 - 4 ... - it has the form of a tree (without cycles). We will not consider the leading cycle, and we start the graph with node 4, the '''root'''.
-Moreover, another trivial type of path starts when m &#x2261; 0 mod 3. We call such a path a ''sprout'', and it contains duplications only. Sprout must be added to the graph for any node divisible by 3, therefore we will not consider them for the moment.
+Furthermore, another trivial type of path starts when m &#x2261; 0 mod 3. We call such a path a ''sprout'', and it contains duplications only. Sprouts must be added to the graph for any node divisible by 3, therefore we will not consider them for the moment.
 
 ===Graph Operations===
 Following [http://dx.doi.org/10.1155/2014/756917 Tr&uuml;mper], we use abbreviations for the elementary operations which transform a node (element, number) in the Collatz graph according to the following table (T1):
@@ -60,7 +60,7 @@ A closer look at the Collatz sequences shows a lot of pairs of adjacent start va
  143/104: 143 u 430 d 215 u 646 d 323 u 970 d 485 u 1456 d 728 d 364 ] 182, 91, ... 4, 2, 1
             +1  *6+4    +1  *6+4    +1  *6+4    +1   *6+4  *6+2    +0    +0 ...
 The third line tells how the second line could be computed from the first.
-Walking from right to left, the step pattern is:
+Proceeding from right to left, the step pattern is:
  &delta; &micro; &micro; &delta; &micro; &delta; &micro; &delta; &micro;
  &micro; &micro; &delta; &micro; &delta; &micro; &delta; &micro; &delta;
 The alternating pattern of operations can be continued to the left with 4 additional pairs of steps:
@@ -74,7 +74,7 @@ These patterns lead us to the construction of special subsets of paths in the Co
 
 ===Segment Directory Construction===
 We list the segments as rows of an infinite array <nowiki>C[i,j]</nowiki>, the so-called ''segment directory''.
-: Informally, and in the two examples above, we consider the terms betweeen the square brackets. For the moment, we only take those which are which are &#x2261; 4 mod 6 (for "compressed" segments, below there are also "detailed" segments where we take all). We start at the right and with the lower line, and we interleave the terms &#x2261; 4 mod 6 of the two lines to get a segment.
+: Informally, and in the two examples above, we consider the terms betweeen the square brackets. For the moment, we only take those which are which are &#x2261; 4 mod 6 (for "compressed" segments; below there are also "detailed" segments where we take all). We start at the right and with the lower line, and we interleave the terms &#x2261; 4 mod 6 of the two lines to get a segment.
 
 Continuing the example above:
  [ 62 d  31 u  94 d  47 u 142 d  71 u 214 d 107 u 322 d 161 u 484 d  242 d 121 u 364 ]
@@ -82,17 +82,19 @@ Continuing the example above:
 Left-to-right reversed, only terms of the form 6*m+4, rows switched and without operations:
  364  1456     970     644     430     286     190
  364       484     322     214     142      94
-The final, linearized example segment in row 61 of the directory looks like so:
+The final, linearized example segment in row 61 of the directory looks like:
 <table style="border-collapse: collapse;>
 <tr>
 <tr><td align="center">&nbsp;61&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; " >&nbsp;364&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;" >&nbsp;1456&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;>&nbsp;484&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;>&nbsp;970&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;>&nbsp;322&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;>&nbsp;646&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;>&nbsp;214&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;>&nbsp;430&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;>&nbsp;142&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;>&nbsp;286&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;>&nbsp;94&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;>&nbsp;190&nbsp;</td></tr>
 </table>
 
-The following table '''(T2)''' tells how the columns in one row i of the array C must be constructed if the condition is fulfilled: 
+The first column(s) ''<nowiki>C[i,1]</nowiki>'' will be denoted as the '''left side''' of the segments (or of the whole directory), while the columns ''<nowiki>C[i,j], j &gt; 1</nowiki>'' are the '''right part'''. 
+
+The following table '''(T2)''' tells how the columns ''j'' in one row ''i'' of C must be constructed if the condition is fulfilled: 
 {| class="wikitable" style="text-align:left"
-!Column                 !! Operation                  !! Formula                  !! Condition            !! Sequence
+!Column j               !! Operation                  !! Formula                  !! Condition            !! Sequence
 |-
-| 1 ||                                                || 6 * i - 2                ||                      ||  4, 10, 16, 22, 28, ...
+| 1 || <nowiki>C[i,1]</nowiki>                        ||  6 * i - 2               ||                      ||  4, 10, 16, 22, 28, ...
 |-
 | 2 || <nowiki>C[i,1]</nowiki> &micro;&micro;         || 24 * (i - 1) / 1     + 16||                      || 16, 40, 64, 88, 112, ...
 |-                                                                            
@@ -102,25 +104,25 @@ The following table '''(T2)''' tells how the columns in one row i of the array C
 |-                                                                            
 | 5 || <nowiki>C[i,3]</nowiki> &sigma;                || 48 * (i - 7) / 9     + 34|| i &#x2261; 7 mod 9   || 34, 82, 130, 178, ...
 |-                                                                            
-| 6 || <nowiki>C[i,2]</nowiki> &sigma;&sigma;         || 96 * (i - 7) / 9     + 70|| i &#x2261; 7 mod 9   || 70, 166, 262, 358, ...
+| 6 || <nowiki>C[i,4]</nowiki> &sigma;                || 96 * (i - 7) / 9     + 70|| i &#x2261; 7 mod 9   || 70, 166, 262, 358, ...
 |-                                                                            
-| 7 || <nowiki>C[i,3]</nowiki> &sigma;&sigma;         || 96 * (i - 7) / 27    + 22|| i &#x2261; 7 mod 27  || 22, 118, 214, 310, ...
+| 7 || <nowiki>C[i,5]</nowiki> &sigma;                || 96 * (i - 7) / 27    + 22|| i &#x2261; 7 mod 27  || 22, 118, 214, 310, ...
 |-                                                                            
-| 8 || <nowiki>C[i,2]</nowiki> &sigma;&sigma;&sigma;  || 192 * (i - 7) / 27   + 46|| i &#x2261; 7  mod 27 || 46, 238, 430, 622, ...
+| 8 || <nowiki>C[i,6]</nowiki> &sigma;                || 192 * (i - 7) / 27   + 46|| i &#x2261; 7  mod 27 || 46, 238, 430, 622, ...
 |-
-| 9 || <nowiki>C[i,3]</nowiki> &sigma;&sigma;&sigma;  || 192 * (i - 61) / 81 + 142|| i &#x2261; 61 mod 81 || 142, 334, ...
+| 9 || <nowiki>C[i,7]</nowiki> &sigma;                || 192 * (i - 61) / 81 + 142|| i &#x2261; 61 mod 81 || 142, 334, ...
 |-
 |...|| ... || ... || ... || ...
 |-
-|...|| <nowiki>C[i,2]</nowiki> &sigma;<sup>j-1</sup>  || 3 * 2<sup>j+2</sup> * (i - m) / 3<sup>k</sup> + x || i &#x2261; m mod 3<sup>k</sup> || x, ...
+| j || <nowiki>C[i,j-2]</nowiki> &sigma;              || 6 * 2<sup>k+1</sup> * (i - m) / 3<sup>l</sup> + 3 * 2<sup>k</sup> * h - 2 || i &#x2261; m mod 3<sup>l</sup> || ...
 |-
 |}
-The first column(s) ''<nowiki>C[i,1]</nowiki>'' will be denoted as the '''left side''' of the segment (or of the whole directory), while the columns ''<nowiki>C[i,j], j &gt; 1</nowiki>'' are the '''right part'''. 
-
-In general, the rows of T2 must be filled as follows:
-* ''j'' and ''k'' are increased in every second row.  
-* The residues ''m'' of ''3<sup>k</sup>'' in the condition column are are the indexes 1, 7, 61, 547, 4921 ... ([http://oeis.org/A066443 OEIS A066443]) of the variable length segments with left sides (4), 40, 364, 3280, 29524 ([http://oeis.org/A191681 OEIS A191681]). They increase (''jump'') after 4 rows.
-* The additive constants ''x'' in the formula are the values appearing first in columns 2-4 (in segment 1), 5-8 (in segment 7), 9-12 (in segment 61) etc. 
+The general formula for a column ''j >= 4'' uses the following parameters:
+* ''k = floor(j / 2)'' 
+* ''l = floor(j - 1) / 2)'' 
+* ''m = a(floor((j - 1) / 4)'',  where ''a(n)'' is the OEIS sequence ([http://oeis.org/A066443 A066443]: ''a(0) = 1; a(n) = 9 * a(n-1) - 2 for n &gt; 0'' . The values are the indexes 1, 7, 61, 547, 4921 ... of the variable length segments with left sides (4), 40, 364, 3280, 29524 ([http://oeis.org/A191681 OEIS A191681]). The constants appear first in columns 2-4 (in segment 1), 5-8 (in segment 7), 9-12 (in segment 61) and so on 
+* ''h = a(j)'', where ''a(n)'' is the OEIS sequence [http://oeis.org/A084101 A084101] with period 4: ''a(0..3) = 1, 3, 3, 1; a(n) = a(n - 4) for n &gt; 3''.
+(This results in ''k = 2, l = 1, m = 1, h = 1 for j = 4''.)
 
 The first few lines of the segment directory are the following:
 
@@ -172,7 +174,7 @@ There is a more elaborated '''[http://www.teherba.org/fasces/oeis/collatz/comp.h
 
 ====Properties of the Segment Directory====
 We make a number of claims for the segment directory C:
-* (C1) All nodes in the segment directory are of the form ''6 * n - 2''.
+* (C1) All nodes in the segment directory have the form ''6 * n - 2''.
 :: This follows from the formula for columns ''<nowiki>C[i,1..3]</nowiki>'', and for any higher column numbers from the 3-by-2 replacement property of the &sigma; operation.
 * (C2) All segments have a finite length.
 :: At some point the &sigma; operations will have replaced all factors 3 by 2.
@@ -230,49 +232,50 @@ Parallel to the segment directory we maintain the ''attachment directory'' A whi
 # tells the target row and column numbers ''i, j'' in the segment directory C where the source segment was attached.
 Initially all segments are unattached.
 
-We operate on A as follows: Considering simultaneously a set of source rows ''i &gt; 1'' (i.e. omitting the root segment) in C - which fulfill some modularity condition (the ''source'' row set), and which are so far unattached, we attach their segments in parallel to the unique occurrences of their left sides in the right part of C (''target row'' set and ''target column''). 
+We operate on A as follows: Considering simultaneously a set of source rows ''i &gt; 1'' (i.e. omitting the root segment) in C - which fulfill some modularity condition (the ''source'' row set), and which are so far unattached, we attach their segments parallel to the unique occurrences of their left sides in the right part of C (''target row'' set and ''target column''). 
 :These operations on A involve infinite sets. They are similiar to the ''gedankenexperiment'' of [https://en.wikipedia.org/wiki/Hilbert%27s_paradox_of_the_Grand_Hotel Hilbert's hotel].
 
 ===Attachment rules===
 The following table '''(T4)''' tells the computation rules for the target position, depending on the modularity condition of the source row index ''i''. We identify and denote these attachment rules by the target column number (which is also the branch level, below). 
 {| class="wikitable" style="text-align:left"
 |-
-!Target<br>Column!!Source<br>rows ''i''!!First source<br>rows !! Target<br>rows!!First<br>target rows !!<!--New<br>pos.-->!! Remaining<br>rows          !! <!--Remaining<br>Fraction-->
+!Target<br>Column!!Source<br>rows ''i''!!First source<br>rows !! Target<br>rows!!First<br>target rows !!<!--New<br>pos.-->!! Remaining<br>rows        !! <!--Remaining<br>Fraction-->
 |-                                                                                           
-| '''1'''||  i = 1             ||                     || 1                                || 1                   || =    ||i 2, 3, 4  ...                   ||2/2
+| '''1'''||  i = 1             || 1                   ||1                            || 1                   || =    ||2, 3, 4, 5 ...                  ||2/2
 |-                                                                                          
-| '''2'''||i &#x2261; 3 mod 4  ||3, 7, 11, 15 ...     ||3<sup>0</sup> * (i -  3) /  4 +  1||1, 2, 3, 4 ...       || &lt; ||i &#x2261; 0, 1, 2 mod 4        ||3/4
+| '''2'''||i &#x2261;  3 mod  4||3, 7, 11, 15 ...     ||(3<sup>0</sup> * i +  1) /  4||1, 2, 3, 4 ...       || &lt; ||i &#x2261; 0, 1, 2 mod 4        ||3/4
 |-                                                                                        
-| '''3'''||i &#x2261; 1 mod 4 and i &gt; 1 || 5, 9, 13 ...||3<sup>1</sup> * (i -  1) / 4 + 1||4, 7, 10 ...       || &lt; ||i &#x2261; 0, 2, 4, 6 mod 8     ||2/4
+| '''3'''||i &#x2261;  1 mod 4||(1), 5, 9, 13 ...     ||(3<sup>1</sup> * i +  1) /  4||(1), 4, 7, 10 ...    || &lt; ||i &#x2261; 0, 2, 4, 6 mod 8     ||2/4
 |-                                                                                        
-| '''4'''||i &#x2261; 2 mod 8  ||2, 10, 18, 26 ...    ||3<sup>1</sup> * (i -  2) /  8 +  1||1, 4, 7, 10 ...      || &lt; ||i &#x2261; 0, 4, 6 mod 8        ||3/8
-|-                                                                                        
-| '''5'''||i &#x2261; 6 mod 8  ||6, 14, 22, 30 ...    ||3<sup>2</sup> * (i -  6) /  8 +  7||7, 16, 25, 34 ...    || &gt; ||i &#x2261; 0, 4, 8, 12 mod 16   ||2/8
-|-                                                                                        
-| '''6'''||i &#x2261; 12 mod 16||12, 28, 44, 60 ...   ||3<sup>2</sup> * (i - 12) / 16 +  7||7, 16, 25, 34 ...    || &lt; ||i &#x2261; 0, 4, 8 mod 16       ||3/16
-|-                                                                                        
-| '''7'''||i &#x2261; 4  mod 16||4, 20, 36, 52 ...    ||3<sup>3</sup> * (i -  4) / 16 +  7||7, 34, 61, 88 ...    || &gt; ||i &#x2261; 0, 8, 16, 24 mod 32  ||2/16
-|-                                                                                        
-| '''8'''||i &#x2261; 8  mod 32||8, 40, 72, 104 ...   ||3<sup>3</sup> * (i -  8) / 32 +  7||7, 34, 61, 88 ...    || &lt; ||i &#x2261; 0, 16, 24 mod 32     ||3/32
+| '''4'''||i &#x2261;  2 mod  8||2, 10, 18, 26 ...    ||(3<sup>1</sup> * i +  2) /  8||1, 4, 7, 10 ...      || &lt; ||i &#x2261; 0, 4, 6 mod 8        ||3/8
+|-                                                                               
+| '''5'''||i &#x2261;  6 mod  8||6, 14, 22, 30 ...    ||(3<sup>2</sup> * i +  2) /  8||7, 16, 25, 34 ...    || &gt; ||i &#x2261; 0, 4, 8, 12 mod 16   ||2/8
+|-                                                                               
+| '''6'''||i &#x2261; 12 mod 16||12, 28, 44, 60 ...   ||(3<sup>2</sup> * i +  4) / 16||7, 16, 25, 34 ...    || &lt; ||i &#x2261; 0, 4, 8 mod 16       ||3/16
+|-                                                                               
+| '''7'''||i &#x2261;  4 mod 16||4, 20, 36, 52 ...    ||(3<sup>3</sup> * i +  4) / 16||7, 34, 61, 88 ...    || &gt; ||i &#x2261; 0, 8, 16, 24 mod 32  ||2/16
+|-                                                                               
+| '''8'''||i &#x2261;  8 mod 32||8, 40, 72, 104 ...   ||(3<sup>3</sup> * i +  8) / 32||7, 34, 61, 88 ...    || &lt; ||i &#x2261; 0, 16, 24 mod 32     ||3/32
+|-                                                                               
+| '''9'''||i &#x2261; 24 mod 32||24, 56, 88, 120 ...  ||(3<sup>4</sup> * i +  8) / 32||61, 142, 223, 304 ...|| &gt; ||i &#x2261; 0, 16, 32, 48 mod 64 ||2/32
+|-                                                                               
+|'''10'''||i &#x2261; 48 mod 64||48, 112, 176, 240 ...||(3<sup>4</sup> * i + 16) / 64||61, 142, 223, 304 ...|| &gt; ||i &#x2261; 0, 16, 32 mod 64     ||3/64
+|-                                                                               
+|'''11'''||i &#x2261; 16 mod 64||16, 80, 144, 208 ... ||(3<sup>5</sup> * i + 16) / 64||61, 304, 547, 790 ...|| &gt; ||i &#x2261; 0, 32, 64, 96 mod 128||2/64
 |-                                                                                     
-| '''9'''||i &#x2261; 24 mod 32||24, 56, 88, 120 ...  ||3<sup>4</sup> * (i - 24) / 32 + 61||61, 142, 223, 304 ...|| &gt; ||i &#x2261; 0, 16, 32, 48 mod 64 ||2/32
-|-                                                                                     
-|'''10'''||i &#x2261; 48 mod 64||48, 112, 176, 240 ...||3<sup>4</sup> * (i - 48) / 64 + 61||61, 142, 223, 304 ...|| &gt; ||i &#x2261; 0, 16, 32 mod 64     ||3/64
-|-                                                                                     
-|'''11'''||i &#x2261; 16 mod 64||16, 80, 144, 208 ... ||3<sup>5</sup> * (i - 16) / 64 + 61||61, 304, 547, 790 ...|| &gt; ||i &#x2261; 0, 32, 64, 96 mod 128||2/64
-|-                                                                                     
-|...     ||...                 ||...                  ||...                               ||...                  || ...  ||...                             ||... 
+|...     ||...                 ||...                  ||...                          ||...                  || ...  ||...                             ||... 
 |-                                                                                      
-|...     ||i &#x2261; {3, 1} * 2<sup>j-2</sup> mod 2<sup>j</sup>||{3, 1} * 2<sup>j-2</sup> ...||3<sup>k</sup> * (i - {1, 3} * 2<sup>j-2</sup>) / 2<sup>j</sup> + m|| m ...|| &gt; || ... mod 2<sup>k+2</sup>  || {3, 2}/2<sup>j</sup>
+| '''j'''||i &#x2261; 2<sup>k-2</sup> * h mod 2<sup>k+1</sup>||...||(3<sup>l</sup> * i + 2<sup>k-1</sup>) / 2<sup>k+1</sup>|| ...|| &gt; || ...     || ...
 |-
 |}
-The first rule applies to the root segment only and is not used.
-It should be obvious how the rows of this infinite table must be filled in general: 
-* ''j'' and ''m'' are increased in every second row.  
-* The residues of ''2<sup>k</sup>'' in the source row column are ''3 * 2<sup>k-2</sup>, 1 * 2<sup>k-2</sup>'' with the pattern 3 1 1 3 3 1 1 3 3 ... for the factor. (This are also the values to be subtracted from ''i'' in the target row colum.) 
-* The additive constants ''n'' in the target row column are the indexes 1, 7, 61, 547, 4921 ... ([http://oeis.org/A066443 OEIS A066443]: a(n) = a(n-1) * 9 - 2) of the variable length segments with left sides (4), 40, 364, 3280, 29524 ([http://oeis.org/A191681 OEIS A191681]) mentioned above. They increase after 4 rows.
 
-As an example, we apply rule 7 to source row 4. (This example does not show the result of of the whole process, but a single step only.)
+For a column ''j >= 4'', the general formula uses the same parameters as defined above for table (T2):
+* ''k = floor(j / 2)'' 
+* ''l = floor(j - 1) / 2)'' 
+* ''h = [https://oeis.org/A084101 A084101](j)'' (1, 3, 3, 1 ...)
+(This results in ''k = 2, l = 1, h = 1 for j = 4''.)
+
+As an example, we apply rule 7 to source row 4. (This example does not show the result of of the whole process, but only a single step.)
 <table style="border-collapse: collapse;>
 <tr>
 <td style="text-align:center"> </td>
@@ -322,7 +325,7 @@ The target row may have been hit by the same rule, and may already have been att
 * (A6) The resulting graphs do not depend on the order of application of the attachment rules.
 :: The rules may well ''hit'' the same target rows, but they always do so in different target columns. It does not matter whether the target row is already attached.
 
-Despite of (A6) we will apply the rules in a well-defined order, because only with this order we can show that the ''tree'' property of the subgraphs is always maintained.
+Despite of (A6) we will apply the rules in a well-defined order, because only in this order we can show that the ''tree'' property of the subgraphs is always maintained.
 
 ===Attachment Process===
 We will now use the rules of (T4) to reduce the set of unattached segments in C in an iterative process. Our goal is to show that all segments are attached - mostly indirectly - to the root segment. (Rule 1 would state that the root segment should be attached to itself.)
@@ -336,17 +339,17 @@ This degenerate rule is inserted for completeness only. It puts the root segment
 ====Rule 2====
 For this rule, all source rows indexes are contained in the target rows indexes. 
 
-We look more closely at the first of these chains of coincidences: row 3 is attached to the root, row 11 to row 3, 43 to 11 and so on. In the end, the trees corresponding to all rows of the form ''(4<sup>k</sup> + 2) / 6, k &gt;= 0'' (OEIS A007583, with left sides 4, 16, 64, 256 ...) are ''stacked'' on the root segment (row 1). All involved segments are different, and because of the uniqueness of the attachment positions, we have built one tree above the root segment.
+We look more closely at the first of these chains of coincidences: row 3 is attached to the root, row 11 to row 3, 43 to 11 and so on. In the end, the trees corresponding to all rows of the form ''(4<sup>k</sup> + 2) / 6, k &gt;= 0'' (OEIS [https://oeis.org/A007583 A007583], with left sides 4, 16, 64, 256 ...) are ''stacked'' on the root segment (row 1). All involved segments are different, and because of the uniqueness of the attachment positions, we have built one tree above the root segment.
 
  3  7 11 15 19 23 27 31 35 39 43 47 51 55 59 63 67 71 75 ... source rows
  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 ... target rows
  ^-----v                  
        ^-----------------------v  1  3 11 43  ...              
     ^--------------v                        
-                   ^------- 2  7 27 107 ... (10 * 4<sup>k</sup> + 2) / 6 = OEIS A136412
+                   ^------- 2  7 27 107 ... (10 * 4<sup>k</sup> + 2) / 6 = OEIS [https://oeis.org/A136412 A136412}
                                             
-          ^---------------- 4 15 59  ...    (22 * 4<sup>k</sup> + 2) / 6 = OEIS A199210     
-             ^------------- 5 19 75  ...    (28 * 4<sup>k</sup> + 2) / 6 = OEIS A206373     
+          ^---------------- 4 15 59  ...    (22 * 4<sup>k</sup> + 2) / 6 = OEIS [https://oeis.org/A199210 A199210]
+             ^------------- 5 19 75  ...    (28 * 4<sup>k</sup> + 2) / 6 = OEIS [https://oeis.org/A206373 A206373]
                 ^---------- 6 23 91  ...    (34 * 4<sup>k</sup> + 2) / 6  
                                             
                       ^---- 8 31 123 ...    (46 * 4<sup>k</sup> + 2) / 6 
@@ -369,9 +372,69 @@ Source rows of the form ''16 * k + 1'' coincide with target rows for this rule, 
 The target of every fourth source row was already attached by rule 2. After the application of rules 2 and 3, we have attached all odd source rows.
 ====Rule 4====
 This is similiar to rule 3. Chains occurs for source rows ''64 * k + 26'', and the lengths of the chains increases for ''k = 6, 38, ... 32^m + 6''.
-====Rule 5====
-This is the first rule which moves upwards.
+===Supersegments===
+The segments considered so far contain nodes of the form ''6 * i - 2''. A node where ''i'' has the same form is called a '''supernode''' (of degree 2, 3, 4 and so on):
+ n<sub>2</sub> = 6 * (6 * i - 2) - 2 = 36 * i - 14 
+ n<sub>3</sub> = 6 * (6 * (6 * i - 2) - 2) - 2 = 216 * i - 86
+ n<sub>4</sub> = 6 * (6 * (6 * (6 * i - 2) - 2) - 2) - 2 = 1296 * i - 518
+ n<sub>5</sub> = ... = 7776 * i - 3110
+ ...
+ n<sub>j</sub> = 6<sup>j</sup> * i - m<sub>j</sub>
+where the additive constants ''m<sub>j</sub>'' are taken from OEIS sequence [https://oeis.org/A005610 A005610] with ''a(k) = 6 * a(k - 1) + 2 = 2 * (6 * 6<sup>k</sup> - 1) / 5''.
 
+When a segment has a supernode as its left side, it is called a '''supersegment'''.
+An inspection of the segment directory C shows that supernodes occur at the following source positions (table '''(T5)'''):
+{| class="wikitable" style="text-align:left"
+|-
+!Degree!!Column            !!First source rows             !! Difference
+|-                                                         
+| 2    || 1 (left side)    ||4, 10, 16, 22 ...             || 6
+|-                                                                   
+|      || 4 &lt;           ||4, 13, 22, 31 ...             || 9
+|-                                                                   
+|      || 5 &gt;           ||25, 52, 79, 106 ...           || 27
+|-                                                                   
+|      || 6 &lt;           ||16, 43, 70, 97 ...            || 27
+|-                                                                   
+|      || ...              || ... || ...                   
+|-                                                                   
+| 3    || 1 (left side)    ||22, 58, 94, 130 ...           || 36
+|-                                                                   
+|      || 4                ||22, 49, 76, 103 ...           || 27
+|-                                                                 
+|      || 5                ||25, 106, 187, 268 ...         || 81
+||-                                                         
+| 4    || 1 (left side)    ||130, 346, 562, 778 ...        || 216
+|-                                                                 
+|      || 4                ||49, 130, 211, 292 ...         || 81
+|-                         
+| 5    || 1 (left side)    ||778, 2074, 3370 ...           || 1286
+|-                                                         
+|      || 4                ||292, 778, 1264, 1750, 2236 ...|| 486 = 6 * 81
+|-                                                         
+| ...  || ... || ...  || ...
+|-
+|}
+
+That are a rather simple consequences of the segment construction rules. We will not use degrees &gt; 2 in the following. We state some claims which are not so obvious:
+<!--
+* (S1) For degrees 3, 4, 5 and following, no other columns than the ones shown in table (T5) are occupied by supernodes of that degree.
+::This is not needed for the following.
+-->
+* (S1) Supernodes only occur in rows ''i &#x2261; 1 mod 3''. (These are the rows which have at least 4 columns).
+
+* (S2) There is no more than one supernode in the right part of a segment, and if there is one, it occurs  at the last or the last-but-one position in the right part (which represent the leafs of the corresponding trees).
+
+* (S3) Each row which contains a supernode in its right part:
+** either has an odd row number,
+** or a supernode as its left side.
+
+* (S4) Each row which does not contain a supernode in its right part (that are rows 1, 10, 19, 28, 37, 46, 55  ... ''i &#x2261; 1 mod 9''):
+** either has an odd row number,
+** or a supernode as its left side.
+
+We first attach all even rows mentioned in (S3). Then we attach the even rows mentioned in (S
+ 
 ===No Cycles===
 * '''(A7)''' The attachment process does not create any new cycle (in addition to the one in the root segment).
 :: Let a segment/tree ''t<sub>1</sub>'' with left side ''n<sub>1</sub>'' and right part ''R<sub>1</sub>'' be attached to node ''n<sub>1</sub>'' in the right part ''R<sub>2</sub>'' of the unique segment/tree ''t<sub>2</sub>'' which has the left side by ''n<sub>2</sub>''. ''t<sub>1</sub>'' and ''t<sub>2</sub>'' are disjoint trees by (C4), therefore the result of such a single attachment step is a tree again (''u<sub>2</sub>'', still with left side ''n<sub>2</sub>'').
