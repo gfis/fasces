@@ -24,7 +24,10 @@ east:
 free: 
 	perl collatz_rails.pl   -n $(N)    -d $(D) -s $(S) -i $(I) -a free   > free.html
 comp: 
-	perl collatz_rails.pl   -n $(N)    -d $(D) -s $(S) -i $(I) -a comp   > comp.html
+	perl segment.pl         -n $(N)    -d $(D) -s $(S) -i $(I) -a comp   > comp.html
+detail: 
+	perl segment.pl         -n $(N)    -d $(D) -s $(S) -i $(I) -a detail > detail.html
+# 	perl collatz_rails.pl   -n $(N)    -d $(D) -s $(S) -i $(I) -a comp   > comp.html
 crop: 
 	perl collatz_rails.pl   -n $(N)    -d $(D) -s $(S) -i $(I) -a crop   > crop.html
 deploy:

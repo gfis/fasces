@@ -1,0 +1,541 @@
+#!perl
+
+# https://github.com/gfis/fasces/blob/master/oeis/collatz/segment.pl
+# Print a directory of segments in the Collatz graph
+# @(#) $Id$
+# 2018-11-15: copied from collatz_rails.pl
+# 2018-11-12: mark supersegments
+# 2018-11-06: links on all numbers for comp
+# 2018-09-05: new kernel format; -a west|east|free|comp
+# 2018-08-30, Georg Fischer: derived from collatz_roads.pl
+#------------------------------------------------------
+# Usage:
+#   perl segment.pl [-n maxn] [-d debug] [-s 4] [-i 6] [-a comp] > comp.html
+#       -n	maximum start value
+#       -s	
+#       -i  elements of the form k*i + s
+#       -m  output mode: tsv, htm (no css), html, wiki, latex
+#       -a  type of directory to be produced: detail, comp(ressed)
+#       -d  debug level: 0 (none), 1 (some), 2 (more)
+# 
+# See http://www.teherba.org/index.php/OEIS/3x%2B1_Problem
+#--------------------------------------------------------
+use strict;
+use integer;
+
+my ($sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst) = localtime (time);
+my $timestamp = sprintf ("%04d-%02d-%02d %02d:%02d:%02d"
+        , $year + 1900, $mon + 1, $mday, $hour, $min, $sec);
+#----------------
+# get commandline options
+my $sep    = "\t";
+my $debug  = 0;
+my $maxn   = 30000; # max. start value
+my $start4 = 4;
+my $incr6  = 6;
+my $incr   = $incr6;
+my $mode   = "html";
+my $action = "comp";
+my %text   =
+    ( "detail",     " Detailed Segment Directory D"
+    , "comp",       " Compressed Segment Directory C"
+    );
+while (scalar(@ARGV) > 0 and ($ARGV[0] =~ m{\A\-})) {
+    my $opt = shift(@ARGV);
+    if (0) {
+    } elsif ($opt =~ m{a}) {
+        $action = shift(@ARGV);
+    } elsif ($opt =~ m{d}) {
+        $debug  = shift(@ARGV);
+    } elsif ($opt =~ m{i}) {
+        $incr   = shift(@ARGV);
+    } elsif ($opt =~ m{m}) {
+        $mode   = shift(@ARGV);
+    } elsif ($opt =~ m{n}) {
+        $maxn   = shift(@ARGV);
+    } elsif ($opt =~ m{s}) {
+        $start4 = shift(@ARGV);
+    } else {
+        die "invalid option \"$opt\"\n";
+    }
+} # while $opt
+#----------------
+# initialization
+my $ffsegm  = 0;
+my @segms;
+while ($ffsegm < $start4) { # $segms[0..3] are not used
+    push(@segms, $ffsegm);
+    $ffsegm ++;
+} # while not used
+&print_header();
+&print_preface();
+#----------------
+$ffsegm = scalar(@segms); # (is asserted)
+while ($ffsegm < $maxn) {
+    @segms[$ffsegm] = &gen_1_segment($ffsegm);
+    $ffsegm += $incr6;
+} # while $ffsegm
+
+# perform one of the possible actions
+if (0) { # switch action
+
+} elsif ($action =~ m{detail}) { # straightforward incrementing of the start values
+    &print_detailed_head();
+    my $isegm = $start4;
+    while ($isegm < $maxn) {
+        if (! defined($segms[$isegm])) {
+            $isegm = $maxn; # break loop
+        } else {
+            &print_1_detailed($isegm);
+        }
+        $isegm += $incr;
+    } # while $isegm
+
+} elsif ($action =~ m{comp})   { # like "detail", but compressed segments
+    my $isegm = $start4;
+    &print_compressed_head();
+    while ($isegm < $maxn) {
+        if (! defined($segms[$isegm])) {
+            $isegm = $maxn; # break loop
+        } else {
+            &print_1_compressed($isegm);
+        }
+        $isegm += $incr;
+    } # while $isegm
+
+} else {
+    die "invalid action \"$action\"\n";
+} # switch action
+#----------------
+&print_trailer();
+# end main
+#================================
+sub gen_1_segment { # build and return a single segment starting with $selem
+    my ($selem) = @_;
+    my @elem    = ($selem, $selem); # 2 parallel tracks: $elem[0] (upper, left), $elem[1] (lower, right)
+    my $len     = 0;
+    my @result  = (($selem + 2) / 6, $selem); # (n, 6*n-2)
+    my $state   = "step0";
+    my $busy    = 1; # as long as we can still do another step
+    while ($busy == 1) { # stepping
+        if (0) {
+        } elsif ($state eq "step0") {
+            $elem[0] = ($elem[0] - 1) / 3; # possible because of preparation above
+            $elem[1] = $elem[1] * 2;
+            $state = "step1";
+        } elsif ($state eq "step1") {
+            $elem[0] = $elem[0] * 2; # mm, always possible
+            $elem[1] = $elem[1] * 2;
+            $state = "md"; # enter the alternating sequence of steps: md, dm, md, dm ...
+        } elsif ($state eq "md") {
+            if (           ($elem[1] - 1) % 3 == 0) {
+                $elem[1] = ($elem[1] - 1) / 3;
+                $elem[0] =  $elem[0] * 2;
+                $state = "dm";
+                if ($elem[0] % 3 == 0 or $elem[1] % 3 == 0) {
+                    $busy  = 0;
+                }
+            } else { # should never happen
+				print STDERR "# ** assertion 1 in gen_1_segment, elem=" . join(",", @elem) . "\n";
+            }
+        } elsif ($state eq "dm") {
+            if (           ($elem[0] - 1) % 3 == 0) {
+                $elem[0] = ($elem[0] - 1) / 3;
+                $elem[1] =  $elem[1] * 2;
+                $state = "md";
+                if ($elem[0] % 3 == 0 or $elem[1] % 3 == 0) {
+                    $busy  = 0;
+                }
+            } else { # should never happen
+				print STDERR "# ** assertion 1 in gen_1_segment, elem=" . join(",", @elem) . "\n";
+            }
+        } else {
+            die "# ** invalid state \"$state\"\n";
+        }
+        push(@result, $elem[0], $elem[1]);
+        $len ++;
+    } # while busy stepping
+    if ($debug >= 1) {
+        print "<!--gen_1_segment: " . join(";", @result) . "-->\n";
+    }
+    return join($sep, @result);
+} # gen_1_segment
+#----------------
+sub print_1_detailed {
+    my ($index) = @_;
+    if (! defined($segms[$index])) {
+        $index = ($index + 2) / 6;
+        if (0) {
+        } elsif ($mode =~ m{\Atsv} ) {
+            print "$index\n";
+        } elsif ($mode =~ m{\Ahtm}) {
+            print "<tr><td class=\"arc\">$index</td></tr>\n";
+        } # mode
+    } else {
+        my @segm  = split(/$sep/, $segms[$index]);
+        my $ir;
+        if (0) {
+        } elsif ($mode =~ m{tsv} ) {
+            print join($sep, @segm) . "\n";
+        } elsif ($mode =~ m{\Ahtm}) {
+            # print the northern track
+            $ir = 1;
+            print "<tr>"
+                . "<td class=\"arc    \">$segm[0]</td>"
+                . &cell_html(            $segm[1], "bor", $ir, "");
+            $ir += 2;
+            my $bold;
+            while ($ir < scalar(@segm)) {
+                my $id = "";
+                $bold = "";
+                if (      $segm[$ir    ] % $incr6 == $start4) {
+                    $id = $segm[$ir    ];
+                    if ($ir % 4 == 1) {
+                        $bold = " seg";
+                    }
+                }
+                if ($ir > 5 and $segm[$ir - 1] % $incr6 == $start4) {
+                    $id = $segm[$ir - 1];
+                }
+                if ($ir <= 3) {
+                    $bold = " sei";
+                }
+                print &cell_html($segm[$ir], "btr$bold", $ir, $id);
+                $ir += 2;
+            } # while $ir
+            print "</tr>\n";
+
+            # print the southern track
+            print "<tr>"
+                . "<td class=\"arl\">\&nbsp;</td>";
+            print "<td class=\"arr\">\&nbsp;</td>";
+            $ir = 2;
+            while ($ir < scalar(@segm)) {
+                $bold = "";
+                if ($segm[$ir] % $incr6 == $start4) {
+                    if ($ir % 4 == 2 and $ir > 5) {
+                        $bold = " seg";
+                    }
+                }
+                if ($ir <= 5) {
+                    $bold = " sei";
+                }
+                print &cell_html($segm[$ir], "bbr$bold", $ir, "");
+                $ir += 2;
+            } # while $ir
+            print "</tr>\n";
+        } # mode
+    } # if defined
+} # print_1_detailed
+#----------------
+sub print_1_compressed {
+    my ($index) = @_;
+    if (! defined($segms[$index])) {
+        $index = ($index + 2) / 6;
+        if (0) {
+        } elsif ($mode =~ m{\Atsv} ) {
+            print "$index\n";
+        } elsif ($mode =~ m{\Ahtm}) {
+            print "<tr><td class=\"arc\">$index</td></tr>\n";
+        } # mode
+    } else {
+        my @segm  = split(/$sep/, $segms[$index]);
+        if ($debug >= 2) {
+            print "<!--print_segm: " . join(";", @segm) . "-->\n";
+        }
+        my $ir;
+        if (0) {
+        } elsif ($mode =~ m{tsv} ) {
+            $ir = 1;
+            print join($sep, $segm[0], $segm[1]);
+            $ir += 4;
+            my $step = 1;
+            while ($ir < scalar(@segm)) {
+                if (      $segm[$ir    ] % $incr6 == $start4) {
+                    print "$sep$segm[$ir]";
+                }
+                $ir += $step;
+                $step = $step == 1 ? 3 : 1;
+            } # while $ir
+            print "\n";
+        } elsif ($mode =~ m{\Ahtm}) {
+            $ir = 1;
+            print "<tr>"
+                . "<td class=\"arc\">$segm[0]</td>"
+                . &cell_html(        $segm[$ir], "bor", $ir, "");
+            $ir += 4;
+            my $step = 1;
+            while ($ir < scalar(@segm)) {
+                my $id = "";
+                if (      $segm[$ir    ] % $incr6 == $start4) {
+                    $id = $segm[$ir    ];
+                    print &cell_html($segm[$ir], "bor seg", $ir, $id);
+                }
+                $ir += $step;
+                $step = $step == 1 ? 3 : 1;
+            } # while $ir
+            print "</tr>\n";
+        } # mode
+    } # if defined
+} # print_1_compressed
+#----------------
+sub cell_html { # print one table cell
+    my ($elem, $border, $ir, $id) = @_;
+    my $rest = $elem % $incr6;
+    my $result = "<td";
+    if ($id ne "") {
+        $result .= " id=\"$id\"";
+        # print STDERR "id2: $id\n";
+    }
+    if (0) {
+    } elsif (1 and $elem % 7776 - 7776 == -3110) {
+    	$result .= " class=\"super5";
+    } elsif (1 and $elem % 1296 - 1296 ==  -518) {
+    	$result .= " class=\"super4"; 
+    } elsif (1 and $elem %  216 -  216 ==   -86) {
+    	$result .= " class=\"super3";
+    } elsif (1 and $elem %   36 -  36  ==   -14) {
+    	$result .= " class=\"super2";
+    } else {
+    	$result .= " class=\"d$rest";
+    }
+    if ($border ne "") {
+        $result .= " $border";
+    }
+    if ($ir == 1) { # start element
+        $result .= "\" id=\"A$elem\"><a href=\"\#$elem\">$elem</a>"; 
+    } else {
+    	if ($elem < $maxn) {
+        	$result .=           "\"><a href=\"\#A$elem\">$elem</a>"; 
+    	} else {
+        	$result .=           "\">$elem"; 
+    	}
+    }
+    $result .= "</td>";
+    return $result;
+} # cell_html
+#----------------
+sub print_header {
+    if (0) {
+    } elsif ($mode =~ m{\Atsv}) {
+    	print <<"GFis";
+# 3x+1 $text{$action}
+GFis
+    } elsif ($mode =~ m{\Ahtm\Z}) {
+	    print <<"GFis";
+<!-- 3x+1 $text{$action} -->
+GFis
+    } elsif ($mode =~ m{\Ahtml}) {
+	    print <<"GFis";
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd" [
+]>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>3x+1 $text{$action}</title>
+<meta name="generator" content="https://github.com/gfis/fasces/blob/master/oeis/collatz/segment.pl" />
+<meta name="author"    content="Georg Fischer" />
+<style>
+body,table,p,td,th
+        { font-family: Verdana,Arial,sans-serif; }
+table   { border-collapse: collapse; }
+td      { padding-right: 4px; }
+tr,td,th{ text-align: right; }
+.arr    { background-color: white          ; color: black; }
+.arc    { background-color: white          ; color: black; text-align: center;      }
+.arl    { background-color: white          ; color: black; text-align: left;        }
+.ker    { font-style   : italic            }
+.bor    { border-left  : 1px solid gray    ; border-top   : 1px solid gray ;
+          border-right : 1px solid gray    ; border-bottom: 1px solid gray ; }
+.btr    { border-left  : 1px solid gray    ; border-top   : 1px solid gray ;
+          border-right : 1px solid gray    ; }
+.bbr    { border-left  : 1px solid gray    ;
+          border-right : 1px solid gray    ; border-bottom: 1px solid gray ; }
+.d0     { background-color: lemonchiffon   ; color: black;                   }
+.d1     { background-color: lavender       ; color: black;                   }
+/*
+.d2     { background-color: beige          ; color: black;                   }
+*/
+.d2     { background-color: white          ; color: gray ;                   }
+.d3     { background-color: lemonchiffon   ; color: gray;                    }
+.d4     { background-color: papayawhip     ; color: black;                   }
+.d5     { background-color: lavender       ; color: gray;                    }
+.super2 { background-color: yellow         ; color: black                    }
+.super3 { background-color: orange         ; color: white                    }
+.super4 { background-color: crimson        ; color: white                    }
+.super5 { background-color: aqua           ; color: black                    }
+.seg    { font-weight: bold; }
+.sei    { font-weight: bold; font-style    : italic; }
+</style>
+</head>
+<body>
+GFis
+	} else { # invalid mode
+	}
+} # print_header
+#----------------
+sub print_preface {
+    if (0) {
+    } elsif ($mode =~ m{\Atsv}) {
+    	print <<"GFis";
+#
+# Generated with https://github.com/gfis/fasces/blob/master/oeis/collatz/segment.pl at $timestamp
+# Article: http://www.teherba.org/index.php/OEIS/3x%2B1_Problem by Georg Fischer
+#
+GFis
+    } elsif ($mode =~ m{\Ahtm\Z}) {
+    } elsif ($mode =~ m{\Ahtml}) {
+	    print <<"GFis";
+<p>
+Generated with 
+<a href="https://github.com/gfis/fasces/blob/master/oeis/collatz/segment.pl">Perl</a> 
+at $timestamp;<br /> 
+<a href="http://www.teherba.org/index.php/OEIS/3x%2B1_Problem">Article 
+about the 3x+1 problem</a> 
+ by <a href="mailto:Dr.Georg.Fischer\@gmail.com">Georg Fischer</a>
+<br />
+<a href="#more">More information</a>
+</p>
+GFis
+	} else { # invalid mode
+	}
+} # print_preface
+#----------------
+sub print_detailed_head {
+    if (0) {
+    } elsif ($mode =~ m{\Atsv}) {
+		print "# Col.$sep" . join($sep, (1,2,3,4,5,6,7,8,9,10,11)) . "\n";
+    } elsif ($mode =~ m{\Ahtm}) {
+    	print <<"GFis";
+<table>
+<tr>
+<td class="arc"> </td>
+<td class="arc">1</td>
+<td class="arc"> </td>
+<td class="arc">2</td>
+<td class="arc">3</td>
+<td class="arc">4</td>
+<td class="arc">5</td>
+<td class="arc">6</td>
+<td class="arc">7</td>
+<td class="arc">8</td>
+<td class="arc">9</td>
+</tr>
+<tr>
+<td class="arc        ">i</td>
+<td class="arr bor    ">6*i&#8209;2</td>
+<td class="arc btr    ">&micro;</td>
+<td class="arc btr seg">&micro;&micro;</td>
+<td class="arc btr    ">&micro;&micro;&delta;</td>
+<td class="arc btr seg">&micro;&micro;&sigma;</td>
+<td class="arc btr    ">&micro;&micro;&sigma;&delta;</td>
+<td class="arc btr seg">&micro;&micro;&sigma;<sup>2</sup></td>
+<td class="arc btr    ">&micro;&micro;&sigma;<sup>2</sup>&delta;</td>
+<td class="arc btr seg">&micro;&micro;&sigma;<sup>3</sup></td>
+<td class="arc btr    ">&micro;&micro;&sigma;<sup>3</sup>&delta;</td>
+</tr>
+<tr>
+<td class="arc        ">&nbsp;</td>
+<td class="arr        ">&nbsp;</td>
+<td class="arc bbr    ">&delta;</td>
+<td class="arc bbr    ">&delta;&micro;</td>
+<td class="arc bbr seg">&delta;&micro;&micro;</td>
+<td class="arc bbr    ">&delta;&micro;&micro;&delta;</td>
+<td class="arc bbr seg">&delta;&micro;&micro;&sigma;</td>
+<td class="arc bbr    ">&delta;&micro;&micro;&sigma;&delta;</td>
+<td class="arc bbr seg">&delta;&micro;&micro;&sigma;<sup>2</sup></td>
+<td class="arc bbr    ">&delta;&micro;&micro;&sigma;<sup>2</sup>&delta;</td>
+<td class="arc bbr seg">&delta;&micro;&micro;&sigma;<sup>3</sup></td>
+</tr>
+GFis
+	} else { # invalid mode
+	}
+} # print_detailed_head
+#----------------
+sub print_compressed_head {
+    if (0) {
+    } elsif ($mode =~ m{\Atsv}) {
+		print "# Col.$sep" . join($sep, (1,2,3,4,5,6,7,8,9,10,11)) . "\n";
+    } elsif ($mode =~ m{\Ahtm}) {
+    	print <<"GFis";
+<table>
+<tr>
+<td class="arc"> </td>
+<td class="arc">1</td>
+<td class="arc">2</td>
+<td class="arc">3</td>
+<td class="arc">4</td>
+<td class="arc">5</td>
+<td class="arc">6</td>
+<td class="arc">7</td>
+<td class="arc">8</td>
+<td class="arc">9</td>
+<td class="arc">10</td>
+<td class="arc">11</td>
+GFis
+    	print <<"GFis";
+</tr>
+<tr>
+<td class="arc bor    ">i</td>
+<td class="arr bor    ">6*i&#8209;2</td>
+<td class="arc bor    ">&micro;&micro;</td>
+<td class="arc bor    ">&delta;&micro;&micro;</td>
+<td class="arc bor    ">&micro;&micro;&sigma;</td>
+<td class="arc bor    ">&delta;&micro;&micro;&sigma;</td>
+<td class="arc bor    ">&micro;&micro;&sigma;&sigma;</td>
+<td class="arc bor    ">&delta;&micro;&micro;&sigma;&sigma;</td>
+<td class="arc bor    ">&micro;&micro;&sigma;<sup>3</sup></td>
+<td class="arc bor    ">&delta;&micro;&micro;&sigma;<sup>3</sup></td>
+<td class="arc bor    ">&micro;&micro;&sigma;<sup>4</sup></td>
+<td class="arc bor    ">&delta;&micro;&micro;&sigma;<sup>4</sup></td>
+</tr>
+GFis
+	} else { # invalid mode
+	}
+} # print_compressed_head
+#----------------
+sub print_trailer {
+    if (0) {
+    } elsif ($mode =~ m{\Atsv}) {
+    	print "# End of directory\n";
+    } elsif ($mode =~ m{\Ahtm\Z}) {
+    	print <<"GFis";
+<!-- End of directory -->
+GFis
+    } elsif ($mode =~ m{\Ahtml}) {
+    	print <<"GFis";
+</table>
+
+<p id="more">End of directory</p>
+<p>
+Root &lt;-&nbsp;&nbsp;&nbsp;numbers &#x2261;
+<span class="d0">0</span>, <span class="d1">1</span>,
+<span class="d2">2</span>, <span class="d3">3</span>,
+<span class="d4">4</span>, <span class="d5">5</span> mod 6&nbsp;&nbsp;&nbsp;-&gt; &#x221e;
+\&nbsp;\&nbsp;\&nbsp;\&nbsp;
+<span class="sei">Inserted</span> <span class="seg">tree</span> nodes 
+<br />
+Longest segments:
+<a href="#16">4</a>,
+<a href="#160">40</a>,
+<a href="#1456">364</a>,
+<a href="#13120">3280</a>,
+<a href="#118096">29524</a>,
+265720, 2391484 (OEIS <a href="http://oeis.org/A191681">A191681</a>)
+</p>
+<p>
+The links on the left side (column 1) jump to the segment 
+which contains that number in its right part, if
+that segment was calculated. 
+Successive klicks on the top left element will finally reach the root 4.
+The links on the right part numbers jump to the corresponding segment.
+</p>
+</body>
+</html>
+GFis
+	} else { # invalid mode
+	}
+} # print_trailer
+#================================
+__DATA__
