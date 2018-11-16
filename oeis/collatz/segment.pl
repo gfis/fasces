@@ -12,12 +12,12 @@
 # Usage:
 #   perl segment.pl [-n maxn] [-d debug] [-s 4] [-i 6] [-a comp] > comp.html
 #       -n  maximum start value
-#       -s  
+#       -s
 #       -i  elements of the form k*i + s
 #       -m  output mode: tsv, htm (no css), html, wiki, latex
-#       -a  type of directory to be produced: detail, comp(ressed)
+#       -a  type of directory to be produced: detail, comp(ressed), super
 #       -d  debug level: 0 (none), 1 (some), 2 (more)
-# 
+#
 # See http://www.teherba.org/index.php/OEIS/3x%2B1_Problem
 #--------------------------------------------------------
 use strict;
@@ -27,9 +27,9 @@ use integer;
 my ($sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst) = localtime (time);
 my $TIMESTAMP = sprintf ("%04d-%02d-%02d %02d:%02d:%02d"
         , $year + 1900, $mon + 1, $mday, $hour, $min, $sec);
-my $SEP    = "\t";
-my $MAX_RULE = 32;
-my @RULENS = (0, 1, 7, 61, 547, 4921, 44287, 398581, 3587227); # OEIS 066443
+my $SEP       = "\t";
+my $MAX_RULE  = 32;
+my @RULENS    = (0, 1, 7, 61, 547, 4921, 44287, 398581, 3587227); # OEIS 066443
 #----------------
 # get commandline options
 my $debug  = 0;
@@ -40,8 +40,9 @@ my $incr   = $incr6;
 my $mode   = "html";
 my $action = "comp";
 my %text   =
-    ( "detail",     " Detailed Segment Directory D"
-    , "comp",       " Compressed Segment Directory C"
+    ( "detail"  , " Detailed Segment Directory D"
+    , "comp"    , " Compressed Segment Directory C"
+    , "super"   , " Supersegment Directory S"
     );
 while (scalar(@ARGV) > 0 and ($ARGV[0] =~ m{\A\-})) {
     my $opt = shift(@ARGV);
@@ -66,6 +67,7 @@ while (scalar(@ARGV) > 0 and ($ARGV[0] =~ m{\A\-})) {
 # initialization
 my $ffsegms  = 0;
 my @segms;
+my $isegms;
 while ($ffsegms < $start4) { # $segms[0..3] are not used
     push(@segms, $ffsegms);
     $ffsegms ++;
@@ -73,29 +75,18 @@ while ($ffsegms < $start4) { # $segms[0..3] are not used
 &print_header();
 &print_preface();
 #----------------
+# generate the segment directory
 $ffsegms = scalar(@segms); # (is asserted)
 while ($ffsegms < $maxn) {
     @segms[$ffsegms] = &generate_segment($ffsegms);
     $ffsegms += $incr6;
 } # while $ffsegms
-
-# perform one of the possible actions
+#----------------
+# action for one of the possible forms of directories
 if (0) { # switch action
 
-} elsif ($action =~ m{detail}) { # straightforward incrementing of the start values
-    &print_detailed_head();
-    my $isegms = $start4;
-    while ($isegms < $maxn) {
-        if (! defined($segms[$isegms])) {
-            $isegms = $maxn; # break loop
-        } else {
-            &print_1_detailed($isegms);
-        }
-        $isegms += $incr;
-    } # while $isegms
-
-} elsif ($action =~ m{comp})   { # like "detail", but compressed segments
-    my $isegms = $start4;
+} elsif ($action =~ m{\Acomp})   { # like "detail", but compressed segments
+    $isegms = $start4;
     &print_compressed_head();
     while ($isegms < $maxn) {
         if (! defined($segms[$isegms])) {
@@ -105,6 +96,99 @@ if (0) { # switch action
         }
         $isegms += $incr;
     } # while $isegms
+    # case compressed
+
+} elsif ($action =~ m{\Adetail}) { # straightforward incrementing of the start values
+    &print_detailed_head();
+    $isegms = $start4;
+    while ($isegms < $maxn) {
+        if (! defined($segms[$isegms])) {
+            $isegms = $maxn; # break loop
+        } else {
+            &print_1_detailed($isegms);
+        }
+        $isegms += $incr;
+    } # while $isegms
+    # case detail
+
+} elsif ($action =~ m{\Asuper})   { # supersegments
+    my @prev = (); # where the segment must be attached, or 0
+    my @next = (); # which segment attaches to the last, or 0
+    if ($debug >= 1) {
+      	print sprintf("%6s:%6s  %6s  | %6s %2s rul > %6s  ...[%2s]  %6s %2s Rul > %6s\n"
+			, "index", "prev", "next", "lehs", "dg", "letar", "il", "last", "dg", "latar");
+    }
+    $isegms = $start4;
+    my $index;
+    while ($isegms < $maxn) {
+        if (! defined($segms[$isegms])) {
+            # $isegms = $maxn; # break loop
+        } elsif (($isegms - 1) % 3 == 0) { # only rows 1, 4, 7 ... targets of rules >= 3
+            my @segment  = split(/$SEP/, $segms[$isegms]);
+            $index    = $segment[0];
+            if ($index % 3 == 1) { # rows 1, 4, 7 ...
+                $prev[$index] = 0;
+                $next[$index] = 0;
+                my $lehs      = $segment[1];
+                my ($lehs_rule, $lehs_tar) = get_rule_target($index);
+                my $lehs_deg  = &get_degree($lehs);
+                my $ilast     = scalar(@segment) - 1;
+                while ($ilast > 0 and $segment[$ilast] % 36 != 22) { # look for degree >= 2
+                    $ilast --;
+                }
+                my $last      = $segment[$ilast];
+                my ($last_rule, $last_tar) = get_rule_target($last);
+                my $last_deg  = &get_degree($last);
+                if (0) {
+                } elsif ($ilast == 0) { # no degree >= 2 in whole segment
+                } elsif ($ilast == 1) { # lehs only has degree >= 2
+                        $prev[$index] = $lehs_tar;
+                    #   $next[$index] = ($last + 2) / 6;
+                } else { # there is a degree >= 2 in the right part
+                    if ($lehs_deg >= 2) { # both have degree >= 2
+                        $prev[$index] = $lehs_tar;
+                        $next[$index] = ($last + 2) / 6;
+                    } else { # only in the right part
+                    #   $prev[$index] = $lehs_tar;
+                        $next[$index] = ($last + 2) / 6;
+                    }
+                } # degree >= 2 in the right part
+
+                if ($debug >= 1) {
+                    # print join(" ", map { sprintf("%4d", $_) } @segment) . " # ";
+                    print sprintf("%6d:%6dp %6dn | %6d %2s r%-2s > %6d  ...[%2d]  %6d %2s R%-2s > %6d\n"
+                        , $index
+                        , $prev[$index], $next[$index]
+                        , $lehs
+                        , ($lehs_deg  <= 1 ? "  " : $lehs_deg )
+                        , ($lehs_rule <= 3 ? "  " : $lehs_rule)
+                        , $lehs_tar
+                        , $ilast, $last
+                        , ($last_deg  <= 1 ? "  " : $last_deg )
+                        , $last_rule
+                        , $last_tar
+                        );
+                } # debug
+            } # rows 1, 4, 7 ...
+        } # targets of rules >= 3
+        $isegms += 3;
+    } # while $isegms
+
+    $index = 1;
+    while ($index < $maxn) {
+        if (defined($prev[$index]) and $prev[$index] == 0) { # was not attachable
+        	print sprintf("%6d: ", $index);
+        	my $tar = $next[$index];
+        	while ($tar > 0) {
+        		my ($node_rule, $node_tar) = &get_rule_target($tar);
+        		print "\t$tar,$node_rule";
+        		$tar = $next[$tar];
+        	}
+        	print "\n";	
+        } # not attachable
+        $index ++;
+    } # while $isegms
+    # case super
 
 } else {
     die "invalid action \"$action\"\n";
@@ -158,7 +242,7 @@ sub generate_segment { # build and return a single segment starting with $selem
         push(@result, $elem[0], $elem[1]);
         $len ++;
     } # while busy stepping
-    if ($debug >= 1) {
+    if ($debug >= 3) {
         print "<!--generate_segment: " . join(";", @result) . "-->\n";
     }
     return join($SEP, @result);
@@ -281,7 +365,7 @@ sub print_1_compressed {
 #----------------
 sub get_index {
     my ($index) = @_;
-    my ($rule, $target, $color) = &get_rule_target_color($index);
+    my ($rule, $target) = &get_rule_target($index);
     my $result = "<td class=\"rule$rule\""
         . " title=\"($rule)->$target\">$index</td>";
     return $result;
@@ -297,6 +381,9 @@ sub cell_html { # print one table cell
     }
     my $degree = &get_degree($elem);
     if ($degree >= 2) {
+        my ($rule, $target) = &get_rule_target($elem);
+        $target = ($elem + 2) / 6;
+        $result .= " title=\"($rule)->$target\"";
         $result .= " class=\"super$degree";
     } else {
         $result .= " class=\"d$rest";
@@ -305,12 +392,12 @@ sub cell_html { # print one table cell
         $result .= " $border";
     }
     if ($ir == 1) { # start element
-        $result .= "\" id=\"A$elem\"><a href=\"\#$elem\">$elem</a>"; 
+        $result .= "\" id=\"A$elem\"><a href=\"\#$elem\">$elem</a>";
     } else {
         if ($elem < $maxn) {
-            $result .=           "\"><a href=\"\#A$elem\">$elem</a>"; 
+            $result .=           "\"><a href=\"\#A$elem\">$elem</a>";
         } else {
-            $result .=           "\">$elem"; 
+            $result .=           "\">$elem";
         }
     }
     $result .= "</td>";
@@ -320,22 +407,25 @@ sub cell_html { # print one table cell
 sub get_degree {
     my ($irow) = @_;
     my $result = 0;
-    if (0) {
-    } elsif (1 and $irow % 7776 - 7776 == -3110) {
+    if (0) { # A000400: 46656, 279936, 1679616, 10077696
+             # A005610: 2, 14, 86, 518, 3110, 18662, 111974, 671846, 4031078
+    } elsif (1 and $irow %  46656 -  46656 ==  -18662) {
         $result = 5;
-    } elsif (1 and $irow % 1296 - 1296 ==  -518) {
+    } elsif (1 and $irow %   7776 -   7776 ==   -3110) {
+        $result = 5;
+    } elsif (1 and $irow %   1296 -   1296 ==    -518) {
         $result = 4;
-    } elsif (1 and $irow %  216 -  216 ==   -86) {
+    } elsif (1 and $irow %    216 -    216 ==     -86) {
         $result = 3;
-    } elsif (1 and $irow %   36 -   36 ==   -14) {
+    } elsif (1 and $irow %     36 -     36 ==     -14) {
         $result = 2;
-    } elsif (1 and $irow %    6 -    6 ==    -2) {
+    } elsif (1 and $irow %      6 -      6 ==      -2) {
         $result = 1;
     }
     return $result;
 } # get_degree
 #------------------------
-sub get_rule_target_color {
+sub get_rule_target {
     my ($irow) = @_;
     my $rule   = 2;
     my $target = 0;
@@ -350,7 +440,7 @@ sub get_rule_target_color {
         if ($irow % $exp2 == $subconst) { # mod cond.
             $busy = 0;
             $target = $exp3 * ($irow - $subconst) / $exp2 + $RULENS[$irulen];
-            if ($debug >= 1) {
+            if ($debug >= 3) {
                 print "rule=$rule, exp2=$exp2, exp2-2=$exp2_2, exp3=$exp3"
                     . ", subconst=$subconst, RULENS[$irulen]=$RULENS[$irulen]\n";
             }
@@ -368,9 +458,8 @@ sub get_rule_target_color {
             }
         } # mod cond.
     } # while rules
-    my $color = sprintf("\&#x%02x%02x%02x;", 0xff, $rule, 0xff);
-    return ($rule, $target, $color);
-} # get_rule_target_color
+    return ($rule, $target);
+} # get_rule_target
 #----------------
 sub print_header {
     if (0) {
@@ -449,11 +538,11 @@ GFis
     } elsif ($mode =~ m{\Ahtml}) {
         print <<"GFis";
 <p>
-Generated with 
-<a href="https://github.com/gfis/fasces/blob/master/oeis/collatz/segment.pl">Perl</a> 
-at $TIMESTAMP;<br /> 
-<a href="http://www.teherba.org/index.php/OEIS/3x%2B1_Problem">Article 
-about the 3x+1 problem</a> 
+Generated with
+<a href="https://github.com/gfis/fasces/blob/master/oeis/collatz/segment.pl">Perl</a>
+at $TIMESTAMP;<br />
+<a href="http://www.teherba.org/index.php/OEIS/3x%2B1_Problem">Article
+about the 3x+1 problem</a>
  by <a href="mailto:Dr.Georg.Fischer\@gmail.com">Georg Fischer</a>
 <br />
 <a href="#more">More information</a>
@@ -574,15 +663,15 @@ Root &lt;-&nbsp;&nbsp;&nbsp;nodes &#x2261;
 <span class="d2">\&nbsp;2</span>, <span class="d3">\&nbsp;3</span>,
 <span class="d4">\&nbsp;4</span>, <span class="d5">\&nbsp;5</span> mod 6&nbsp;&nbsp;&nbsp;-&gt; &#x221e;
 \&nbsp;\&nbsp;\&nbsp;\&nbsp;
-<span class="sei">Inserted</span> <span class="seg">tree</span> nodes 
+<span class="sei">Inserted</span> <span class="seg">tree</span> nodes
 <br />
 GFis
-        print "Rules <span class=\"rule2\">\&nbsp;2</span>"; 
+        print "Rules <span class=\"rule2\">\&nbsp;2</span>";
         for (my $rule = 3; $rule <= 11; $rule ++) {
             print ", <span class=\"rule$rule\">\&nbsp;$rule</span>";
         } # for $rule
-        print ".\&nbsp;\&nbsp;\&nbsp;\&nbsp;";  
-        print "Nodes with degree <span class=\"d2\">\&nbsp;1</span>"; 
+        print ".\&nbsp;\&nbsp;\&nbsp;\&nbsp;";
+        print "Nodes with degree <span class=\"d2\">\&nbsp;1</span>";
         for (my $degree = 2; $degree <= 5; $degree ++) {
             print ", <span class=\"super$degree\">\&nbsp;$degree</span>";
         } # for $degree
@@ -597,9 +686,9 @@ Longest segments:
 265720, 2391484 (OEIS <a href="http://oeis.org/A191681">A191681</a>)
 </p>
 <p>
-The links on the left side (column 1) jump to the segment 
+The links on the left side (column 1) jump to the segment
 which contains that number in its right part, if
-that segment was calculated. 
+that segment was calculated.
 Successive klicks on the top left element will finally reach the root 4.
 The links on the right part numbers jump to the corresponding segment.
 </p>
