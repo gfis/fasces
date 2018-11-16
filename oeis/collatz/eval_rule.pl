@@ -15,6 +15,7 @@ my $maxn   = 4096; # max. start value
 my $start  = 4;
 my $incr   = 6;
 my $MAX_RULE = 32;
+my @rulen = (0, 1, 7, 61, 547, 4921, 44287, 398581, 3587227); # OEIS 066443
 my $rule   = 5;
 while (scalar(@ARGV) > 0) {
     my $opt = shift(@ARGV);
@@ -42,7 +43,6 @@ my @rules = ("0,0", "1,1"
     , "16,64"   # 11
     );
 ($start, $incr) = split(/\,/, $rules[$rule]);
-my @len = (0, 1, 7, 61, 547, 4921, 44287, 398581, 3587227); # OEIS 066443
 my $irow = $start;
 while ($irow < $maxn) {
     my $result = &get_rule($irow);
@@ -101,13 +101,13 @@ sub get_rule {
     my $exp2_2 = 1;
     my $exp2   = 4;
     my $exp3   = 1;
-    my $ilen   = 1;
+    my $irulen = 1;
     while ($busy == 1 and $rule <= $MAX_RULE) {
         my $subconst = $exp2_2 * $tog31;
         if ($irow % $exp2 == $subconst) { # mod cond.
             $busy = 0;
             $result = $rule;
-            my $newnode = $exp3 * ($irow - $subconst) / $exp2 + $len[$ilen];
+            my $newnode = $exp3 * ($irow - $subconst) / $exp2 + $rulen[$irulen];
             $result .= "->$newnode";
             if ($debug >= 1) {
                 print "rule $rule, exp2 $exp2, exp2-2 $exp2_2, exp3 $exp3 subconst $subconst, ilen $ilen, len[] $len[$ilen]\n";
@@ -115,7 +115,7 @@ sub get_rule {
         } else {
             $rule ++;
             if ($rule % 4 == 1) {
-                $ilen ++;
+                $irulen ++;
             }
             if ($rule % 2 == 0) {
                 $exp2   *= 2;

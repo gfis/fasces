@@ -11,8 +11,8 @@
 #------------------------------------------------------
 # Usage:
 #   perl segment.pl [-n maxn] [-d debug] [-s 4] [-i 6] [-a comp] > comp.html
-#       -n	maximum start value
-#       -s	
+#       -n  maximum start value
+#       -s  
 #       -i  elements of the form k*i + s
 #       -m  output mode: tsv, htm (no css), html, wiki, latex
 #       -a  type of directory to be produced: detail, comp(ressed)
@@ -22,13 +22,16 @@
 #--------------------------------------------------------
 use strict;
 use integer;
-
+#----------------
+# global constants
 my ($sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst) = localtime (time);
-my $timestamp = sprintf ("%04d-%02d-%02d %02d:%02d:%02d"
+my $TIMESTAMP = sprintf ("%04d-%02d-%02d %02d:%02d:%02d"
         , $year + 1900, $mon + 1, $mday, $hour, $min, $sec);
+my $SEP    = "\t";
+my $MAX_RULE = 32;
+my @RULENS = (0, 1, 7, 61, 547, 4921, 44287, 398581, 3587227); # OEIS 066443
 #----------------
 # get commandline options
-my $sep    = "\t";
 my $debug  = 0;
 my $maxn   = 30000; # max. start value
 my $start4 = 4;
@@ -61,47 +64,47 @@ while (scalar(@ARGV) > 0 and ($ARGV[0] =~ m{\A\-})) {
 } # while $opt
 #----------------
 # initialization
-my $ffsegm  = 0;
+my $ffsegms  = 0;
 my @segms;
-while ($ffsegm < $start4) { # $segms[0..3] are not used
-    push(@segms, $ffsegm);
-    $ffsegm ++;
+while ($ffsegms < $start4) { # $segms[0..3] are not used
+    push(@segms, $ffsegms);
+    $ffsegms ++;
 } # while not used
 &print_header();
 &print_preface();
 #----------------
-$ffsegm = scalar(@segms); # (is asserted)
-while ($ffsegm < $maxn) {
-    @segms[$ffsegm] = &gen_1_segment($ffsegm);
-    $ffsegm += $incr6;
-} # while $ffsegm
+$ffsegms = scalar(@segms); # (is asserted)
+while ($ffsegms < $maxn) {
+    @segms[$ffsegms] = &generate_segment($ffsegms);
+    $ffsegms += $incr6;
+} # while $ffsegms
 
 # perform one of the possible actions
 if (0) { # switch action
 
 } elsif ($action =~ m{detail}) { # straightforward incrementing of the start values
     &print_detailed_head();
-    my $isegm = $start4;
-    while ($isegm < $maxn) {
-        if (! defined($segms[$isegm])) {
-            $isegm = $maxn; # break loop
+    my $isegms = $start4;
+    while ($isegms < $maxn) {
+        if (! defined($segms[$isegms])) {
+            $isegms = $maxn; # break loop
         } else {
-            &print_1_detailed($isegm);
+            &print_1_detailed($isegms);
         }
-        $isegm += $incr;
-    } # while $isegm
+        $isegms += $incr;
+    } # while $isegms
 
 } elsif ($action =~ m{comp})   { # like "detail", but compressed segments
-    my $isegm = $start4;
+    my $isegms = $start4;
     &print_compressed_head();
-    while ($isegm < $maxn) {
-        if (! defined($segms[$isegm])) {
-            $isegm = $maxn; # break loop
+    while ($isegms < $maxn) {
+        if (! defined($segms[$isegms])) {
+            $isegms = $maxn; # break loop
         } else {
-            &print_1_compressed($isegm);
+            &print_1_compressed($isegms);
         }
-        $isegm += $incr;
-    } # while $isegm
+        $isegms += $incr;
+    } # while $isegms
 
 } else {
     die "invalid action \"$action\"\n";
@@ -110,7 +113,7 @@ if (0) { # switch action
 &print_trailer();
 # end main
 #================================
-sub gen_1_segment { # build and return a single segment starting with $selem
+sub generate_segment { # build and return a single segment starting with $selem
     my ($selem) = @_;
     my @elem    = ($selem, $selem); # 2 parallel tracks: $elem[0] (upper, left), $elem[1] (lower, right)
     my $len     = 0;
@@ -136,7 +139,7 @@ sub gen_1_segment { # build and return a single segment starting with $selem
                     $busy  = 0;
                 }
             } else { # should never happen
-				print STDERR "# ** assertion 1 in gen_1_segment, elem=" . join(",", @elem) . "\n";
+                print STDERR "# ** assertion 1 in generate_segment, elem=" . join(",", @elem) . "\n";
             }
         } elsif ($state eq "dm") {
             if (           ($elem[0] - 1) % 3 == 0) {
@@ -147,7 +150,7 @@ sub gen_1_segment { # build and return a single segment starting with $selem
                     $busy  = 0;
                 }
             } else { # should never happen
-				print STDERR "# ** assertion 1 in gen_1_segment, elem=" . join(",", @elem) . "\n";
+                print STDERR "# ** assertion 1 in generate_segment, elem=" . join(",", @elem) . "\n";
             }
         } else {
             die "# ** invalid state \"$state\"\n";
@@ -156,10 +159,10 @@ sub gen_1_segment { # build and return a single segment starting with $selem
         $len ++;
     } # while busy stepping
     if ($debug >= 1) {
-        print "<!--gen_1_segment: " . join(";", @result) . "-->\n";
+        print "<!--generate_segment: " . join(";", @result) . "-->\n";
     }
-    return join($sep, @result);
-} # gen_1_segment
+    return join($SEP, @result);
+} # generate_segment
 #----------------
 sub print_1_detailed {
     my ($index) = @_;
@@ -169,38 +172,38 @@ sub print_1_detailed {
         } elsif ($mode =~ m{\Atsv} ) {
             print "$index\n";
         } elsif ($mode =~ m{\Ahtm}) {
-            print "<tr><td class=\"arc\">$index</td></tr>\n";
+            print "<tr>" . &get_index($index) . "</tr>\n";
         } # mode
     } else {
-        my @segm  = split(/$sep/, $segms[$index]);
+        my @segment  = split(/$SEP/, $segms[$index]);
         my $ir;
         if (0) {
         } elsif ($mode =~ m{tsv} ) {
-            print join($sep, @segm) . "\n";
+            print join($SEP, @segment) . "\n";
         } elsif ($mode =~ m{\Ahtm}) {
             # print the northern track
             $ir = 1;
             print "<tr>"
-                . "<td class=\"arc    \">$segm[0]</td>"
-                . &cell_html(            $segm[1], "bor", $ir, "");
+                . &get_index($segment[0])
+                . &cell_html(            $segment[1], "bor", $ir, "");
             $ir += 2;
             my $bold;
-            while ($ir < scalar(@segm)) {
+            while ($ir < scalar(@segment)) {
                 my $id = "";
                 $bold = "";
-                if (      $segm[$ir    ] % $incr6 == $start4) {
-                    $id = $segm[$ir    ];
+                if (      $segment[$ir    ] % $incr6 == $start4) {
+                    $id = $segment[$ir    ];
                     if ($ir % 4 == 1) {
                         $bold = " seg";
                     }
                 }
-                if ($ir > 5 and $segm[$ir - 1] % $incr6 == $start4) {
-                    $id = $segm[$ir - 1];
+                if ($ir > 5 and $segment[$ir - 1] % $incr6 == $start4) {
+                    $id = $segment[$ir - 1];
                 }
                 if ($ir <= 3) {
                     $bold = " sei";
                 }
-                print &cell_html($segm[$ir], "btr$bold", $ir, $id);
+                print &cell_html($segment[$ir], "btr$bold", $ir, $id);
                 $ir += 2;
             } # while $ir
             print "</tr>\n";
@@ -210,9 +213,9 @@ sub print_1_detailed {
                 . "<td class=\"arl\">\&nbsp;</td>";
             print "<td class=\"arr\">\&nbsp;</td>";
             $ir = 2;
-            while ($ir < scalar(@segm)) {
+            while ($ir < scalar(@segment)) {
                 $bold = "";
-                if ($segm[$ir] % $incr6 == $start4) {
+                if ($segment[$ir] % $incr6 == $start4) {
                     if ($ir % 4 == 2 and $ir > 5) {
                         $bold = " seg";
                     }
@@ -220,7 +223,7 @@ sub print_1_detailed {
                 if ($ir <= 5) {
                     $bold = " sei";
                 }
-                print &cell_html($segm[$ir], "bbr$bold", $ir, "");
+                print &cell_html($segment[$ir], "bbr$bold", $ir, "");
                 $ir += 2;
             } # while $ir
             print "</tr>\n";
@@ -236,23 +239,20 @@ sub print_1_compressed {
         } elsif ($mode =~ m{\Atsv} ) {
             print "$index\n";
         } elsif ($mode =~ m{\Ahtm}) {
-            print "<tr><td class=\"arc\">$index</td></tr>\n";
+            print "<tr>" . &get_index($index) . "</tr>\n";
         } # mode
     } else {
-        my @segm  = split(/$sep/, $segms[$index]);
-        if ($debug >= 2) {
-            print "<!--print_segm: " . join(";", @segm) . "-->\n";
-        }
+        my @segment  = split(/$SEP/, $segms[$index]);
         my $ir;
         if (0) {
         } elsif ($mode =~ m{tsv} ) {
             $ir = 1;
-            print join($sep, $segm[0], $segm[1]);
+            print join($SEP, $segment[0], $segment[1]);
             $ir += 4;
             my $step = 1;
-            while ($ir < scalar(@segm)) {
-                if (      $segm[$ir    ] % $incr6 == $start4) {
-                    print "$sep$segm[$ir]";
+            while ($ir < scalar(@segment)) {
+                if (      $segment[$ir    ] % $incr6 == $start4) {
+                    print "$SEP$segment[$ir]";
                 }
                 $ir += $step;
                 $step = $step == 1 ? 3 : 1;
@@ -261,15 +261,15 @@ sub print_1_compressed {
         } elsif ($mode =~ m{\Ahtm}) {
             $ir = 1;
             print "<tr>"
-                . "<td class=\"arc\">$segm[0]</td>"
-                . &cell_html(        $segm[$ir], "bor", $ir, "");
+                . &get_index($segment[0])
+                . &cell_html(        $segment[$ir], "bor", $ir, "");
             $ir += 4;
             my $step = 1;
-            while ($ir < scalar(@segm)) {
+            while ($ir < scalar(@segment)) {
                 my $id = "";
-                if (      $segm[$ir    ] % $incr6 == $start4) {
-                    $id = $segm[$ir    ];
-                    print &cell_html($segm[$ir], "bor seg", $ir, $id);
+                if (      $segment[$ir    ] % $incr6 == $start4) {
+                    $id = $segment[$ir    ];
+                    print &cell_html($segment[$ir], "bor seg", $ir, $id);
                 }
                 $ir += $step;
                 $step = $step == 1 ? 3 : 1;
@@ -279,6 +279,14 @@ sub print_1_compressed {
     } # if defined
 } # print_1_compressed
 #----------------
+sub get_index {
+    my ($index) = @_;
+    my ($rule, $target, $color) = &get_rule_target_color($index);
+    my $result = "<td class=\"rule$rule\""
+        . " title=\"($rule)->$target\">$index</td>";
+    return $result;
+} # get_index
+#----------------
 sub cell_html { # print one table cell
     my ($elem, $border, $ir, $id) = @_;
     my $rest = $elem % $incr6;
@@ -287,17 +295,11 @@ sub cell_html { # print one table cell
         $result .= " id=\"$id\"";
         # print STDERR "id2: $id\n";
     }
-    if (0) {
-    } elsif (1 and $elem % 7776 - 7776 == -3110) {
-    	$result .= " class=\"super5";
-    } elsif (1 and $elem % 1296 - 1296 ==  -518) {
-    	$result .= " class=\"super4"; 
-    } elsif (1 and $elem %  216 -  216 ==   -86) {
-    	$result .= " class=\"super3";
-    } elsif (1 and $elem %   36 -  36  ==   -14) {
-    	$result .= " class=\"super2";
+    my $degree = &get_degree($elem);
+    if ($degree >= 2) {
+        $result .= " class=\"super$degree";
     } else {
-    	$result .= " class=\"d$rest";
+        $result .= " class=\"d$rest";
     }
     if ($border ne "") {
         $result .= " $border";
@@ -305,28 +307,83 @@ sub cell_html { # print one table cell
     if ($ir == 1) { # start element
         $result .= "\" id=\"A$elem\"><a href=\"\#$elem\">$elem</a>"; 
     } else {
-    	if ($elem < $maxn) {
-        	$result .=           "\"><a href=\"\#A$elem\">$elem</a>"; 
-    	} else {
-        	$result .=           "\">$elem"; 
-    	}
+        if ($elem < $maxn) {
+            $result .=           "\"><a href=\"\#A$elem\">$elem</a>"; 
+        } else {
+            $result .=           "\">$elem"; 
+        }
     }
     $result .= "</td>";
     return $result;
 } # cell_html
+#------------------------
+sub get_degree {
+    my ($irow) = @_;
+    my $result = 0;
+    if (0) {
+    } elsif (1 and $irow % 7776 - 7776 == -3110) {
+        $result = 5;
+    } elsif (1 and $irow % 1296 - 1296 ==  -518) {
+        $result = 4;
+    } elsif (1 and $irow %  216 -  216 ==   -86) {
+        $result = 3;
+    } elsif (1 and $irow %   36 -   36 ==   -14) {
+        $result = 2;
+    } elsif (1 and $irow %    6 -    6 ==    -2) {
+        $result = 1;
+    }
+    return $result;
+} # get_degree
+#------------------------
+sub get_rule_target_color {
+    my ($irow) = @_;
+    my $rule   = 2;
+    my $target = 0;
+    my $busy   = 1;
+    my $tog31  = 3;
+    my $exp2_2 = 1;
+    my $exp2   = 4;
+    my $exp3   = 1;
+    my $irulen = 1;
+    while ($busy == 1 and $rule <= $MAX_RULE) {
+        my $subconst = $exp2_2 * $tog31;
+        if ($irow % $exp2 == $subconst) { # mod cond.
+            $busy = 0;
+            $target = $exp3 * ($irow - $subconst) / $exp2 + $RULENS[$irulen];
+            if ($debug >= 1) {
+                print "rule=$rule, exp2=$exp2, exp2-2=$exp2_2, exp3=$exp3"
+                    . ", subconst=$subconst, RULENS[$irulen]=$RULENS[$irulen]\n";
+            }
+        } else {
+            $rule ++;
+            if ($rule % 4 == 1) {
+                $irulen ++;
+            }
+            if ($rule % 2 == 0) {
+                $exp2   *= 2;
+                $exp2_2 *= 2;
+            } else {
+                $exp3   *= 3;
+                $tog31 = 4 - $tog31;
+            }
+        } # mod cond.
+    } # while rules
+    my $color = sprintf("\&#x%02x%02x%02x;", 0xff, $rule, 0xff);
+    return ($rule, $target, $color);
+} # get_rule_target_color
 #----------------
 sub print_header {
     if (0) {
     } elsif ($mode =~ m{\Atsv}) {
-    	print <<"GFis";
+        print <<"GFis";
 # 3x+1 $text{$action}
 GFis
     } elsif ($mode =~ m{\Ahtm\Z}) {
-	    print <<"GFis";
+        print <<"GFis";
 <!-- 3x+1 $text{$action} -->
 GFis
     } elsif ($mode =~ m{\Ahtml}) {
-	    print <<"GFis";
+        print <<"GFis";
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd" [
@@ -337,26 +394,15 @@ GFis
 <meta name="generator" content="https://github.com/gfis/fasces/blob/master/oeis/collatz/segment.pl" />
 <meta name="author"    content="Georg Fischer" />
 <style>
-body,table,p,td,th
-        { font-family: Verdana,Arial,sans-serif; }
-table   { border-collapse: collapse; }
-td      { padding-right: 4px; }
-tr,td,th{ text-align: right; }
+table   {  }
 .arr    { background-color: white          ; color: black; }
 .arc    { background-color: white          ; color: black; text-align: center;      }
 .arl    { background-color: white          ; color: black; text-align: left;        }
-.ker    { font-style   : italic            }
-.bor    { border-left  : 1px solid gray    ; border-top   : 1px solid gray ;
-          border-right : 1px solid gray    ; border-bottom: 1px solid gray ; }
-.btr    { border-left  : 1px solid gray    ; border-top   : 1px solid gray ;
-          border-right : 1px solid gray    ; }
-.bbr    { border-left  : 1px solid gray    ;
-          border-right : 1px solid gray    ; border-bottom: 1px solid gray ; }
+.bor    { border-left  : 1px solid gray    ; border-top   : 1px solid gray ; border-right : 1px solid gray    ; border-bottom: 1px solid gray ; }
+.btr    { border-left  : 1px solid gray    ; border-top   : 1px solid gray ; border-right : 1px solid gray    ; }
+.bbr    { border-left  : 1px solid gray    ; border-right : 1px solid gray ; border-bottom: 1px solid gray ; }
 .d0     { background-color: lemonchiffon   ; color: black;                   }
 .d1     { background-color: lavender       ; color: black;                   }
-/*
-.d2     { background-color: beige          ; color: black;                   }
-*/
 .d2     { background-color: white          ; color: gray ;                   }
 .d3     { background-color: lemonchiffon   ; color: gray;                    }
 .d4     { background-color: papayawhip     ; color: black;                   }
@@ -365,50 +411,65 @@ tr,td,th{ text-align: right; }
 .super3 { background-color: orange         ; color: white                    }
 .super4 { background-color: crimson        ; color: white                    }
 .super5 { background-color: aqua           ; color: black                    }
+.rule2  { background-color: Lime           ; color: black                    }
+.rule3  { background-color: LawnGreen      ; color: black                    }
+.rule4  { background-color: Chartreuse     ; color: black                    }
+.rule5  { background-color: LightSalmon    ; color: black                    }
+.rule6  { background-color: SpringGreen    ; color: black                    }
+.rule7  { background-color: DarkSalmon     ; color: black                    }
+.rule8  { background-color: LightGreen     ; color: black                    }
+.rule9  { background-color: LightCoral     ; color: white                    }
+.rule10 { background-color: IndianRed      ; color: white                    }
+.rule11 { background-color: Crimson        ; color: white                    }
+.rule12 { background-color: Firebrick      ; color: white                    }
 .seg    { font-weight: bold; }
 .sei    { font-weight: bold; font-style    : italic; }
 </style>
 </head>
-<body>
+<body style=\"font-family: Verdana,Arial,sans-serif;\" >
+<h3>3x+1 $text{$action}</h3>
 GFis
-	} else { # invalid mode
-	}
+    } else { # invalid mode
+    }
 } # print_header
 #----------------
 sub print_preface {
     if (0) {
     } elsif ($mode =~ m{\Atsv}) {
-    	print <<"GFis";
+        print <<"GFis";
 #
-# Generated with https://github.com/gfis/fasces/blob/master/oeis/collatz/segment.pl at $timestamp
+# Generated with https://github.com/gfis/fasces/blob/master/oeis/collatz/segment.pl at $TIMESTAMP
 # Article: http://www.teherba.org/index.php/OEIS/3x%2B1_Problem by Georg Fischer
 #
 GFis
     } elsif ($mode =~ m{\Ahtm\Z}) {
+        print <<"GFis";
+<table style=\"border-collapse: collapse; text-align: right;  padding-right: 4px;\">
+GFis
     } elsif ($mode =~ m{\Ahtml}) {
-	    print <<"GFis";
+        print <<"GFis";
 <p>
 Generated with 
 <a href="https://github.com/gfis/fasces/blob/master/oeis/collatz/segment.pl">Perl</a> 
-at $timestamp;<br /> 
+at $TIMESTAMP;<br /> 
 <a href="http://www.teherba.org/index.php/OEIS/3x%2B1_Problem">Article 
 about the 3x+1 problem</a> 
  by <a href="mailto:Dr.Georg.Fischer\@gmail.com">Georg Fischer</a>
 <br />
 <a href="#more">More information</a>
 </p>
+<table style=\"border-collapse: collapse; text-align: right;  padding-right: 4px;\">
 GFis
-	} else { # invalid mode
-	}
+    } else { # invalid mode
+    }
 } # print_preface
 #----------------
 sub print_detailed_head {
     if (0) {
     } elsif ($mode =~ m{\Atsv}) {
-		print "# Col.$sep" . join($sep, (1,2,3,4,5,6,7,8,9,10,11)) . "\n";
+        print "# Col.$SEP" . join($SEP, (1,2,3,4,5,6,7,8,9,10,11)) . "\n";
     } elsif ($mode =~ m{\Ahtm}) {
-    	print <<"GFis";
-<table>
+        print <<"GFis";
 <tr>
 <td class="arc"> </td>
 <td class="arc">1</td>
@@ -449,17 +510,16 @@ sub print_detailed_head {
 <td class="arc bbr seg">&delta;&micro;&micro;&sigma;<sup>3</sup></td>
 </tr>
 GFis
-	} else { # invalid mode
-	}
+    } else { # invalid mode
+    }
 } # print_detailed_head
 #----------------
 sub print_compressed_head {
     if (0) {
     } elsif ($mode =~ m{\Atsv}) {
-		print "# Col.$sep" . join($sep, (1,2,3,4,5,6,7,8,9,10,11)) . "\n";
+        print "# Col.$SEP" . join($SEP, (1,2,3,4,5,6,7,8,9,10,11)) . "\n";
     } elsif ($mode =~ m{\Ahtm}) {
-    	print <<"GFis";
-<table>
+        print <<"GFis";
 <tr>
 <td class="arc"> </td>
 <td class="arc">1</td>
@@ -474,7 +534,7 @@ sub print_compressed_head {
 <td class="arc">10</td>
 <td class="arc">11</td>
 GFis
-    	print <<"GFis";
+        print <<"GFis";
 </tr>
 <tr>
 <td class="arc bor    ">i</td>
@@ -491,30 +551,42 @@ GFis
 <td class="arc bor    ">&delta;&micro;&micro;&sigma;<sup>4</sup></td>
 </tr>
 GFis
-	} else { # invalid mode
-	}
+    } else { # invalid mode
+    }
 } # print_compressed_head
 #----------------
 sub print_trailer {
     if (0) {
     } elsif ($mode =~ m{\Atsv}) {
-    	print "# End of directory\n";
+        print "# End of directory\n";
     } elsif ($mode =~ m{\Ahtm\Z}) {
-    	print <<"GFis";
+        print <<"GFis";
 <!-- End of directory -->
 GFis
     } elsif ($mode =~ m{\Ahtml}) {
-    	print <<"GFis";
+        print <<"GFis";
 </table>
 
 <p id="more">End of directory</p>
 <p>
-Root &lt;-&nbsp;&nbsp;&nbsp;numbers &#x2261;
-<span class="d0">0</span>, <span class="d1">1</span>,
-<span class="d2">2</span>, <span class="d3">3</span>,
-<span class="d4">4</span>, <span class="d5">5</span> mod 6&nbsp;&nbsp;&nbsp;-&gt; &#x221e;
+Root &lt;-&nbsp;&nbsp;&nbsp;nodes &#x2261;
+<span class="d0">\&nbsp;0</span>, <span class="d1">\&nbsp;1</span>,
+<span class="d2">\&nbsp;2</span>, <span class="d3">\&nbsp;3</span>,
+<span class="d4">\&nbsp;4</span>, <span class="d5">\&nbsp;5</span> mod 6&nbsp;&nbsp;&nbsp;-&gt; &#x221e;
 \&nbsp;\&nbsp;\&nbsp;\&nbsp;
 <span class="sei">Inserted</span> <span class="seg">tree</span> nodes 
+<br />
+GFis
+        print "Rules <span class=\"rule2\">\&nbsp;2</span>"; 
+        for (my $rule = 3; $rule <= 11; $rule ++) {
+            print ", <span class=\"rule$rule\">\&nbsp;$rule</span>";
+        } # for $rule
+        print ".\&nbsp;\&nbsp;\&nbsp;\&nbsp;";  
+        print "Nodes with degree <span class=\"d2\">\&nbsp;1</span>"; 
+        for (my $degree = 2; $degree <= 5; $degree ++) {
+            print ", <span class=\"super$degree\">\&nbsp;$degree</span>";
+        } # for $degree
+        print <<"GFis";
 <br />
 Longest segments:
 <a href="#16">4</a>,
@@ -534,8 +606,8 @@ The links on the right part numbers jump to the corresponding segment.
 </body>
 </html>
 GFis
-	} else { # invalid mode
-	}
+    } else { # invalid mode
+    }
 } # print_trailer
 #================================
 __DATA__
