@@ -14,6 +14,14 @@ SRC=comp.html
 
 all: comp  
 old:rails kernels kerneval eawefr
+#----
+comp: 
+	perl segment.pl         -n $(N)    -d $(D) -s $(S) -i $(I) -a comp   > comp.html
+double: 
+	perl segment.pl         -n $(N)    -d $(D) -s $(S) -i $(I) -a double > double.html
+detail: 
+	perl segment.pl         -n $(N)    -d $(D) -s $(S) -i $(I) -a detail > detail.html
+#----
 rails: 
 	perl collatz_rails.pl   -n $(N)    -d $(D) -s $(S) -i $(I) -a simple > rails.html
 eawefr: west east free
@@ -23,11 +31,6 @@ east:
 	perl collatz_rails.pl   -n $(N)    -d $(D) -s $(S) -i $(I) -a east   > east.html
 free: 
 	perl collatz_rails.pl   -n $(N)    -d $(D) -s $(S) -i $(I) -a free   > free.html
-comp: 
-	perl segment.pl         -n $(N)    -d $(D) -s $(S) -i $(I) -a comp   > comp.html
-detail: 
-	perl segment.pl         -n $(N)    -d $(D) -s $(S) -i $(I) -a detail > detail.html
-# 	perl collatz_rails.pl   -n $(N)    -d $(D) -s $(S) -i $(I) -a comp   > comp.html
 crop: 
 	perl collatz_rails.pl   -n $(N)    -d $(D) -s $(S) -i $(I) -a crop   > crop.html
 deploy:

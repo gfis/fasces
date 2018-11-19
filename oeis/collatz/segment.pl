@@ -15,7 +15,7 @@
 #       -s
 #       -i  elements of the form k*i + s
 #       -m  output mode: tsv, htm (no css), html, wiki, latex
-#       -a  type of directory to be produced: detail, comp(ressed), super
+#       -a  type of directory to be produced: detail, compress, double, super
 #       -d  debug level: 0 (none), 1 (some), 2 (more)
 #
 # See http://www.teherba.org/index.php/OEIS/3x%2B1_Problem
@@ -28,8 +28,10 @@ my ($sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst) = localtime (ti
 my $TIMESTAMP = sprintf ("%04d-%02d-%02d %02d:%02d:%02d"
         , $year + 1900, $mon + 1, $mday, $hour, $min, $sec);
 my $SEP       = "\t";
-my $MAX_RULE  = 32;
-my @RULENS    = (0, 1, 7, 61, 547, 4921, 44287, 398581, 3587227); # OEIS 066443
+my $MAX_RULE  = 64; # rule 7 has 4 mod 16, rule 11 has 16 mod 64
+my @RULENS    = (0, 1, 7, 61
+	, 547, 4921, 44287, 398581
+	, 3587227, 32285041, 290565367, 2615088301); # OEIS A066443
 #----------------
 # get commandline options
 my $debug  = 0;
@@ -40,8 +42,9 @@ my $incr   = $incr6;
 my $mode   = "html";
 my $action = "comp";
 my %text   =
-    ( "detail"  , " Detailed Segment Directory D"
+    ( "detail"  , " Detailed   Segment Directory D"
     , "comp"    , " Compressed Segment Directory C"
+    , "double"  , " Double     Segment Directory D2 "
     , "super"   , " Supersegment Directory S"
     );
 while (scalar(@ARGV) > 0 and ($ARGV[0] =~ m{\A\-})) {
@@ -87,25 +90,38 @@ if (0) { # switch action
 
 } elsif ($action =~ m{\Acomp})   { # like "detail", but compressed segments
     $isegms = $start4;
-    &print_compressed_head();
+    &print_compress_head();
     while ($isegms < $maxn) {
         if (! defined($segms[$isegms])) {
             $isegms = $maxn; # break loop
         } else {
-            &print_1_compressed($isegms);
+            &print_1_compress($isegms);
         }
         $isegms += $incr;
     } # while $isegms
-    # case compressed
+    # case compress
 
-} elsif ($action =~ m{\Adetail}) { # straightforward incrementing of the start values
-    &print_detailed_head();
+} elsif ($action =~ m{\Adouble}) { # two lines per segment
+    &print_double_head();
     $isegms = $start4;
     while ($isegms < $maxn) {
         if (! defined($segms[$isegms])) {
             $isegms = $maxn; # break loop
         } else {
-            &print_1_detailed($isegms);
+            &print_1_double($isegms);
+        }
+        $isegms += $incr;
+    } # while $isegms
+    # case double
+
+} elsif ($action =~ m{\Adetail}) { # like "double", but in one line
+    &print_detail_head();
+    $isegms = $start4;
+    while ($isegms < $maxn) {
+        if (! defined($segms[$isegms])) {
+            $isegms = $maxn; # break loop
+        } else {
+            &print_1_detail($isegms);
         }
         $isegms += $incr;
     } # while $isegms
@@ -177,10 +193,11 @@ if (0) { # switch action
     $index = 1;
     while ($index < $maxn) {
         if (defined($prev[$index]) and $prev[$index] == 0) { # was not attachable
-        	print sprintf("%6d: ", $index);
+       		my ($node_rule, $node_tar) = &get_rule_target($index);
+        	print sprintf("%6d %2d: ", $index, $node_rule);
         	my $tar = $next[$index];
         	while ($tar > 0) {
-        		my ($node_rule, $node_tar) = &get_rule_target($tar);
+        		($node_rule, $node_tar) = &get_rule_target($tar);
         		print "\t$tar,$node_rule";
         		$tar = $next[$tar];
         	}
@@ -248,7 +265,7 @@ sub generate_segment { # build and return a single segment starting with $selem
     return join($SEP, @result);
 } # generate_segment
 #----------------
-sub print_1_detailed {
+sub print_1_double {
     my ($index) = @_;
     if (! defined($segms[$index])) {
         $index = ($index + 2) / 6;
@@ -265,6 +282,7 @@ sub print_1_detailed {
         } elsif ($mode =~ m{tsv} ) {
             print join($SEP, @segment) . "\n";
         } elsif ($mode =~ m{\Ahtm}) {
+        	
             # print the northern track
             $ir = 1;
             print "<tr>"
@@ -294,8 +312,10 @@ sub print_1_detailed {
 
             # print the southern track
             print "<tr>"
-                . "<td class=\"arl\">\&nbsp;</td>";
-            print "<td class=\"arr\">\&nbsp;</td>";
+                . "<td class=\"arl\">\&nbsp;</td>"
+                . "<td class=\"arl\">\&nbsp;</td>"
+                . "<td class=\"arr\">\&nbsp;</td>"
+                ;
             $ir = 2;
             while ($ir < scalar(@segment)) {
                 $bold = "";
@@ -313,9 +333,9 @@ sub print_1_detailed {
             print "</tr>\n";
         } # mode
     } # if defined
-} # print_1_detailed
+} # print_1_double
 #----------------
-sub print_1_compressed {
+sub print_1_compress {
     my ($index) = @_;
     if (! defined($segms[$index])) {
         $index = ($index + 2) / 6;
@@ -326,16 +346,15 @@ sub print_1_compressed {
             print "<tr>" . &get_index($index) . "</tr>\n";
         } # mode
     } else {
-        my @segment  = split(/$SEP/, $segms[$index]);
+        my @segment = split(/$SEP/, $segms[$index]);
         my $ir;
         if (0) {
         } elsif ($mode =~ m{tsv} ) {
-            $ir = 1;
             print join($SEP, $segment[0], $segment[1]);
-            $ir += 4;
+            $ir = 5;
             my $step = 1;
             while ($ir < scalar(@segment)) {
-                if (      $segment[$ir    ] % $incr6 == $start4) {
+                if ($segment[$ir] % $incr6 == $start4) {
                     print "$SEP$segment[$ir]";
                 }
                 $ir += $step;
@@ -343,16 +362,15 @@ sub print_1_compressed {
             } # while $ir
             print "\n";
         } elsif ($mode =~ m{\Ahtm}) {
-            $ir = 1;
             print "<tr>"
                 . &get_index($segment[0])
-                . &cell_html(        $segment[$ir], "bor", $ir, "");
-            $ir += 4;
+                . &cell_html($segment[1], "bor", 1, "");
+            $ir = 5;
             my $step = 1;
             while ($ir < scalar(@segment)) {
                 my $id = "";
-                if (      $segment[$ir    ] % $incr6 == $start4) {
-                    $id = $segment[$ir    ];
+                if ($segment[$ir] % $incr6 == $start4) {
+                    $id = $segment[$ir];
                     print &cell_html($segment[$ir], "bor seg", $ir, $id);
                 }
                 $ir += $step;
@@ -361,13 +379,52 @@ sub print_1_compressed {
             print "</tr>\n";
         } # mode
     } # if defined
-} # print_1_compressed
+} # print_1_compress
+#----------------
+sub print_1_detail {
+    my ($index) = @_;
+    if (! defined($segms[$index])) {
+        $index = ($index + 2) / 6;
+        if (0) {
+        } elsif ($mode =~ m{\Atsv} ) {
+            print "$index\n";
+        } elsif ($mode =~ m{\Ahtm}) {
+            print "<tr>" . &get_index($index) . "</tr>\n";
+        } # mode
+    } else {
+        my @segment = split(/$SEP/, $segms[$index]);
+        my $ir;
+        if (0) {
+        } elsif ($mode =~ m{tsv} ) {
+            print join($SEP, @segment) . "\n";
+        } elsif ($mode =~ m{\Ahtm}) {
+            print "<tr>"
+                . &get_index($segment[0])
+                . &cell_html($segment[1], "bor", 1, "");
+            $ir = 2;
+            my $step = 1;
+            while ($ir < scalar(@segment)) {
+                my $id = $segment[$ir];
+                my $bold = "";
+                if ($segment[$ir] % $incr6 == $start4) {
+                    if ($ir % 4 == 1 or ($ir % 4 == 2 and $ir > 5)) {
+                        $bold = " seg";
+                    }
+                }
+                print &cell_html($segment[$ir], "bor$bold", $ir, $id);
+                $ir += $step;
+            } # while $ir
+            print "</tr>\n";
+        } # mode
+    } # if defined
+} # print_1_detail
 #----------------
 sub get_index {
     my ($index) = @_;
     my ($rule, $target) = &get_rule_target($index);
-    my $result = "<td class=\"rule$rule\""
-        . " title=\"($rule)->$target\">$index</td>";
+    my $result = "<td class=\"arc\">$index</td>"
+    	.        "<td class=\"arc rule$rule\" title=\"($rule)->$target\">$rule</td>"
+    	;
     return $result;
 } # get_index
 #----------------
@@ -394,7 +451,7 @@ sub cell_html { # print one table cell
     if ($ir == 1) { # start element
         $result .= "\" id=\"A$elem\"><a href=\"\#$elem\">$elem</a>";
     } else {
-        if ($elem < $maxn) {
+        if ($elem < $maxn and $elem % $incr6 == $start4) {
             $result .=           "\"><a href=\"\#A$elem\">$elem</a>";
         } else {
             $result .=           "\">$elem";
@@ -484,33 +541,37 @@ GFis
 <meta name="author"    content="Georg Fischer" />
 <style>
 table   {  }
-.arr    { background-color: white          ; color: black; }
+.arr    { background-color: white          ; color: black; text-align: right        }
 .arc    { background-color: white          ; color: black; text-align: center;      }
 .arl    { background-color: white          ; color: black; text-align: left;        }
 .bor    { border-left  : 1px solid gray    ; border-top   : 1px solid gray ; border-right : 1px solid gray    ; border-bottom: 1px solid gray ; }
 .btr    { border-left  : 1px solid gray    ; border-top   : 1px solid gray ; border-right : 1px solid gray    ; }
 .bbr    { border-left  : 1px solid gray    ; border-right : 1px solid gray ; border-bottom: 1px solid gray ; }
-.d0     { background-color: lemonchiffon   ; color: black;                   }
-.d1     { background-color: lavender       ; color: black;                   }
-.d2     { background-color: white          ; color: gray ;                   }
-.d3     { background-color: lemonchiffon   ; color: gray;                    }
-.d4     { background-color: papayawhip     ; color: black;                   }
-.d5     { background-color: lavender       ; color: gray;                    }
-.super2 { background-color: yellow         ; color: black                    }
-.super3 { background-color: orange         ; color: white                    }
-.super4 { background-color: crimson        ; color: white                    }
-.super5 { background-color: aqua           ; color: black                    }
-.rule2  { background-color: Lime           ; color: black                    }
-.rule3  { background-color: LawnGreen      ; color: black                    }
-.rule4  { background-color: Chartreuse     ; color: black                    }
-.rule5  { background-color: LightSalmon    ; color: black                    }
-.rule6  { background-color: SpringGreen    ; color: black                    }
-.rule7  { background-color: DarkSalmon     ; color: black                    }
-.rule8  { background-color: LightGreen     ; color: black                    }
-.rule9  { background-color: LightCoral     ; color: white                    }
-.rule10 { background-color: IndianRed      ; color: white                    }
-.rule11 { background-color: Crimson        ; color: white                    }
-.rule12 { background-color: Firebrick      ; color: white                    }
+.bot    { border-bottom: 1px solid gray ; }
+.d0     { background-color: lemonchiffon   ; color: black; }
+.d1     { background-color: lavender       ; color: black; }
+.d2     { background-color: white          ; color: black; }
+.d3     { background-color: lemonchiffon   ; color: black; }
+.d4     { background-color: papayawhip     ; color: black; }
+.d5     { background-color: lavender       ; color: black; }
+.super2 { background-color: yellow         ; color: black; }
+.super3 { background-color: orange         ; color: white; }
+.super4 { background-color: crimson        ; color: white; }
+.super5 { background-color: aqua           ; color: black; }
+.rule2  { background-color: Lime           ; color: black; }
+.rule3  { background-color: LawnGreen      ; color: black; }
+.rule4  { background-color: Chartreuse     ; color: black; }
+.rule5  { background-color: LightSalmon    ; color: black; }
+.rule6  { background-color: SpringGreen    ; color: black; }
+.rule7  { background-color: DarkSalmon     ; color: black; }
+.rule8  { background-color: LightGreen     ; color: black; }
+.rule9  { background-color: LightCoral     ; color: white; }
+.rule10 { background-color: IndianRed      ; color: white; }
+.rule11 { background-color: Crimson        ; color: white; }
+.rule12 { background-color: Firebrick      ; color: white; }
+.rule13 { background-color: Firebrick      ; color: white; }
+.rule14 { background-color: Firebrick      ; color: white; }
+.rule15 { background-color: Firebrick      ; color: white; }
 .seg    { font-weight: bold; }
 .sei    { font-weight: bold; font-style    : italic; }
 </style>
@@ -553,14 +614,14 @@ GFis
     }
 } # print_preface
 #----------------
-sub print_detailed_head {
+sub print_double_head {
     if (0) {
     } elsif ($mode =~ m{\Atsv}) {
         print "# Col.$SEP" . join($SEP, (1,2,3,4,5,6,7,8,9,10,11)) . "\n";
     } elsif ($mode =~ m{\Ahtm}) {
         print <<"GFis";
 <tr>
-<td class="arc"> </td>
+<td class="arl bot" colspan="2">Column</td>
 <td class="arc">1</td>
 <td class="arc"> </td>
 <td class="arc">2</td>
@@ -573,8 +634,9 @@ sub print_detailed_head {
 <td class="arc">9</td>
 </tr>
 <tr>
-<td class="arc        ">i</td>
-<td class="arr bor    ">6*i&#8209;2</td>
+<td class="arc bor    ">i</td>
+<td class="arc bor    ">R</td>
+<td class="arr btr    ">6*i&#8209;2</td>
 <td class="arc btr    ">&micro;</td>
 <td class="arc btr seg">&micro;&micro;</td>
 <td class="arc btr    ">&micro;&micro;&delta;</td>
@@ -588,6 +650,7 @@ sub print_detailed_head {
 <tr>
 <td class="arc        ">&nbsp;</td>
 <td class="arr        ">&nbsp;</td>
+<td class="arc bbr    ">LHS   </td>
 <td class="arc bbr    ">&delta;</td>
 <td class="arc bbr    ">&delta;&micro;</td>
 <td class="arc bbr seg">&delta;&micro;&micro;</td>
@@ -601,48 +664,113 @@ sub print_detailed_head {
 GFis
     } else { # invalid mode
     }
-} # print_detailed_head
+} # print_double_head
 #----------------
-sub print_compressed_head {
+sub print_compress_head {
     if (0) {
     } elsif ($mode =~ m{\Atsv}) {
         print "# Col.$SEP" . join($SEP, (1,2,3,4,5,6,7,8,9,10,11)) . "\n";
     } elsif ($mode =~ m{\Ahtm}) {
         print <<"GFis";
 <tr>
-<td class="arc"> </td>
-<td class="arc">1</td>
-<td class="arc">2</td>
-<td class="arc">3</td>
-<td class="arc">4</td>
-<td class="arc">5</td>
-<td class="arc">6</td>
-<td class="arc">7</td>
-<td class="arc">8</td>
-<td class="arc">9</td>
-<td class="arc">10</td>
-<td class="arc">11</td>
+<td class="arl bot" colspan="2">Column</td>
+<td class="arc    ">1</td>
+<td class="arc seg">5</td>
+<td class="arc seg">6</td>
+<td class="arc seg">9</td>
+<td class="arc seg">10</td>
+<td class="arc seg">13</td>
+<td class="arc seg">14</td>
+<td class="arc seg">17</td>
+<td class="arc seg">18</td>
+<td class="arc seg">21</td>
+<td class="arc seg">22</td>
 GFis
         print <<"GFis";
 </tr>
 <tr>
 <td class="arc bor    ">i</td>
+<td class="arc bor    ">R</td>
 <td class="arr bor    ">6*i&#8209;2</td>
-<td class="arc bor    ">&micro;&micro;</td>
-<td class="arc bor    ">&delta;&micro;&micro;</td>
-<td class="arc bor    ">&micro;&micro;&sigma;</td>
-<td class="arc bor    ">&delta;&micro;&micro;&sigma;</td>
-<td class="arc bor    ">&micro;&micro;&sigma;&sigma;</td>
-<td class="arc bor    ">&delta;&micro;&micro;&sigma;&sigma;</td>
-<td class="arc bor    ">&micro;&micro;&sigma;<sup>3</sup></td>
-<td class="arc bor    ">&delta;&micro;&micro;&sigma;<sup>3</sup></td>
-<td class="arc bor    ">&micro;&micro;&sigma;<sup>4</sup></td>
-<td class="arc bor    ">&delta;&micro;&micro;&sigma;<sup>4</sup></td>
+<td class="arc bor seg">&micro;&micro;</td>
+<td class="arc bor seg">&delta;&micro;&micro;</td>
+<td class="arc bor seg">&micro;&micro;&sigma;<sup>1</sup></td>
+<td class="arc bor seg">&delta;&micro;&micro;&sigma;<sup>1</sup></td>
+<td class="arc bor seg">&micro;&micro;&sigma;<sup>2</sup></td>
+<td class="arc bor seg">&delta;&micro;&micro;&sigma;<sup>2</sup></td>
+<td class="arc bor seg">&micro;&micro;&sigma;<sup>3</sup></td>
+<td class="arc bor seg">&delta;&micro;&micro;&sigma;<sup>3</sup></td>
+<td class="arc bor seg">&micro;&micro;&sigma;<sup>4</sup></td>
+<td class="arc bor seg">&delta;&micro;&micro;&sigma;<sup>4</sup></td>
 </tr>
 GFis
     } else { # invalid mode
     }
-} # print_compressed_head
+} # print_compress_head
+#----------------
+sub print_detail_head {
+    if (0) {
+    } elsif ($mode =~ m{\Atsv}) {
+        print "# Col.$SEP" . join($SEP, (1,2,3,4,5,6,7,8,9,10,11)) . "\n";
+    } elsif ($mode =~ m{\Ahtm}) {
+        print <<"GFis";
+<tr>
+<td class="arl bot" colspan="2">Column</td>
+<td class="arc    ">1</td>
+<td class="arc    ">2</td>
+<td class="arc    ">3</td>
+<td class="arc    ">4</td>
+<td class="arc seg">5</td>
+<td class="arc seg">6</td>
+<td class="arc    ">7</td>
+<td class="arc    ">8</td>
+<td class="arc seg">9</td>
+<td class="arc seg">10</td>
+<td class="arc    ">11</td>
+<td class="arc    ">12</td>
+<td class="arc seg">13</td>
+<td class="arc seg">14</td>
+<td class="arc    ">15</td>
+<td class="arc    ">16</td>
+<td class="arc seg">17</td>
+<td class="arc seg">18</td>
+<td class="arc    ">19</td>
+<td class="arc    ">20</td>
+</tr>
+<tr>
+<td class="arc bor    ">i</td>
+<td class="arc bor    ">R</td>
+<td class="arr bor    ">6*i&#8209;2</td>
+<td class="arc bor    ">&delta;</td>
+<td class="arc bor    ">&micro;</td>
+<td class="arc bor    ">&delta;&micro;</td>
+<td class="arc bor seg">&micro;&micro;</td>
+<td class="arc bor seg">&delta;&micro;&micro;</td>
+<td class="arc bor    ">&micro;&micro;&delta;</td>
+<td class="arc bor    ">&delta;&micro;&micro;&delta;</td>
+<td class="arc bor seg">&micro;&micro;&sigma;<sup>1</sup></td>
+<td class="arc bor seg">&delta;&micro;&micro;&sigma;<sup>1</sup></td>
+<td class="arc bor    ">&micro;&micro;&sigma;<sup>1</sup>&delta;</td>
+<td class="arc bor    ">&delta;&micro;&micro;&sigma;<sup>1</sup>&delta;</td>
+<td class="arc bor seg">&micro;&micro;&sigma;<sup>2</sup></td>
+<td class="arc bor seg">&delta;&micro;&micro;&sigma;<sup>2</sup></td>
+<td class="arc bor    ">&micro;&micro;&sigma;<sup>2</sup>&delta;</td>
+<td class="arc bor    ">&delta;&micro;&micro;&sigma;<sup>2</sup>&delta;</td>
+<td class="arc bor seg">&micro;&micro;&sigma;<sup>3</sup></td>
+<td class="arc bor seg">&delta;&micro;&micro;&sigma;<sup>3</sup></td>
+<td class="arc bor    ">&micro;&micro;&sigma;<sup>3</sup>&delta;</td>
+<td class="arc bor    ">&delta;&micro;&micro;&sigma;<sup>3</sup>&delta;</td>
+<!--
+<td class="arc bor seg">&micro;&micro;&sigma;<sup>4</sup></td>
+<td class="arc bor seg">&delta;&micro;&micro;&sigma;<sup>4</sup></td>
+<td class="arc bor    ">&micro;&micro;&sigma;<sup>4</sup>&delta;</td>
+<td class="arc bor    ">&delta;&micro;&micro;&sigma;<sup>4</sup>&delta;</td>
+-->
+</tr>
+GFis
+    } else { # invalid mode
+    }
+} # print_detail_head
 #----------------
 sub print_trailer {
     if (0) {
@@ -700,3 +828,77 @@ GFis
 } # print_trailer
 #================================
 __DATA__
+# k = 0,1,2,3 ... old rule - new rule
+# 
+# R2 16,40,64,88     	=> 	4,10,16,22
+# r2
+s = 4*6*k - 8     			
+s = 6*(1*(4*k + 3)) - 2	
+t = 6*1*k-2
+t = 6*(1*(k           ) -2
+#  0 mod 8, 2 / 4 6 mod 8
+#  
+# R3 4,28,52,76      	=> 	4,22,40,58    R6
+# r3
+s = 4*6*k - 20   			
+s = 6*(1*(4*k + 1)) - 2  	
+t = 3*6*k+4 
+t = 6*(1*(3*k + 1)     ) - 2 
+t = 1*(6*(3*k + 1)     ) - 2 
+#  4 mod 8, 2 6 / 10 14 mod 16
+#  
+# R4 10,58,106,154   	=> 	4,22,40,58    R9
+# r4
+s = 8*6*k - 38    			
+s = 6*(2*(4*k + 1)) - 2  	
+t = 6*3*k+4
+t = 6*(1*(3*k + 1)    ) - 2
+t = 1*(6*(3*k + 1)    ) - 2
+#  10 mod 16, 2 6 / 14 mod 16
+# 
+# R5 34,82,130,178   	=> 	40,94,148,202 R10
+# r5
+s = 8*6*k - 14     		
+t = 6*(3*(3*k + 2) - 2) - 2
+t = 6*(9*k + 7) - 2
+t = 3*(6*(3*k + 1) - 8) - 2
+#  2 mod 16, 6 14 / 22 30 mod 32
+#  
+# R6 70,166,262,358  	=> 	40,94,148,202 R13
+# r7
+s = 6*(4*(4*k + 3)) - 2	
+t = 6*(3*(3*k + 3) - 2) - 2
+#  6 mod 32, 14 / 22 30 mod 32
+# 
+# R7 22,118,214,310   	=> 	40,202,364,526 R14
+# r7
+s = 6*(4*(4*k + 1)) - 2	
+t = 6*(9*(3*k + 1) - 2) - 2
+#  22 mod 32, 14 30 / 46 62 mod 64
+#  
+# R8  46,238,430,622   	=> 	40,202,364,526  R17
+# r8	8,40,72,104				7,34,61,88
+s = 6*(8*(4*k + 1)) - 2	
+t = 6*(9*(3*k + 1) - 2) - 2
+#  46 mod 64, 14 30 / 62 mod 64
+# 
+# R9 142,334,526,718  	=> 	364,850,1336,1822 R18
+# r9	24,56,88,120	   	61,142,223,304
+s = 6*(8*(4*k + 3)) - 2	
+t = 6*27*k+40
+t = 6*(27*(3*k + 1) - 2) - 2
+#  14 mod 64, 30 62 / 94 126 mod 128
+# 
+# R10 286,670,1054,1438 =>	364,850,1336,1822 R21
+# r10 48,112,176,240     		61,142,223,304
+s = 6*(16*(4*k + 3)) - 2	
+t = 6*27*k+40
+t = 6*(27*(3*k + 1) - 2) - 2
+#  30 mod 128, 62 / 94 126 mod 128
+#  
+# R11	94,478,862,1246	=>	364,1822,3280,4738	R22
+# r11,80,144,208	   		61,304,547,790
+s = 6*(16*(4*k + 3)) - 2	
+t = 6*27*k+40
+t = 6*(27*(3*k + 1) - 2) - 2
+#  94 mod 128,  62 126 / 190 254 mod 256
