@@ -21,6 +21,8 @@ double:
 	perl segment.pl         -n $(N)    -d $(D) -s $(S) -i $(I) -a double > double.html
 detail: 
 	perl segment.pl         -n $(N)    -d $(D) -s $(S) -i $(I) -a detail > detail.html
+atab:
+	perl attachtab.pl > atab.wiki
 #----
 rails: 
 	perl collatz_rails.pl   -n $(N)    -d $(D) -s $(S) -i $(I) -a simple > rails.html

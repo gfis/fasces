@@ -23,92 +23,148 @@ while (scalar(@ARGV) > 0 and ($ARGV[0] =~ m{\A\-})) {
     }
 } # while $opt
 #---------------
+print <<"GFis"; # table header
+{| class="wikitable" style="text-align:left"
+|-
+!Rule /<br>column!!Source<br>segments||Condition /<br>remaining!!First source<br>segments!!Target<br>segments!!First target<br>segments!!Dir.
+GFis
+my ($rule, $cond, $remain, $snodes, $fsnodes, $tnodes, $ftnodes, $dir, $st);
 while (<DATA>) {
     s/\s+\Z//; # chompr
     s/\A\s+//; # trim leading whitespace
     my $line = $_;
     if (0) {
-    } elsif ($line =~ m{\A\#\Z}) { 
-    	print "#---------------------------------------------\n";
-    } elsif ($line =~ m{\#}) { # ignore comment
-    	print "$line\n";
+	#----
+    } elsif ($line =~ m{\A\#\Z}) {
+        print STDERR "#---------------------------------------------\n";
+        $dir = "'''\&gt;'''";
+        $fsnodes =~ m{(\d+)};
+        my $fsn1 = $1;
+        $ftnodes =~ m{(\d+)};
+        my $ftn1 = $1;
+        if ($fsn1 >= $ftn1) {
+        	$dir = "\&lt;";
+        }
+        print <<"GFis";
+|-
+|'''$rule'''||$ssegments||$cond<br>$remain||$fssegments||$tsegments||$ftsegments||$dir
+GFis
+	#----
+    } elsif ($line =~ m{\A\#R(\d+)}) {
+    	$rule = $1;
+    	print STDERR "$line\n";
+    } elsif ($line =~ m{mod}) {
+    	print STDERR "$line\n";
+    	($cond, $remain) = map { 
+    		# s/ mod / \&\#x2261\; /; 
+    		s{\A\s+}{};
+    		$_ 
+    		} split(/\;\s+/, substr($line, 1));	
+	#----
+    } elsif ($line =~ m{\#}) { # ignore other comments
+        print STDERR "$line\n";
+	#----
     } else { # statement line
-	    print "$line\t|| ";
+        print STDERR sprintf("#! %-40s || ", $line);
         $line =~ s{\A(\w+)\s*\=\s*}{}; # remove "S = "
+        $st = $1;
+        my $expr = $line;
+        $expr =~ s{\*\*(\d+)}{<sup>\1<\/sup>}g;
+        $expr =~ s{\*}{}g;
         $line =~ s{k}{\$k}g;
-        for my $k (0..$maxn) {
-            print " " . (eval $line); # errors in $@
+		my $first = "";
+        for my $k (0..$maxn - 1) {
+            $first .= ", " . (eval $line); # errors in $@
         } # for $k
-	    print "\n";
+		print STDERR "#$first";
+        if ($st eq "s") {
+        	$ssegments = $expr;
+        	$fssegments = substr($first, 2);
+        } else { # eq "t"
+        	$tsegments = $expr;
+        	$ftsegments = substr($first, 2);
+        }
+        print STDERR "\n";
     } # statement line
+	#----
 } # while DATA
+print <<"GFis"; # table trailer
+|-                                                                                     
+|...||...                                           ||...||...                      ||...||...                             ||... 
+|-
+|}
+GFis
+# |-                                                                                      
+# |Rj ||6(2<sup>4</sup>(4k + 1)) - 2||...||...mod 2<sup>k+1</sup><br>...||...||6(3<sup>l</sup>k + m) - 2||...|| &gt; 
+
 __DATA__
-# k = 0,1,2,3 ... old rule - new rule
-#
-# R2    16,40,64,88        =>  4,10,16,22
+# Attachment table for k = 0,1,2,3; Rnew, rold
+#R5    16,40,64,88        =>  4,10,16,22
 # r2
-s = 6*(1*(4*k + 3)) - 2
-t = 6*(1*(k           ) -2
-#  0 mod 8, 2 / 4 6 mod 8
+s = 6*(2**0*(4*k + 3)) - 2
+t = 6*(3**0*k + 1   ) - 2
+#t = 6*(1*(k + 1      )) -2
+#  0 mod 8; 2, 4, 6 mod 8
 #
-# R3    4,28,52,76         =>  4,22,40,58    R6
+#R6   4,28,52,76         =>  4,22,40,58
 # r3
-s = 6*(1*(4*k + 1)) - 2
-t = 3*6*k+4
-t = 6*(1*(3*k + 1)     ) - 2
-t = 1*(6*(3*k + 1)     ) - 2
-#  4 mod 8, 2 6 / 10 14 mod 16
+s = 6*(2**0*(4*k + 1)) - 2
+t = 6*(3**1*k    + 1) - 2
+#t = 6*(1*(3*k + 1)     ) - 2
+#  4 mod 8; 2, 6, 10, 14 mod 16
 #
-# R4    10,58,106,154      =>  4,22,40,58    R9
+#R9  10,58,106,154      =>  4,22,40,58
 # r4
-s = 6*(2*(4*k + 1)) - 2
-t = 6*(1*(3*k + 1)    ) - 2
-t = 1*(6*(3*k + 1)    ) - 2
-#  10 mod 16, 2 6 / 14 mod 16
+s = 6*(2**1*(4*k + 1)) - 2
+t = 6*(3**1*k    + 1) - 2
+#t = 6*(1*(3*k + 1)    ) - 2
+#  10 mod 16; 2, 6, 14 mod 16
 #
-# R5    34,82,130,178      =>  40,94,148,202 R10
+#R10    34,82,130,178      =>  40,94,148,202
 # r5
-s = 6*(2*(4*k + 3)) - 2
-t = 6*(3*(3*k + 2) - 2) - 2
-t = 6*(9*k + 7) - 2
-t = 3*(6*(3*k + 1) - 8) - 2
-#  2 mod 16, 6 14 / 22 30 mod 32
+s = 6*(2**1*(4*k + 3)) - 2
+t = 6*(3**2*k    + 7) - 2
+#t = 6*(3*(3*k + 3) - 2) - 2
+#  2 mod 16; 6, 14, 22, 30 mod 32
 #
-# R6    70,166,262,358     =>  40,94,148,202 R13
+#R13    70,166,262,358     =>  40,94,148,202
+# r6
+s = 6*(2**2*(4*k + 3)) - 2
+t = 6*(3**2*k    + 7) - 2
+#t = 6*(3*(3*k + 3) - 2) - 2
+#  6 mod 32; 14, 22, 30 mod 32
+#
+#R14    22,118,214,310     =>  40,202,364,526
 # r7
-s = 6*(4*(4*k + 3)) - 2
-t = 6*(3*(3*k + 3) - 2) - 2
-#  6 mod 32, 14 / 22 30 mod 32
+s = 6*(2**2*(4*k + 1)) - 2
+t = 6*(3**3*k    + 7) - 2
+#t = 6*(9*(3*k + 1) - 2) - 2
+#  22 mod 32; 14, 30, 46, 62 mod 64
 #
-# R7    22,118,214,310     =>  40,202,364,526 R14
-# r7
-s = 6*(4*(4*k + 1)) - 2
-t = 6*(9*(3*k + 1) - 2) - 2
-#  22 mod 32, 14 30 / 46 62 mod 64
-#
-# R8    46,238,430,622    =>  40,202,364,526  R17
+#R17    46,238,430,622    =>  40,202,364,526
 # r8    8,40,72,104             7,34,61,88
-s = 6*(8*(4*k + 1)) - 2
-t = 6*(9*(3*k + 1) - 2) - 2
-#  46 mod 64, 14 30 / 62 mod 64
+s = 6*(2**3*(4*k + 1)) - 2
+t = 6*(3**3*k    + 7) - 2
+#t = 6*(9*(3*k + 1) - 2) - 2
+#  46 mod 64; 14, 30, 62 mod 64
 #
-# R9    142,334,526,718    =>  364,850,1336,1822 R18
+#R18    142,334,526,718    =>  364,850,1336,1822
 # r9    24,56,88,120        61,142,223,304
-s = 6*(8*(4*k + 3)) - 2
-t = 6*27*k+40
-t = 6*(27*(3*k + 1) - 2) - 2
-#  14 mod 64, 30 62 / 94 126 mod 128
+s = 6*(2**3*(4*k + 3)) - 2
+t = 6*(3**4*k   + 61) - 2
+#t = 6*(9*(3*(3*k+3) - 2) - 2) - 2
+#  14 mod 64; 30, 62, 94, 126 mod 128
 #
-# R10   286,670,1054,1438 =>  364,850,1336,1822 R21
+#R21    286,670,1054,1438 =>  364,850,1336,1822
 # r10   48,112,176,240            61,142,223,304
-s = 6*(16*(4*k + 3)) - 2
-t = 6*27*k+40
-t = 6*(27*(3*k + 1) - 2) - 2
-#  30 mod 128, 62 / 94 126 mod 128
+s = 6*(2**4*(4*k + 3)) - 2
+t = 6*(3**4*k   + 61) - 2
+#t = 6*(9*(3*(3*k+3) - 2) - 2) - 2
+#  30 mod 128; 62, 94, 126 mod 128
 #
-# R11   94,478,862,1246 =>  364,1822,3280,4738  R22
+#R22    94,478,862,1246 =>  364,1822,3280,4738
 # r11   80,144,208            61,304,547,790
-s = 6*(16*(4*k + 3)) - 2
-t = 6*27*k+40
-t = 6*(27*(3*k + 1) - 2) - 2
-#  94 mod 128,  62 126 / 190 254 mod 256
+s = 6*(2**4*(4*k + 1)) - 2
+t = 6*(3**5*k   + 61) - 2
+#  94 mod 128;  62, 126, 190, 254 mod 256
+#
