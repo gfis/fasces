@@ -30,8 +30,8 @@ my $TIMESTAMP = sprintf ("%04d-%02d-%02d %02d:%02d:%02d"
 my $SEP       = "\t";
 my $MAX_RULE  = 64; # rule 7 has 4 mod 16, rule 11 has 16 mod 64
 my @RULENS    = (0, 1, 7, 61
-	, 547, 4921, 44287, 398581
-	, 3587227, 32285041, 290565367, 2615088301); # OEIS A066443
+    , 547, 4921, 44287, 398581
+    , 3587227, 32285041, 290565367, 2615088301); # OEIS A066443
 #----------------
 # get commandline options
 my $debug  = 0;
@@ -42,10 +42,10 @@ my $incr   = $incr6;
 my $mode   = "html";
 my $action = "comp";
 my %text   =
-    ( "detail"  , " Detailed   Segment Directory D"
+    ( "detail"  , " Detailed   Segment Directory S"
     , "comp"    , " Compressed Segment Directory C"
-    , "double"  , " Double     Segment Directory D2 "
-    , "super"   , " Supersegment Directory S"
+    , "double"  , " Double Line Segment Directory S"
+    , "super"   , " Supersegment Directory D<sub>2</sub>"
     );
 while (scalar(@ARGV) > 0 and ($ARGV[0] =~ m{\A\-})) {
     my $opt = shift(@ARGV);
@@ -131,8 +131,8 @@ if (0) { # switch action
     my @prev = (); # where the segment must be attached, or 0
     my @next = (); # which segment attaches to the last, or 0
     if ($debug >= 1) {
-      	print sprintf("%6s:%6s  %6s  | %6s %2s rul > %6s  ...[%2s]  %6s %2s Rul > %6s\n"
-			, "index", "prev", "next", "lehs", "dg", "letar", "il", "last", "dg", "latar");
+        print sprintf("%6s:%6s  %6s  | %6s %2s rul > %6s  ...[%2s]  %6s %2s Rul > %6s\n"
+            , "index", "prev", "next", "lehs", "dg", "letar", "il", "last", "dg", "latar");
     }
     $isegms = $start4;
     my $index;
@@ -146,14 +146,14 @@ if (0) { # switch action
                 $prev[$index] = 0;
                 $next[$index] = 0;
                 my $lehs      = $segment[1];
-                my ($lehs_rule, $lehs_tar) = get_rule_target($index);
+                my ($lehs_rule, $lehs_tar) = get_nrule_itarget($index);
                 my $lehs_deg  = &get_degree($lehs);
                 my $ilast     = scalar(@segment) - 1;
                 while ($ilast > 0 and $segment[$ilast] % 36 != 22) { # look for degree >= 2
                     $ilast --;
                 }
                 my $last      = $segment[$ilast];
-                my ($last_rule, $last_tar) = get_rule_target($last);
+                my ($last_rule, $last_tar) = get_nrule_itarget($last);
                 my $last_deg  = &get_degree($last);
                 if (0) {
                 } elsif ($ilast == 0) { # no degree >= 2 in whole segment
@@ -193,15 +193,15 @@ if (0) { # switch action
     $index = 1;
     while ($index < $maxn) {
         if (defined($prev[$index]) and $prev[$index] == 0) { # was not attachable
-       		my ($node_rule, $node_tar) = &get_rule_target($index);
-        	print sprintf("%6d %2d: ", $index, $node_rule);
-        	my $tar = $next[$index];
-        	while ($tar > 0) {
-        		($node_rule, $node_tar) = &get_rule_target($tar);
-        		print "\t$tar,$node_rule";
-        		$tar = $next[$tar];
-        	}
-        	print "\n";	
+            my ($node_rule, $node_tar) = &get_nrule_itarget($index);
+            print sprintf("%6d %2d: ", $index, $node_rule);
+            my $tar = $next[$index];
+            while ($tar > 0) {
+                ($node_rule, $node_tar) = &get_nrule_itarget($tar);
+                print "\t$tar,$node_rule";
+                $tar = $next[$tar];
+            }
+            print "\n";
         } # not attachable
         $index ++;
     } # while $isegms
@@ -282,7 +282,7 @@ sub print_1_double {
         } elsif ($mode =~ m{tsv} ) {
             print join($SEP, @segment) . "\n";
         } elsif ($mode =~ m{\Ahtm}) {
-        	
+
             # print the northern track
             $ir = 1;
             print "<tr>"
@@ -302,7 +302,7 @@ sub print_1_double {
                 if ($ir > 5 and $segment[$ir - 1] % $incr6 == $start4) {
                     $id = $segment[$ir - 1];
                 }
-                if ($ir <= 3) {
+                if ($ir < 5) {
                     $bold = " sei";
                 }
                 print &cell_html($segment[$ir], "btr$bold", $ir, $id);
@@ -324,7 +324,7 @@ sub print_1_double {
                         $bold = " seg";
                     }
                 }
-                if ($ir <= 5) {
+                if ($ir < 5) {
                     $bold = " sei";
                 }
                 print &cell_html($segment[$ir], "bbr$bold", $ir, "");
@@ -411,6 +411,9 @@ sub print_1_detail {
                         $bold = " seg";
                     }
                 }
+                if ($ir < 5) {
+                    $bold = " sei";
+                }
                 print &cell_html($segment[$ir], "bor$bold", $ir, $id);
                 $ir += $step;
             } # while $ir
@@ -421,10 +424,10 @@ sub print_1_detail {
 #----------------
 sub get_index {
     my ($index) = @_;
-    my ($rule, $target) = &get_rule_target($index);
+    my ($nrule, $itarget) = &get_nrule_itarget($index);
     my $result = "<td class=\"arc\">$index</td>"
-    	.        "<td class=\"arc rule$rule\" title=\"($rule)->$target\">$rule</td>"
-    	;
+        .        "<td class=\"arc rule$nrule\" title=\"($nrule)->$itarget\">$nrule</td>"
+        ;
     return $result;
 } # get_index
 #----------------
@@ -434,13 +437,15 @@ sub cell_html { # print one table cell
     my $result = "<td";
     if ($id ne "") {
         $result .= " id=\"$id\"";
-        # print STDERR "id2: $id\n";
     }
     my $degree = &get_degree($elem);
-    if ($degree >= 2) {
-        my ($rule, $target) = &get_rule_target($elem);
-        $target = ($elem + 2) / 6;
-        $result .= " title=\"($rule)->$target\"";
+    if ($degree >= 1) {
+		my $isource = ($elem + 2) / 6;
+        my ($nrule, $itarget) = &get_nrule_itarget($isource);
+        my $target = $itarget * 6 - 2;
+        if ($rest == $start4) {
+        	$result .= " title=\"($nrule)->$target\"";
+        }
         $result .= " class=\"super$degree";
     } else {
         $result .= " class=\"d$rest";
@@ -467,7 +472,7 @@ sub get_degree {
     if (0) { # A000400: 46656, 279936, 1679616, 10077696
              # A005610: 2, 14, 86, 518, 3110, 18662, 111974, 671846, 4031078
     } elsif (1 and $irow %  46656 -  46656 ==  -18662) {
-        $result = 5;
+        $result = 6;
     } elsif (1 and $irow %   7776 -   7776 ==   -3110) {
         $result = 5;
     } elsif (1 and $irow %   1296 -   1296 ==    -518) {
@@ -482,31 +487,31 @@ sub get_degree {
     return $result;
 } # get_degree
 #------------------------
-sub get_rule_target {
-    my ($irow) = @_;
-    my $rule   = 2;
-    my $target = 0;
-    my $busy   = 1;
-    my $tog31  = 3;
-    my $exp2_2 = 1;
-    my $exp2   = 4;
-    my $exp3   = 1;
-    my $irulen = 1;
-    while ($busy == 1 and $rule <= $MAX_RULE) {
+sub get_nrule_itarget {
+    my ($isource) = @_;
+    my $orule   = 2;
+    my $itarget = 0;
+    my $busy    = 1;
+    my $tog31   = 3;
+    my $exp2_2  = 1;
+    my $exp2    = 4;
+    my $exp3    = 1;
+    my $irulen  = 1;
+    while ($busy == 1 and $orule <= $MAX_RULE) {
         my $subconst = $exp2_2 * $tog31;
-        if ($irow % $exp2 == $subconst) { # mod cond.
+        if ($isource % $exp2 == $subconst) { # mod cond.
             $busy = 0;
-            $target = $exp3 * ($irow - $subconst) / $exp2 + $RULENS[$irulen];
+            $itarget = $exp3 * ($isource - $subconst) / $exp2 + $RULENS[$irulen];
             if ($debug >= 3) {
-                print "rule=$rule, exp2=$exp2, exp2-2=$exp2_2, exp3=$exp3"
+                print "orule=$orule, exp2=$exp2, exp2-2=$exp2_2, exp3=$exp3"
                     . ", subconst=$subconst, RULENS[$irulen]=$RULENS[$irulen]\n";
             }
         } else {
-            $rule ++;
-            if ($rule % 4 == 1) {
+            $orule ++;
+            if ($orule % 4 == 1) {
                 $irulen ++;
             }
-            if ($rule % 2 == 0) {
+            if ($orule % 2 == 0) {
                 $exp2   *= 2;
                 $exp2_2 *= 2;
             } else {
@@ -515,8 +520,9 @@ sub get_rule_target {
             }
         } # mod cond.
     } # while rules
-    return ($rule, $target);
-} # get_rule_target
+    my $nrule = ($orule % 2 == 0) ? $orule * 2 + 1 : $orule * 2;
+    return ($nrule, $itarget);
+} # get_nrule_itarget
 #----------------
 sub print_header {
     if (0) {
@@ -558,26 +564,27 @@ table   {  }
 .super3 { background-color: orange         ; color: white; }
 .super4 { background-color: crimson        ; color: white; }
 .super5 { background-color: aqua           ; color: black; }
-.rule2  { background-color: Lime           ; color: black; }
-.rule3  { background-color: LawnGreen      ; color: black; }
-.rule4  { background-color: Chartreuse     ; color: black; }
-.rule5  { background-color: LightSalmon    ; color: black; }
-.rule6  { background-color: SpringGreen    ; color: black; }
-.rule7  { background-color: DarkSalmon     ; color: black; }
-.rule8  { background-color: LightGreen     ; color: black; }
-.rule9  { background-color: LightCoral     ; color: white; }
-.rule10 { background-color: IndianRed      ; color: white; }
-.rule11 { background-color: Crimson        ; color: white; }
-.rule12 { background-color: Firebrick      ; color: white; }
-.rule13 { background-color: Firebrick      ; color: white; }
-.rule14 { background-color: Firebrick      ; color: white; }
-.rule15 { background-color: Firebrick      ; color: white; }
+.rule5  { background-color: Lime           ; color: black; }
+.rule6  { background-color: LawnGreen      ; color: black; }
+.rule9  { background-color: Chartreuse     ; color: black; }
+.rule10 { background-color: LightSalmon    ; color: black; }
+.rule13 { background-color: SpringGreen    ; color: black; }
+.rule14 { background-color: DarkSalmon     ; color: black; }
+.rule17 { background-color: LightGreen     ; color: black; }
+.rule18 { background-color: LightCoral     ; color: white; }
+.rule21 { background-color: IndianRed      ; color: white; }
+.rule22 { background-color: Crimson        ; color: white; }
+.rule25 { background-color: Firebrick      ; color: white; }
+.rule26 { background-color: Firebrick      ; color: white; }
+.rule29 { background-color: Firebrick      ; color: white; }
+.rule30 { background-color: Firebrick      ; color: white; }
 .seg    { font-weight: bold; }
-.sei    { font-weight: bold; font-style    : italic; }
+.sei    { /* font-weight: bold; */ 
+	      font-style    : italic; }
 </style>
 </head>
 <body style=\"font-family: Verdana,Arial,sans-serif;\" >
-<h3>3x+1 $text{$action}</h3>
+<h3 id="start">3x+1 $text{$action}</h3>
 GFis
     } else { # invalid mode
     }
@@ -600,13 +607,16 @@ GFis
         print <<"GFis";
 <p>
 Generated with
-<a href="https://github.com/gfis/fasces/blob/master/oeis/collatz/segment.pl">Perl</a>
+<a href="https://github.com/gfis/fasces/blob/master/oeis/collatz/segment.pl">segment.pl</a>
 at $TIMESTAMP;<br />
 <a href="http://www.teherba.org/index.php/OEIS/3x%2B1_Problem">Article
 about the 3x+1 problem</a>
  by <a href="mailto:Dr.Georg.Fischer\@gmail.com">Georg Fischer</a>
 <br />
-<a href="#more">More information</a>
+<a href="detail.html">Detailed</a>,
+<a href="comp.html">Compressed</a>,
+<a href="double.html">Double line</a> directory;
+<a href="#more">more information</a>
 </p>
 <table style=\"border-collapse: collapse; text-align: right;  padding-right: 4px;\">
 GFis
@@ -623,43 +633,42 @@ sub print_double_head {
 <tr>
 <td class="arl bot" colspan="2">Column</td>
 <td class="arc">1</td>
-<td class="arc"> </td>
-<td class="arc">2</td>
 <td class="arc">3</td>
-<td class="arc">4</td>
 <td class="arc">5</td>
-<td class="arc">6</td>
 <td class="arc">7</td>
-<td class="arc">8</td>
 <td class="arc">9</td>
+<td class="arc">11</td>
+<td class="arc">13</td>
+<td class="arc">15</td>
+<td class="arc">17</td>
+<td class="arc">21</td>
 </tr>
 <tr>
-<td class="arc bor    ">i</td>
-<td class="arc bor    ">R</td>
-<td class="arr btr    ">6*i&#8209;2</td>
-<td class="arc btr    ">&micro;</td>
-<td class="arc btr seg">&micro;&micro;</td>
-<td class="arc btr    ">&micro;&micro;&delta;</td>
-<td class="arc btr seg">&micro;&micro;&sigma;</td>
-<td class="arc btr    ">&micro;&micro;&sigma;&delta;</td>
-<td class="arc btr seg">&micro;&micro;&sigma;<sup>2</sup></td>
-<td class="arc btr    ">&micro;&micro;&sigma;<sup>2</sup>&delta;</td>
-<td class="arc btr seg">&micro;&micro;&sigma;<sup>3</sup></td>
-<td class="arc btr    ">&micro;&micro;&sigma;<sup>3</sup>&delta;</td>
+<td class="arr" colspan="2">Rule</td>
+<td class="arr bor           ">LHS</td>
+<td class="arc btr           ">&micro;</td>
+<td class="arc btr seg rule5 ">&micro;&micro;</td>
+<td class="arc btr           ">&micro;&micro;&delta;</td>
+<td class="arc btr seg rule9 ">&micro;&micro;&sigma;</td>
+<td class="arc btr           ">&micro;&micro;&sigma;&delta;</td>
+<td class="arc btr seg rule13">&micro;&micro;&sigma;<sup>2</sup></td>
+<td class="arc btr           ">&micro;&micro;&sigma;<sup>2</sup>&delta;</td>
+<td class="arc btr seg rule17">&micro;&micro;&sigma;<sup>3</sup></td>
+<td class="arc btr           ">&micro;&micro;&sigma;<sup>3</sup>&delta;</td>
 </tr>
 <tr>
-<td class="arc        ">&nbsp;</td>
-<td class="arr        ">&nbsp;</td>
-<td class="arc bbr    ">LHS   </td>
-<td class="arc bbr    ">&delta;</td>
-<td class="arc bbr    ">&delta;&micro;</td>
-<td class="arc bbr seg">&delta;&micro;&micro;</td>
-<td class="arc bbr    ">&delta;&micro;&micro;&delta;</td>
-<td class="arc bbr seg">&delta;&micro;&micro;&sigma;</td>
-<td class="arc bbr    ">&delta;&micro;&micro;&sigma;&delta;</td>
-<td class="arc bbr seg">&delta;&micro;&micro;&sigma;<sup>2</sup></td>
-<td class="arc bbr    ">&delta;&micro;&micro;&sigma;<sup>2</sup>&delta;</td>
-<td class="arc bbr seg">&delta;&micro;&micro;&sigma;<sup>3</sup></td>
+<td class="arc               ">&nbsp;</td>
+<td class="arr               ">&nbsp;</td>
+<td class="arr               ">&nbsp;</td>
+<td class="arc bbr           ">&delta;</td>
+<td class="arc bbr           ">&delta;&micro;</td>
+<td class="arc bbr seg rule6 ">&delta;&micro;&micro;</td>
+<td class="arc bbr           ">&delta;&micro;&micro;&delta;</td>
+<td class="arc bbr seg rule10">&delta;&micro;&micro;&sigma;</td>
+<td class="arc bbr           ">&delta;&micro;&micro;&sigma;&delta;</td>
+<td class="arc bbr seg rule14">&delta;&micro;&micro;&sigma;<sup>2</sup></td>
+<td class="arc bbr           ">&delta;&micro;&micro;&sigma;<sup>2</sup>&delta;</td>
+<td class="arc bbr seg rule18">&delta;&micro;&micro;&sigma;<sup>3</sup></td>
 </tr>
 GFis
     } else { # invalid mode
@@ -674,34 +683,33 @@ sub print_compress_head {
         print <<"GFis";
 <tr>
 <td class="arl bot" colspan="2">Column</td>
-<td class="arc    ">1</td>
-<td class="arc seg">5</td>
-<td class="arc seg">6</td>
-<td class="arc seg">9</td>
-<td class="arc seg">10</td>
-<td class="arc seg">13</td>
-<td class="arc seg">14</td>
-<td class="arc seg">17</td>
-<td class="arc seg">18</td>
-<td class="arc seg">21</td>
-<td class="arc seg">22</td>
+<td class="arc">1</td>
+<td class="arc">5</td>
+<td class="arc">6</td>
+<td class="arc">9</td>
+<td class="arc">10</td>
+<td class="arc">13</td>
+<td class="arc">14</td>
+<td class="arc">17</td>
+<td class="arc">18</td>
+<td class="arc">21</td>
+<td class="arc">22</td>
 GFis
         print <<"GFis";
 </tr>
 <tr>
-<td class="arc bor    ">i</td>
-<td class="arc bor    ">R</td>
-<td class="arr bor    ">6*i&#8209;2</td>
-<td class="arc bor seg">&micro;&micro;</td>
-<td class="arc bor seg">&delta;&micro;&micro;</td>
-<td class="arc bor seg">&micro;&micro;&sigma;<sup>1</sup></td>
-<td class="arc bor seg">&delta;&micro;&micro;&sigma;<sup>1</sup></td>
-<td class="arc bor seg">&micro;&micro;&sigma;<sup>2</sup></td>
-<td class="arc bor seg">&delta;&micro;&micro;&sigma;<sup>2</sup></td>
-<td class="arc bor seg">&micro;&micro;&sigma;<sup>3</sup></td>
-<td class="arc bor seg">&delta;&micro;&micro;&sigma;<sup>3</sup></td>
-<td class="arc bor seg">&micro;&micro;&sigma;<sup>4</sup></td>
-<td class="arc bor seg">&delta;&micro;&micro;&sigma;<sup>4</sup></td>
+<td class="arr" colspan="2">Rule</td>
+<td class="arr bor           ">LHS</td>
+<td class="arc bor seg rule5 ">&micro;&micro;</td>
+<td class="arc bor seg rule6 ">&delta;&micro;&micro;</td>
+<td class="arc bor seg rule9 ">&micro;&micro;&sigma;<sup>1</sup></td>
+<td class="arc bor seg rule10">&delta;&micro;&micro;&sigma;<sup>1</sup></td>
+<td class="arc bor seg rule13">&micro;&micro;&sigma;<sup>2</sup></td>
+<td class="arc bor seg rule14">&delta;&micro;&micro;&sigma;<sup>2</sup></td>
+<td class="arc bor seg rule17">&micro;&micro;&sigma;<sup>3</sup></td>
+<td class="arc bor seg rule18">&delta;&micro;&micro;&sigma;<sup>3</sup></td>
+<td class="arc bor seg rule21">&micro;&micro;&sigma;<sup>4</sup></td>
+<td class="arc bor seg rule22">&delta;&micro;&micro;&sigma;<sup>4</sup></td>
 </tr>
 GFis
     } else { # invalid mode
@@ -738,28 +746,27 @@ sub print_detail_head {
 <td class="arc    ">20</td>
 </tr>
 <tr>
-<td class="arc bor    ">i</td>
-<td class="arc bor    ">R</td>
-<td class="arr bor    ">6*i&#8209;2</td>
-<td class="arc bor    ">&delta;</td>
-<td class="arc bor    ">&micro;</td>
-<td class="arc bor    ">&delta;&micro;</td>
-<td class="arc bor seg">&micro;&micro;</td>
-<td class="arc bor seg">&delta;&micro;&micro;</td>
-<td class="arc bor    ">&micro;&micro;&delta;</td>
-<td class="arc bor    ">&delta;&micro;&micro;&delta;</td>
-<td class="arc bor seg">&micro;&micro;&sigma;<sup>1</sup></td>
-<td class="arc bor seg">&delta;&micro;&micro;&sigma;<sup>1</sup></td>
-<td class="arc bor    ">&micro;&micro;&sigma;<sup>1</sup>&delta;</td>
-<td class="arc bor    ">&delta;&micro;&micro;&sigma;<sup>1</sup>&delta;</td>
-<td class="arc bor seg">&micro;&micro;&sigma;<sup>2</sup></td>
-<td class="arc bor seg">&delta;&micro;&micro;&sigma;<sup>2</sup></td>
-<td class="arc bor    ">&micro;&micro;&sigma;<sup>2</sup>&delta;</td>
-<td class="arc bor    ">&delta;&micro;&micro;&sigma;<sup>2</sup>&delta;</td>
-<td class="arc bor seg">&micro;&micro;&sigma;<sup>3</sup></td>
-<td class="arc bor seg">&delta;&micro;&micro;&sigma;<sup>3</sup></td>
-<td class="arc bor    ">&micro;&micro;&sigma;<sup>3</sup>&delta;</td>
-<td class="arc bor    ">&delta;&micro;&micro;&sigma;<sup>3</sup>&delta;</td>
+<td class="arr" colspan="2">Rule</td>
+<td class="arr bor           ">LHS</td>
+<td class="arc bor           ">&delta;</td>
+<td class="arc bor           ">&micro;</td>
+<td class="arc bor           ">&delta;&micro;</td>
+<td class="arc bor seg rule5 ">&micro;&micro;</td>
+<td class="arc bor seg rule6 ">&delta;&micro;&micro;</td>
+<td class="arc bor           ">&micro;&micro;&delta;</td>
+<td class="arc bor           ">&delta;&micro;&micro;&delta;</td>
+<td class="arc bor seg rule9 ">&micro;&micro;&sigma;<sup>1</sup></td>
+<td class="arc bor seg rule10">&delta;&micro;&micro;&sigma;<sup>1</sup></td>
+<td class="arc bor           ">&micro;&micro;&sigma;<sup>1</sup>&delta;</td>
+<td class="arc bor           ">&delta;&micro;&micro;&sigma;<sup>1</sup>&delta;</td>
+<td class="arc bor seg rule13">&micro;&micro;&sigma;<sup>2</sup></td>
+<td class="arc bor seg rule14">&delta;&micro;&micro;&sigma;<sup>2</sup></td>
+<td class="arc bor           ">&micro;&micro;&sigma;<sup>2</sup>&delta;</td>
+<td class="arc bor           ">&delta;&micro;&micro;&sigma;<sup>2</sup>&delta;</td>
+<td class="arc bor seg rule17">&micro;&micro;&sigma;<sup>3</sup></td>
+<td class="arc bor seg rule18">&delta;&micro;&micro;&sigma;<sup>3</sup></td>
+<td class="arc bor           ">&micro;&micro;&sigma;<sup>3</sup>&delta;</td>
+<td class="arc bor           ">&delta;&micro;&micro;&sigma;<sup>3</sup>&delta;</td>
 <!--
 <td class="arc bor seg">&micro;&micro;&sigma;<sup>4</sup></td>
 <td class="arc bor seg">&delta;&micro;&micro;&sigma;<sup>4</sup></td>
@@ -784,20 +791,24 @@ GFis
         print <<"GFis";
 </table>
 
-<p id="more">End of directory</p>
+<p id="more">End of directory; back to <a href="#start">start</a> </p>
 <p>
 Root &lt;-&nbsp;&nbsp;&nbsp;nodes &#x2261;
 <span class="d0">\&nbsp;0</span>, <span class="d1">\&nbsp;1</span>,
 <span class="d2">\&nbsp;2</span>, <span class="d3">\&nbsp;3</span>,
-<span class="d4">\&nbsp;4</span>, <span class="d5">\&nbsp;5</span> mod 6&nbsp;&nbsp;&nbsp;-&gt; &#x221e;
+<span class="d4 seg">\&nbsp;4</span>, <span class="d5">\&nbsp;5</span> mod 6&nbsp;&nbsp;&nbsp;-&gt; &#x221e;
 \&nbsp;\&nbsp;\&nbsp;\&nbsp;
-<span class="sei">Inserted</span> <span class="seg">tree</span> nodes
+<span class="sei">Inserted</span> <span class="">tree</span> nodes
 <br />
 GFis
         print "Rules <span class=\"rule2\">\&nbsp;2</span>";
-        for (my $rule = 3; $rule <= 11; $rule ++) {
-            print ", <span class=\"rule$rule\">\&nbsp;$rule</span>";
-        } # for $rule
+        my $nrule = 5;
+        while ($nrule <= 30) {
+            print ", <span class=\"rule$nrule\">\&nbsp;$nrule</span>";
+            $nrule ++;
+            print ", <span class=\"rule$nrule\">\&nbsp;$nrule</span>";
+            $nrule += 3;
+        } # while $nrule
         print ".\&nbsp;\&nbsp;\&nbsp;\&nbsp;";
         print "Nodes with degree <span class=\"d2\">\&nbsp;1</span>";
         for (my $degree = 2; $degree <= 5; $degree ++) {
@@ -828,77 +839,9 @@ GFis
 } # print_trailer
 #================================
 __DATA__
-# k = 0,1,2,3 ... old rule - new rule
-# 
-# R2 16,40,64,88     	=> 	4,10,16,22
-# r2
-s = 4*6*k - 8     			
-s = 6*(1*(4*k + 3)) - 2	
-t = 6*1*k-2
-t = 6*(1*(k           ) -2
-#  0 mod 8, 2 / 4 6 mod 8
-#  
-# R3 4,28,52,76      	=> 	4,22,40,58    R6
-# r3
-s = 4*6*k - 20   			
-s = 6*(1*(4*k + 1)) - 2  	
-t = 3*6*k+4 
-t = 6*(1*(3*k + 1)     ) - 2 
-t = 1*(6*(3*k + 1)     ) - 2 
-#  4 mod 8, 2 6 / 10 14 mod 16
-#  
-# R4 10,58,106,154   	=> 	4,22,40,58    R9
-# r4
-s = 8*6*k - 38    			
-s = 6*(2*(4*k + 1)) - 2  	
-t = 6*3*k+4
-t = 6*(1*(3*k + 1)    ) - 2
-t = 1*(6*(3*k + 1)    ) - 2
-#  10 mod 16, 2 6 / 14 mod 16
-# 
-# R5 34,82,130,178   	=> 	40,94,148,202 R10
-# r5
-s = 8*6*k - 14     		
-t = 6*(3*(3*k + 2) - 2) - 2
-t = 6*(9*k + 7) - 2
-t = 3*(6*(3*k + 1) - 8) - 2
-#  2 mod 16, 6 14 / 22 30 mod 32
-#  
-# R6 70,166,262,358  	=> 	40,94,148,202 R13
-# r7
-s = 6*(4*(4*k + 3)) - 2	
-t = 6*(3*(3*k + 3) - 2) - 2
-#  6 mod 32, 14 / 22 30 mod 32
-# 
-# R7 22,118,214,310   	=> 	40,202,364,526 R14
-# r7
-s = 6*(4*(4*k + 1)) - 2	
-t = 6*(9*(3*k + 1) - 2) - 2
-#  22 mod 32, 14 30 / 46 62 mod 64
-#  
-# R8  46,238,430,622   	=> 	40,202,364,526  R17
-# r8	8,40,72,104				7,34,61,88
-s = 6*(8*(4*k + 1)) - 2	
-t = 6*(9*(3*k + 1) - 2) - 2
-#  46 mod 64, 14 30 / 62 mod 64
-# 
-# R9 142,334,526,718  	=> 	364,850,1336,1822 R18
-# r9	24,56,88,120	   	61,142,223,304
-s = 6*(8*(4*k + 3)) - 2	
-t = 6*27*k+40
-t = 6*(27*(3*k + 1) - 2) - 2
-#  14 mod 64, 30 62 / 94 126 mod 128
-# 
-# R10 286,670,1054,1438 =>	364,850,1336,1822 R21
-# r10 48,112,176,240     		61,142,223,304
-s = 6*(16*(4*k + 3)) - 2	
-t = 6*27*k+40
-t = 6*(27*(3*k + 1) - 2) - 2
-#  30 mod 128, 62 / 94 126 mod 128
-#  
-# R11	94,478,862,1246	=>	364,1822,3280,4738	R22
-# r11,80,144,208	   		61,304,547,790
-s = 6*(16*(4*k + 3)) - 2	
-t = 6*27*k+40
-t = 6*(27*(3*k + 1) - 2) - 2
-#  94 mod 128,  62 126 / 190 254 mod 256
+supersegments at rows (1), 4, 7, 10, 13 ... 1 mod 3
+lhs super at 4 10 16 22 ... 4 mod 6
+rp not at 10 19 28 37 ... 1 mod 9
+both in lhs and rp at 4 16 22 34 40 52 58 70 76 ... 4,16 mod 18
+                       12 6 12  6  12 6 12  6
+last-but-one in rp at 7 25 52 61 79 88 106

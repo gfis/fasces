@@ -28,7 +28,7 @@ print <<"GFis"; # table header
 |-
 !Rule /<br>column!!Source<br>segments||Condition /<br>remaining!!First source<br>segments!!Target<br>segments!!First target<br>segments!!Dir.
 GFis
-my ($rule, $cond, $remain, $snodes, $fsnodes, $tnodes, $ftnodes, $dir, $st);
+my ($rule, $cond, $remain, $ssegments, $fssegments, $tsegments, $ftsegments, $dir, $st);
 while (<DATA>) {
     s/\s+\Z//; # chompr
     s/\A\s+//; # trim leading whitespace
@@ -38,9 +38,9 @@ while (<DATA>) {
     } elsif ($line =~ m{\A\#\Z}) {
         print STDERR "#---------------------------------------------\n";
         $dir = "'''\&gt;'''";
-        $fsnodes =~ m{(\d+)};
+        $fssegments =~ m{(\d+)};
         my $fsn1 = $1;
-        $ftnodes =~ m{(\d+)};
+        $ftsegments =~ m{(\d+)};
         my $ftn1 = $1;
         if ($fsn1 >= $ftn1) {
         	$dir = "\&lt;";

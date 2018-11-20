@@ -229,10 +229,10 @@ We now want to ''attach'' (or ''connect'') the segments to other graphs until we
 === Attachment Directory Construction===
 Parallel to the segment directory we maintain the ''attachment directory'' A which, for any source segment in C: 
 # tells whether the tree corresponding to the segment was already attached to the graph represented by some other segment, and if so,  
-# tells the target row and column numbers ''i, j'' in the segment directory C where the source segment was attached.
+# tells the target segment and column numbers in the segment directory C where the source segment was attached.
 Initially all segments are unattached.
 
-We operate on A as follows: Considering simultaneously a set of source segments ''i &gt; 1'' (i.e. omitting the root segment) in C - which fulfill some modularity condition (the ''source'' row set), and which are so far unattached, we attach their segments parallel to the unique occurrences of their left sides in the right part of C (''target segment'' set and ''target column''). 
+We operate on A as follows: Considering simultaneously a set of source segments ''i &gt; 1'' (i.e. omitting the root segment) in C - which fulfill some modularity condition (the ''source'' segment set), and which are so far unattached, we attach their segments parallel to the unique occurrences of their left sides in the right part of C (''target segment'' set and ''target column''). 
 <!--
 :These operations on A involve infinite sets. They are similiar to the ''gedankenexperiment'' of [https://en.wikipedia.org/wiki/Hilbert%27s_paradox_of_the_Grand_Hotel Hilbert's hotel].
 -->
@@ -248,21 +248,21 @@ The following table '''(T4)''' tells the computation rules for the target positi
 |-
 |'''9'''||6(2<sup>1</sup>(4k + 1)) - 2||10 mod 16<br>2, 6, 14 mod 16||10, 58, 106, 154||6(3<sup>1</sup>k    + 1) - 2||4, 22, 40, 58||&lt;
 |-
-|'''10'''||6(2<sup>1</sup>(4k + 3)) - 2||2 mod 16<br>6, 14, 22, 30 mod 32||34, 82, 130, 178||6(3<sup>2</sup>k    + 7) - 2||40, 94, 148, 202||&lt;
+|'''10'''||6(2<sup>1</sup>(4k + 3)) - 2||2 mod 16<br>6, 14, 22, 30 mod 32||34, 82, 130, 178||6(3<sup>2</sup>k    + 7) - 2||40, 94, 148, 202||'''&gt;'''
 |-
 |'''13'''||6(2<sup>2</sup>(4k + 3)) - 2||6 mod 32<br>14, 22, 30 mod 32||70, 166, 262, 358||6(3<sup>2</sup>k    + 7) - 2||40, 94, 148, 202||&lt;
 |-
-|'''14'''||6(2<sup>2</sup>(4k + 1)) - 2||22 mod 32<br>14, 30, 46, 62 mod 64||22, 118, 214, 310||6(3<sup>3</sup>k    + 7) - 2||40, 202, 364, 526||&lt;
+|'''14'''||6(2<sup>2</sup>(4k + 1)) - 2||22 mod 32<br>14, 30, 46, 62 mod 64||22, 118, 214, 310||6(3<sup>3</sup>k    + 7) - 2||40, 202, 364, 526||'''&gt;'''
 |-
 |'''17'''||6(2<sup>3</sup>(4k + 1)) - 2||46 mod 64<br>14, 30, 62 mod 64||46, 238, 430, 622||6(3<sup>3</sup>k    + 7) - 2||40, 202, 364, 526||&lt;
 |-
-|'''18'''||6(2<sup>3</sup>(4k + 3)) - 2||14 mod 64<br>30, 62, 94, 126 mod 128||142, 334, 526, 718||6(3<sup>4</sup>k   + 61) - 2||364, 850, 1336, 1822||&lt;
+|'''18'''||6(2<sup>3</sup>(4k + 3)) - 2||14 mod 64<br>30, 62, 94, 126 mod 128||142, 334, 526, 718||6(3<sup>4</sup>k   + 61) - 2||364, 850, 1336, 1822||'''&gt;'''
 |-
-|'''21'''||6(2<sup>4</sup>(4k + 3)) - 2||30 mod 128<br>62, 94, 126 mod 128||286, 670, 1054, 1438||6(3<sup>4</sup>k   + 61) - 2||364, 850, 1336, 1822||&lt;
+|'''21'''||6(2<sup>4</sup>(4k + 3)) - 2||30 mod 128<br>62, 94, 126 mod 128||286, 670, 1054, 1438||6(3<sup>4</sup>k   + 61) - 2||364, 850, 1336, 1822||'''&gt;'''
 |-
-|'''22'''||6(2<sup>4</sup>(4k + 1)) - 2||94 mod 128<br>62, 126, 190, 254 mod 256||94, 478, 862, 1246||6(3<sup>5</sup>k   + 61) - 2||364, 1822, 3280, 4738||&lt;
+|'''22'''||6(2<sup>4</sup>(4k + 1)) - 2||94 mod 128<br>62, 126, 190, 254 mod 256||94, 478, 862, 1246||6(3<sup>5</sup>k   + 61) - 2||364, 1822, 3280, 4738||'''&gt;'''
 |-                                                                                     
-|...||...                                           ||...||...                      ||...||...                             ||... 
+|...||...                                           ||...||...                      ||...||'''&gt;'''                             ||... 
 |-
 |}
 
@@ -305,16 +305,37 @@ For the attachment directory A we note respectively claim:
 :: Table (T4) is derived from (T2) which has similiar modularity conditions.
 * (A5) The target column (or rule number) depends on the modularity condition for the source segment alone, but not on (the left side of) the segment.
 :: This can be shown by the graph operations (&delta; / &micro; / &sigma;) which are tied to the columns.
-===Moving up or down===
-There are three major groups of attachment rules (column ''Dir.'' in (T4)):
-* Rules 5, 6 and 9 attach to a lower segment.
-* Rules 10 and 14 attach to higher, 13 and 17 to lower segments.
-* Rules 18 and above all attach to higher segment.
-:: This can be seen from the powers of 2 and 3 in the source and target row columns. Starting at rule 9, we have ''3<sup>k</sup> &gt; 2<sup>k+2</sup>'' for ''k &gt;= 4''.
-With the single exception of the root segment 1, the rules obviously never attach a row to itself. 
+===Shifting left or right===
+There are two categories of attachment rules (column ''Dir.'' in (T4)):
+* Rules 5, 6, 9, 13, 17 attach to lower segments - they ''shift left''.
+* Rules 10, 14, 18 and above attach to higher segments - they ''shift right''.
+:: This can be seen from the powers of 2 and 3 in the source and target row columns. Starting at segment 18, we have ''3<sup>k</sup> &gt; 2<sup>k+2</sup>'' for ''k &gt;= 4''.
+With the single exception of the root segment 1, the rules obviously never attach a segment to itself. 
+===Decreasing and increasing set of subtrees===
+Likewise, we can also group the subtrees which are built from the segments by attachment operations into two sets:
+* the ''decreasing set T<sub>d</sub>'' with members that will attach to some segment with a lower number, initially the segments for which rules 5, 6, 9, 13, 17 apply. 
+* the ''increasing set T<sub>i</sub>'' with members that will attach to some segment with a higher number, initially the segments for which rules 10, 14, 18 and above apply.
+We define that the root segment is also a member of ''T<sub>d</sub>''.
+The goal is the following claim:
+(A7) If ''T<sub>i</sub>'' is empty, all segments in ''T<sub>d</sub>'' finally attach to the tree above the root segment.
+: Suppose ''n'' is the smallest member of ''T<sub>d</sub>'' which is not yet attached. A left-shifting rule applies to ''n'', but there is no smaller, unattached member in ''T<sub>d</sub>''. ''T<sub>i</sub>'' is empty. Therefore ''n'' must be attached to the root or some segment in the tree above the root.
+===Reduction of the increasing set===
+We now try to ''move'' subsets of ''T<sub>i</sub>'' to ''T<sub>d</sub>'' by examining the parameter ''k'' in the formula for the targets ''t'' of some members ''s'' in ''T<sub>i</sub>'' (c.f. (T4)). 
+We concentrate on rule 10 because the targets of rules 14, 18 and above are a subset of the targets of rule 10 (i.e. the "longer" segments 4, 22, 40, 58, 76, 94 ...).
+A simple observation is:
+(A8) We can move all members with even ''k''.
+: We attach ''s'' to ''t''. For even ''k'' we get ''t = 6*(2l + 1) - 2 = &#x2261; 0,4 mod 8'', so the left-shifting rules 5 or 6 apply to ''t'', therefore ''t'' and the attached ''s'' are in ''T<sub>d</sub>''.
+''T<sub>i</sub>'' now contains only (target) segments with odd ''k'', and that are supersegments: 
+(A9) If ''k'' is odd, then ''t'' is a supersegment of degree >= 2.
+: ''t = 6(3<sup>m</sup>(2l + 1) + 7) - 2 = 6(6*3<sup>m-1</sup>l + 3<sup>m</sup> + 7) - 2'' which has the form ''6(6i - 2) - 2''. 
+
+<!--
 The target segment may have been hit by the same rule, and may already have been attached elsewhere. This is no problem, since the attachment process maintains the attachment state in A for the source segment only. 
 * (A6) It does not matter whether the single attachment steps are performed with increasing source segment, or thought to happen with decreasing segment number.
+-->
 
+
+===Rule sieving===
 ===Order of Rule Application===
 * (A7) The resulting graphs do not depend on the order of application of the attachment rules.
 :: The rules may well ''hit'' the same target segments, but they always do so in different target columns. It does not matter whether the target segment is already attached.
@@ -330,10 +351,11 @@ In general, when dealing with the 3x+1 problem, it seems difficult to introduce 
 
 Here we use the ''branch level'', that is the column index ''j'' of the unique position  ''<nowiki>C[i, j]</nowiki>'' in a segment where a second segment should be attached.
 -->
+<!--
 ====Rule 1====
 This degenerate rule is inserted for completeness only. It puts the root segment in the "attached" state.
 ====Rule 5====
-For this rule, all source rows indexes are contained in the target rows indexes. 
+For this rule, all source rows are contained in the target segments. 
 
 We look more closely at the first of these chains of coincidences: row 3 is attached to the root, row 11 to row 3, 43 to 11 and so on. In the end, the trees corresponding to all rows of the form ''(4<sup>k</sup> + 2) / 6, k &gt;= 0'' (OEIS [https://oeis.org/A007583 A007583], with left sides 4, 16, 64, 256 ...) are ''stacked'' on the root segment (row 1). All involved segments are different, and because of the uniqueness of the attachment positions, we have built one tree above the root segment.
 
@@ -366,73 +388,77 @@ Source rows of the form ''16 * k + 1'' coincide with target rows for this rule, 
  81->61=>46
  ...
 The target of every fourth source row was already attached by rule 2. After the application of rules 2 and 3, we have attached all odd source rows.
-====Rule 4====
+====Rule 9====
 This is similiar to rule 3. Chains occurs for source rows ''64 * k + 26'', and the lengths of the chains increases for ''k = 6, 38, ... 32^m + 6''.
+-->
+
 ===Supersegments===
-The segments considered so far contain nodes of the form ''6 * i - 2''. A node where ''i'' has the same form is called a '''supernode''' (of degree 2, 3, 4 and so on):
- n<sub>2</sub> = 6 * (6 * i - 2) - 2 = 36 * i - 14 
- n<sub>3</sub> = 6 * (6 * (6 * i - 2) - 2) - 2 = 216 * i - 86
- n<sub>4</sub> = 6 * (6 * (6 * (6 * i - 2) - 2) - 2) - 2 = 1296 * i - 518
- n<sub>5</sub> = ... = 7776 * i - 3110
+The segments considered so far contain nodes of the form ''6 * i - 2''. We call a node where ''i'' has the same form  a '''supernode''' (of degree 2, 3, 4 and so on):
+ n<sub>1</sub> = 6 * i - 2                     =    6 * i -    2 &#x2261;  0 mod  2
+ n<sub>2</sub> = 6 * (6 * i - 2) - 2           =   36 * i -   14 &#x2261;  2 mod  4: rules >= 9
+ n<sub>3</sub> = 6 * (6 * (6 * i - 2) - 2) - 2 =  216 * i -   86 &#x2261;  2 mod  8; rules 9, 10
+ n<sub>4</sub> = ...                           = 1296 * i -  518 &#x2261; 10 mod 16; rule 9
+ n<sub>5</sub> = ...                           = 7776 * i - 3110 &#x2261; 10 mod 16; rule 9
  ...
  n<sub>j</sub> = 6<sup>j</sup> * i - m<sub>j</sub>
-where the additive constants ''m<sub>j</sub>'' are taken from OEIS sequence [https://oeis.org/A005610 A005610] with ''a(k) = 6 * a(k - 1) + 2 = 2 * (6 * 6<sup>k</sup> - 1) / 5''.
+The additive constants ''m<sub>j</sub>'' are taken here from [https://oeis.org/A005610 OEIS A005610] with ''a(k) = 6 * a(k - 1) + 2 = 2 * (6 * 6<sup>k</sup> - 1) / 5''.
 
 When a segment has a supernode as its left side, it is called a '''supersegment'''.
 An inspection of the segment directory C shows that supernodes occur at the following source positions (table '''(T5)'''):
 {| class="wikitable" style="text-align:left"
 |-
-!Degree!!Column            !!First source rows             !! Difference
+!Degree!!Column             !!First source rows             !! Difference
+|-                                                          
+| 2    || 1                 ||4, 10, 16, 22 ...             || 6
+|-                                                                    
+|      || 9 &lt;            ||4, 13, 22, 31 ...             || 9
+|-                                                                    
+|      ||10 &gt;            ||25, 52, 79, 106 ...           || 27
+|-                                                                    
+|      ||13 &lt;            ||16, 43, 70, 97 ...            || 27
+|-                                                                    
+|      || ...               || ...                          || ...                   
+|-                                                                    
+| 3    || 1                 ||22, 58, 94, 130 ...           || 36
+|-                                                                    
+|      || 9 &lt;            ||22, 49, 76, 103 ...           || 27
+|-                                                                  
+|      ||10 &gt;            ||25, 106, 187, 268 ...         || 81
 |-                                                         
-| 2    || 1 (left side)    ||4, 10, 16, 22 ...             || 6
-|-                                                                   
-|      || 4 &lt;           ||4, 13, 22, 31 ...             || 9
-|-                                                                   
-|      || 5 &gt;           ||25, 52, 79, 106 ...           || 27
-|-                                                                   
-|      || 6 &lt;           ||16, 43, 70, 97 ...            || 27
-|-                                                                   
-|      || ...              || ...                          || ...                   
-|-                                                                   
-| 3    || 1                ||22, 58, 94, 130 ...           || 36
-|-                                                                   
-|      || 4                ||22, 49, 76, 103 ...           || 27
-|-                                                                 
-|      || 5                ||25, 106, 187, 268 ...         || 81
-|-                                                         
-| 4    || 1                ||130, 346, 562, 778 ...        || 216
-|-                                                                 
-|      || 4                ||49, 130, 211, 292 ...         || 81
-|-                         
-| 5    || 1                ||778, 2074, 3370 ...           || 1286
-|-                                                         
-|      || 4                ||292, 778, 1264, 1750, 2236 ...|| 486 = 6 * 81
+| 4    || 1                 ||130, 346, 562, 778 ...        || 216
+|-                                                                  
+|      || 9 &lt;            ||49, 130, 211, 292 ...         || 81
+|-                          
+| 5    || 1                 ||778, 2074, 3370 ...           || 1286
+|-                                                          
+|      || 9 &lt;            ||292, 778, 1264, 1750, 2236 ...|| 486 = 6 * 81
 |-                                                         
 | ...  || ... || ...  || ...
 |-
 |}
 
-That are a rather simple consequences of the segment construction rules. We will not use degrees &gt; 2 in the following. We state some claims which are not so obvious:
+That are a rather simple consequences of the segment construction rules. We state some claims which are not so obvious:
+* (S1) For degrees &gt; 2, no other columns than the ones shown in table (T5) are occupied by supernodes of that degree.
+* (S2) For degrees &gt;= 4, only rule 9 (which moves downwards) is applicable.
+:The property ''&#x2261; 10 mod 16'' is maintained by the map ''i => 6 * i - 2'' because ''6 * 10 - 2 = 58 &#x2261; 10 mod 16''.
 <!--
-* (S1) For degrees 3, 4, 5 and following, no other columns than the ones shown in table (T5) are occupied by supernodes of that degree.
-::This is not needed for the following.
 -->
-* (S1) Supernodes only occur in rows ''i &#x2261; 1 mod 3''. (These are the rows which have at least 4 columns).
+* (S3) Supernodes only occur in segments ''s &#x2261; 4 mod 18''. (These are the segments which have at least 6 columns).
 
-* (S2) There is no more than one supernode in the right part of a segment, and if there is one, it occurs  at the last or the last-but-one position in the right part (which represent the leafs of the corresponding trees).
+* (S4) There is not more than one supernode in the right part of a segment, and if there is one, it occurs at the last or the last-but-one position in the right part (which represent the leafs of the corresponding trees).
 
-* (S3) Each row which contains a supernode in its right part:
+* (S5) Each segment which contains a supernode in its right part:
 ** either has an odd row number,
 ** or a supernode as its left side.
 
-* (S4) Each row which does not contain a supernode in its right part (that are rows 1, 10, 19, 28, 37, 46, 55  ... ''i &#x2261; 1 mod 9''):
+* (S6) Each segment which does not contain a supernode in its right part (that are rows 1, 10, 19, 28, 37, 46, 55  ... ''i &#x2261; 1 mod 9''):
 ** either has an odd row number,
 ** or a supernode as its left side.
 
-We first attach all even rows mentioned in (S3). Then we attach the even rows mentioned in (S
+We first attach all even rows mentioned in (S3). Then we attach the even rows mentioned in (S4).
  
 ===No Cycles===
-* '''(A7)''' The attachment process does not create any new cycle (in addition to the one in the root segment).
+* '''(A8)''' The attachment process does not create any new cycle (in addition to the one in the root segment).
 :: Let a segment/tree ''t<sub>1</sub>'' with left side ''n<sub>1</sub>'' and right part ''R<sub>1</sub>'' be attached to node ''n<sub>1</sub>'' in the right part ''R<sub>2</sub>'' of the unique segment/tree ''t<sub>2</sub>'' which has the left side by ''n<sub>2</sub>''. ''t<sub>1</sub>'' and ''t<sub>2</sub>'' are disjoint trees by (C4), therefore the result of such a single attachment step is a tree again (''u<sub>2</sub>'', still with left side ''n<sub>2</sub>'').
 
 ==Proof for the Collatz Tree==

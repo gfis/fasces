@@ -4,7 +4,7 @@
 # @(#) $Id$
 # 2018-08-17, Georg Fischer 
 #---------------------------------
-N=4000
+N=30000
 K=64
 D=0
 S=4
@@ -12,9 +12,10 @@ I=6
 M=html
 SRC=comp.html
 
-all: comp  
+all: dirs  
 old:rails kernels kerneval eawefr
 #----
+dirs: comp double detail atab
 comp: 
 	perl segment.pl         -n $(N)    -d $(D) -s $(S) -i $(I) -a comp   > comp.html
 double: 
@@ -22,7 +23,10 @@ double:
 detail: 
 	perl segment.pl         -n $(N)    -d $(D) -s $(S) -i $(I) -a detail > detail.html
 atab:
-	perl attachtab.pl > atab.wiki
+	perl attachtab.pl > atab.wiki 2> x.tmp
+deploy:
+	scp comp.html double.html detail.html \
+		gfis@punctum.com:/var/www/html/teherba.org/fasces/oeis/collatz/
 #----
 rails: 
 	perl collatz_rails.pl   -n $(N)    -d $(D) -s $(S) -i $(I) -a simple > rails.html
@@ -35,8 +39,6 @@ free:
 	perl collatz_rails.pl   -n $(N)    -d $(D) -s $(S) -i $(I) -a free   > free.html
 crop: 
 	perl collatz_rails.pl   -n $(N)    -d $(D) -s $(S) -i $(I) -a crop   > crop.html
-deploy:
-	scp $(SRC) gfis@punctum.com:/var/www/html/teherba.org/fasces/oeis/collatz/
 roads: 
 	perl collatz_roads.pl   -n $(N)    -d $(D) -s $(S) -i $(I) -a contig > roads.html
 txt:
