@@ -7,25 +7,27 @@
 N=30000
 K=64
 D=0
-S=4
-I=6
+S=22
+I=36
 M=html
 SRC=comp.html
 
 all: dirs  
 old:rails kernels kerneval eawefr
 #----
-dirs: comp double detail atab
+dirs: comp double detail subset atab
 comp: 
-	perl segment.pl         -n $(N)    -d $(D) -s $(S) -i $(I) -a comp   > comp.html
+	perl segment.pl         -n $(N)    -d $(D)                 -a comp   > comp.html
 double: 
-	perl segment.pl         -n $(N)    -d $(D) -s $(S) -i $(I) -a double > double.html
+	perl segment.pl         -n $(N)    -d $(D)                 -a double > double.html
 detail: 
-	perl segment.pl         -n $(N)    -d $(D) -s $(S) -i $(I) -a detail > detail.html
+	perl segment.pl         -n $(N)    -d $(D)                 -a detail > detail.html
+subset: 
+	perl segment.pl         -n $(N)    -d $(D) -s $(S) -i $(I) -a subset > subset.html
 atab:
 	perl attachtab.pl > atab.wiki 2> x.tmp
 deploy:
-	scp comp.html double.html detail.html \
+	scp comp.html double.html detail.html subset.html \
 		gfis@punctum.com:/var/www/html/teherba.org/fasces/oeis/collatz/
 #----
 rails: 
@@ -64,8 +66,14 @@ kernels:
 kerneval:
 	perl kerneval.pl -n 256 kernels.tmp | tee kerneval.tmp
 #------------------
-invar:
-	perl gen_invariants.pl | tee invariants.html
+invar6:
+	perl gen_invariants.pl -i    6 -s -2   > invariants.html
+invar36:                                  
+	perl gen_invariants.pl -i   36 -s -14  > invariants.html
+invar216:                                 
+	perl gen_invariants.pl -i  216 -s -86  > invariants.html
+invar1296:                                 
+	perl gen_invariants.pl -i 1296 -s -518 > invariants.html
 #------------------
 graph:
 	perl collatz_graph.pl   -n $(N) > graph.html

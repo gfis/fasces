@@ -15,6 +15,8 @@ my $debug  = 0;
 my $maxn   = 24; # max. length of operation sequence
 my $action = "simple";
 my $mode   = "html";
+my $start  = -2;
+my $incr   = 6;
 while (scalar(@ARGV) > 0 and ($ARGV[0] =~ m{\A\-})) {
     my $opt = shift(@ARGV);
     if (0) {
@@ -22,8 +24,12 @@ while (scalar(@ARGV) > 0 and ($ARGV[0] =~ m{\A\-})) {
         $action = shift(@ARGV);
     } elsif ($opt =~ m{d}) {
         $debug  = shift(@ARGV);
+    } elsif ($opt =~ m{i}) {
+        $incr   = shift(@ARGV);
     } elsif ($opt =~ m{m}) {
         $mode   = shift(@ARGV);
+    } elsif ($opt =~ m{s}) {
+        $start  = shift(@ARGV);
     } else {
         die "invalid option \"$opt\"\n";
     }
@@ -36,7 +42,7 @@ my @queue = ();
 my ($len, $exp2, $exp3, $add, $expr) = ("0000", 0, 0, -2, "");
 &enqueue($len, $exp2, $exp3, $add, $expr);
 #----------------
-while (scalar(@queue) > 0) {
+while (scalar(@queue) > 0) { # try both operations
     &dequeue();
     $len ++;
     # try multiplication *2
@@ -63,26 +69,25 @@ sub enqueue { # queue an entry
     if ($len < $maxn) {
         my $busy = 1; # suppose we shall queue the entry
         my $formula = "<td>"
-            . ($exp2 > 1 ? "2^$exp2*" : "") . "6*"
+            . ($exp2 > 1 ? "2^$exp2*" : "") . "$incr*"
             . ($exp3 > 0 ? "3^-$exp3*n" : "n")
             . "$add"
             . "</td><td>$expr</td>"
             ;
-            ;
         if ($debug >= 1) {
-            print "enqueue $formula; add % 6 = " . ($add % 6) . "\n";
+            print "enqueue $formula; add % $incr = " . ($add % $incr) . "\n";
         }
         # evaluate
         if (0) {
         } elsif ($add % 3 == 0) {
             print "<tr>$formula<td>% 3 ...</td></tr>\n";
             $busy = 0; # only m will follow, not necessary to look at that trivial path
-        } elsif ($add % 6 == -2) {
-            print "<tr>$formula<td>6x-2, ";
-            if ($add == -2) {
+        } elsif ($add % $incr == $start) {
+            print "<tr>$formula<td>${incr}x$start, ";
+            if ($add == $start) {
                 print "same n";
             } else {
-                my $shift = (- $add / 6);
+                my $shift = (- $add / $incr);
                 print "n-$shift";
             }
             print "</td></tr>\n";
@@ -142,7 +147,7 @@ does not work
 </style>
 </head>
 <body>
-<h3>Invariant Words</h3>
+<h3>Invariant Words for $incr*n$start</h3>
 <table>
 GFis
 } # print_html_head

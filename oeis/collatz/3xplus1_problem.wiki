@@ -322,13 +322,21 @@ The goal is the following claim:
 ===Reduction of the increasing set===
 We now try to ''move'' subsets of ''T<sub>i</sub>'' to ''T<sub>d</sub>'' by examining the parameter ''k'' in the formula for the targets ''t'' of some members ''s'' in ''T<sub>i</sub>'' (c.f. (T4)). 
 We concentrate on rule 10 because the targets of rules 14, 18 and above are a subset of the targets of rule 10 (i.e. the "longer" segments 4, 22, 40, 58, 76, 94 ...).
-A simple observation is:
-(A8) We can move all members with even ''k''.
-: We attach ''s'' to ''t''. For even ''k'' we get ''t = 6*(2l + 1) - 2 = &#x2261; 0,4 mod 8'', so the left-shifting rules 5 or 6 apply to ''t'', therefore ''t'' and the attached ''s'' are in ''T<sub>d</sub>''.
-''T<sub>i</sub>'' now contains only (target) segments with odd ''k'', and that are supersegments: 
-(A9) If ''k'' is odd, then ''t'' is a supersegment of degree >= 2.
-: ''t = 6(3<sup>m</sup>(2l + 1) + 7) - 2 = 6(6*3<sup>m-1</sup>l + 3<sup>m</sup> + 7) - 2'' which has the form ''6(6i - 2) - 2''. 
 
+A simple observation is:
+* (A8) We can move all members with even ''k''.
+:: We attach ''s'' to ''t''. For even ''k = 2l'' we get an odd factor of 6: ''t = 6*(2l + 1) - 2 = 12l + 4'' which implies ''t &#x2261; 0, 4 mod 8'' with the left-shifting rules 5 or 6. Therefore ''t'' (and the attached ''s'') can be moved to ''T<sub>d</sub>''.
+We can now assume that ''T<sub>i</sub>'' contains only segments with odd ''k'' in the target formula.  
+* (A9) If ''k = 2l + 1'' is odd, then ''t'' is a supersegment of degree >= 2.
+:: The constants 1, 7, 61 ... from OEIS A066443 have the formula ''a(n) = 1 + Sum_{i=1..n} 2*3^(2i-1), n >= 0'', which implies ''a(n) &#x2261; 1 mod 6''. We have:
+ t = 6(3<sup>m</sup>(2l + 1) + 1 + 6j) - 2 
+   = 6(6*3<sup>m-1</sup>*l + 3<sup>m</sup> + 1 + 6j) - 2
+   = 6(6*(3<sup>m-1</sup>*l + j) + 3<sup>m</sup> + 1) - 2 
+:: ''3<sup>m</sup> + 1 &#x2261; 4 mod 6'' can be proven by induction, therefore ''t'' has the form ''6(6i - 2) - 2'' of a supernode.
+So we are left with the task to examine the supersegments for which right-shifting rules apply.
+<!--
+=== Attachment of right-shifting supersegments===
+-->
 <!--
 The target segment may have been hit by the same rule, and may already have been attached elsewhere. This is no problem, since the attachment process maintains the attachment state in A for the source segment only. 
 * (A6) It does not matter whether the single attachment steps are performed with increasing source segment, or thought to happen with decreasing segment number.
@@ -409,7 +417,7 @@ An inspection of the segment directory C shows that supernodes occur at the foll
 |-
 !Degree!!Column             !!First source rows             !! Difference
 |-                                                          
-| 2    || 1                 ||4, 10, 16, 22 ...             || 6
+| 2    || 1                 ||4, 10, 16, 22 ...             || 6<sup>1</sup>
 |-                                                                    
 |      || 9 &lt;            ||4, 13, 22, 31 ...             || 9
 |-                                                                    
@@ -419,21 +427,19 @@ An inspection of the segment directory C shows that supernodes occur at the foll
 |-                                                                    
 |      || ...               || ...                          || ...                   
 |-                                                                    
-| 3    || 1                 ||22, 58, 94, 130 ...           || 36
+| 3    || 1                 ||22, 58, 94, 130 ...           || 6<sup>2</sup>
 |-                                                                    
 |      || 9 &lt;            ||22, 49, 76, 103 ...           || 27
 |-                                                                  
 |      ||10 &gt;            ||25, 106, 187, 268 ...         || 81
 |-                                                         
-| 4    || 1                 ||130, 346, 562, 778 ...        || 216
+| 4    || 1                 ||130, 346, 562, 778 ...        || 6<sup>3</sup>
 |-                                                                  
 |      || 9 &lt;            ||49, 130, 211, 292 ...         || 81
 |-                          
-| 5    || 1                 ||778, 2074, 3370 ...           || 1286
+| 5    || 1                 ||778, 2074, 3370 ...           || 6<sup>4</sup>
 |-                                                          
 |      || 9 &lt;            ||292, 778, 1264, 1750, 2236 ...|| 486 = 6 * 81
-|-                                                         
-| ...  || ... || ...  || ...
 |-
 |}
 

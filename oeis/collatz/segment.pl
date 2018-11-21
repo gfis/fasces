@@ -3,6 +3,7 @@
 # https://github.com/gfis/fasces/blob/master/oeis/collatz/segment.pl
 # Print a directory of segments in the Collatz graph
 # @(#) $Id$
+# 2018-11-21: SR, TR
 # 2018-11-15: copied from collatz_rails.pl
 # 2018-11-12: mark supersegments
 # 2018-11-06: links on all numbers for comp
@@ -12,10 +13,10 @@
 # Usage:
 #   perl segment.pl [-n maxn] [-d debug] [-s 4] [-i 6] [-a comp] > comp.html
 #       -n  maximum start value
-#       -s
-#       -i  elements of the form k*i + s
+#       -s  index of first segment to be printed
+#       -i  index increment for printing 
 #       -m  output mode: tsv, htm (no css), html, wiki, latex
-#       -a  type of directory to be produced: detail, compress, double, super
+#       -a  type of directory to be produced: detail, compress, double, subset
 #       -d  debug level: 0 (none), 1 (some), 2 (more)
 #
 # See http://www.teherba.org/index.php/OEIS/3x%2B1_Problem
@@ -38,15 +39,10 @@ my $debug  = 0;
 my $maxn   = 30000; # max. start value
 my $start4 = 4;
 my $incr6  = 6;
+my $start  = $start4;
 my $incr   = $incr6;
 my $mode   = "html";
 my $action = "comp";
-my %text   =
-    ( "detail"  , " Detailed   Segment Directory S"
-    , "comp"    , " Compressed Segment Directory C"
-    , "double"  , " Double Line Segment Directory S"
-    , "super"   , " Supersegment Directory D<sub>2</sub>"
-    );
 while (scalar(@ARGV) > 0 and ($ARGV[0] =~ m{\A\-})) {
     my $opt = shift(@ARGV);
     if (0) {
@@ -61,11 +57,17 @@ while (scalar(@ARGV) > 0 and ($ARGV[0] =~ m{\A\-})) {
     } elsif ($opt =~ m{n}) {
         $maxn   = shift(@ARGV);
     } elsif ($opt =~ m{s}) {
-        $start4 = shift(@ARGV);
+        $start  = shift(@ARGV);
     } else {
         die "invalid option \"$opt\"\n";
     }
 } # while $opt
+my %text   =
+    ( "detail"  , " Detailed   Segment Directory S"
+    , "comp"    , " Compressed Segment Directory C"
+    , "double"  , " Double Line Segment Directory S"
+    , "subset"   , "Directory Subset ($incr * i + $start)"
+    );
 #----------------
 # initialization
 my $ffsegms  = 0;
@@ -89,7 +91,7 @@ while ($ffsegms < $maxn) {
 if (0) { # switch action
 
 } elsif ($action =~ m{\Acomp})   { # like "detail", but compressed segments
-    $isegms = $start4;
+    $isegms = $start;
     &print_compress_head();
     while ($isegms < $maxn) {
         if (! defined($segms[$isegms])) {
@@ -103,7 +105,7 @@ if (0) { # switch action
 
 } elsif ($action =~ m{\Adouble}) { # two lines per segment
     &print_double_head();
-    $isegms = $start4;
+    $isegms = $start;
     while ($isegms < $maxn) {
         if (! defined($segms[$isegms])) {
             $isegms = $maxn; # break loop
@@ -116,7 +118,7 @@ if (0) { # switch action
 
 } elsif ($action =~ m{\Adetail}) { # like "double", but in one line
     &print_detail_head();
-    $isegms = $start4;
+    $isegms = $start;
     while ($isegms < $maxn) {
         if (! defined($segms[$isegms])) {
             $isegms = $maxn; # break loop
@@ -127,14 +129,27 @@ if (0) { # switch action
     } # while $isegms
     # case detail
 
-} elsif ($action =~ m{\Asuper})   { # supersegments
+} elsif ($action =~ m{\Asubset})   { # subsetsegments
+    &print_compress_head();
+    $isegms = $start;
+    while ($isegms < $maxn) {
+        if (! defined($segms[$isegms])) {
+            $isegms = $maxn; # break loop
+        } else {
+            &print_1_compress($isegms);
+        }
+        $isegms += $incr;
+    } # while $isegms
+    # case subset
+
+} elsif ($action =~ m{\Asuper})   { # old supersegments
     my @prev = (); # where the segment must be attached, or 0
     my @next = (); # which segment attaches to the last, or 0
     if ($debug >= 1) {
         print sprintf("%6s:%6s  %6s  | %6s %2s rul > %6s  ...[%2s]  %6s %2s Rul > %6s\n"
             , "index", "prev", "next", "lehs", "dg", "letar", "il", "last", "dg", "latar");
     }
-    $isegms = $start4;
+    $isegms = $start;
     my $index;
     while ($isegms < $maxn) {
         if (! defined($segms[$isegms])) {
@@ -146,14 +161,14 @@ if (0) { # switch action
                 $prev[$index] = 0;
                 $next[$index] = 0;
                 my $lehs      = $segment[1];
-                my ($lehs_rule, $lehs_tar) = get_nrule_itarget($index);
+                my ($lehs_rule, $lehs_tar, $lehs_k) = get_nrule_itarget_k($index);
                 my $lehs_deg  = &get_degree($lehs);
                 my $ilast     = scalar(@segment) - 1;
                 while ($ilast > 0 and $segment[$ilast] % 36 != 22) { # look for degree >= 2
                     $ilast --;
                 }
                 my $last      = $segment[$ilast];
-                my ($last_rule, $last_tar) = get_nrule_itarget($last);
+                my ($last_rule, $last_tar, $last_k) = get_nrule_itarget_k($last);
                 my $last_deg  = &get_degree($last);
                 if (0) {
                 } elsif ($ilast == 0) { # no degree >= 2 in whole segment
@@ -193,11 +208,11 @@ if (0) { # switch action
     $index = 1;
     while ($index < $maxn) {
         if (defined($prev[$index]) and $prev[$index] == 0) { # was not attachable
-            my ($node_rule, $node_tar) = &get_nrule_itarget($index);
+            my  ($node_rule, $node_tar, $node_k) = &get_nrule_itarget_k($index);
             print sprintf("%6d %2d: ", $index, $node_rule);
             my $tar = $next[$index];
             while ($tar > 0) {
-                ($node_rule, $node_tar) = &get_nrule_itarget($tar);
+                ($node_rule, $node_tar, $node_k) = &get_nrule_itarget_k($tar);
                 print "\t$tar,$node_rule";
                 $tar = $next[$tar];
             }
@@ -422,12 +437,47 @@ sub print_1_detail {
     } # if defined
 } # print_1_detail
 #----------------
+sub is_increasing {
+    my ($nrule) = @_;
+    return ($nrule == 10 or $nrule == 14 or $nrule >= 18) ? 1 : 0;
+}
+#----------------
 sub get_index {
-    my ($index) = @_;
-    my ($nrule, $itarget) = &get_nrule_itarget($index);
-    my $result = "<td class=\"arc\">$index</td>"
-        .        "<td class=\"arc rule$nrule\" title=\"($nrule)->$itarget\">$nrule</td>"
-        ;
+    my  ($index) = @_;
+    my  ($nrule1,  $itarget1, $k1) = &get_nrule_itarget_k($index);
+    my  $result =  "<td class=\"arc\">$index</td>";
+    $result .= "<td class=\"arc bor\">$k1</td>";
+    $result .= "<td class=\"arc rule$nrule1\" title=\"($nrule1)->$itarget1\">$nrule1</td>";
+    if (&is_increasing($nrule1)) {
+        my ($nrule2, $itarget2, $k2) = &get_nrule_itarget_k($itarget1);
+        $result .= "<td class=\"arc rule$nrule2\" title=\"($nrule2)->$itarget2\">$nrule2</td>";
+    #   if (&is_increasing($nrule2)) {
+    #       my ($nrule3, $itarget3, $k3) = &get_nrule_itarget_k($itarget2);
+    #       $result .= "<td class=\"arc rule$nrule3\" title=\"($nrule3)->$itarget3\">$nrule3</td>";
+    #       if (&is_increasing($nrule3)) {
+    #           my ($nrule4, $itarget4, $k4) = &get_nrule_itarget_k($itarget3);
+    #           $result .= "<td class=\"arc rule$nrule4\" title=\"($nrule4)->$itarget4\">$nrule4</td>";
+    #           if (&is_increasing($nrule4)) {
+    #               my ($nrule5, $itarget5, $k5) = &get_nrule_itarget_k($itarget4);
+    #               $result .= "<td class=\"arc rule$nrule5\" title=\"($nrule5)->$itarget5\">$nrule5</td>";
+    #           } else {
+    #               $result .= "<td class=\"arc bor\">&nbsp;</td>";
+    #           }
+    #       } else {
+    #           $result .= "<td class=\"arc bor\">&nbsp;</td>";
+    #           $result .= "<td class=\"arc bor\">&nbsp;</td>";
+    #       }
+    #   } else {
+    #           $result .= "<td class=\"arc bor\">&nbsp;</td>";
+    #           $result .= "<td class=\"arc bor\">&nbsp;</td>";
+    #           $result .= "<td class=\"arc bor\">&nbsp;</td>";
+    #   }
+    } else {
+    #   $result .= "<td class=\"arc bor\">&nbsp;</td>";
+    #   $result .= "<td class=\"arc bor\">&nbsp;</td>";
+    #   $result .= "<td class=\"arc bor\">&nbsp;</td>";
+        $result .= "<td class=\"arc bor\">&nbsp;</td>";
+    }
     return $result;
 } # get_index
 #----------------
@@ -440,11 +490,11 @@ sub cell_html { # print one table cell
     }
     my $degree = &get_degree($elem);
     if ($degree >= 1) {
-		my $isource = ($elem + 2) / 6;
-        my ($nrule, $itarget) = &get_nrule_itarget($isource);
+        my $isource = ($elem + 2) / 6;
+        my ($nrule, $itarget, $k) = &get_nrule_itarget_k($isource);
         my $target = $itarget * 6 - 2;
         if ($rest == $start4) {
-        	$result .= " title=\"($nrule)->$target\"";
+            $result .= " title=\"($nrule)->$target\"";
         }
         $result .= " class=\"super$degree";
     } else {
@@ -487,24 +537,26 @@ sub get_degree {
     return $result;
 } # get_degree
 #------------------------
-sub get_nrule_itarget {
+sub get_nrule_itarget_k {
     my ($isource) = @_;
+    my $k       = 1;
     my $orule   = 2;
     my $itarget = 0;
     my $busy    = 1;
     my $tog31   = 3;
-    my $exp2_2  = 1;
-    my $exp2    = 4;
-    my $exp3    = 1;
+    my $pow2_2  = 1;
+    my $pow2    = 4;
+    my $pow3    = 1;
     my $irulen  = 1;
     while ($busy == 1 and $orule <= $MAX_RULE) {
-        my $subconst = $exp2_2 * $tog31;
-        if ($isource % $exp2 == $subconst) { # mod cond.
+        my $modfit = $pow2_2 * $tog31;
+        if ($isource % $pow2 == $modfit) { # mod condition fits
+        	$k = ($isource / $pow2_2 - $tog31) / 4;
             $busy = 0;
-            $itarget = $exp3 * ($isource - $subconst) / $exp2 + $RULENS[$irulen];
+            $itarget = $pow3 * ($isource - $modfit) / $pow2 + $RULENS[$irulen];
             if ($debug >= 3) {
-                print "orule=$orule, exp2=$exp2, exp2-2=$exp2_2, exp3=$exp3"
-                    . ", subconst=$subconst, RULENS[$irulen]=$RULENS[$irulen]\n";
+                print "orule=$orule, pow2=$pow2, pow2-2=$pow2_2, pow3=$pow3"
+                    . ", modfit=$modfit, RULENS[$irulen]=$RULENS[$irulen]\n";
             }
         } else {
             $orule ++;
@@ -512,17 +564,17 @@ sub get_nrule_itarget {
                 $irulen ++;
             }
             if ($orule % 2 == 0) {
-                $exp2   *= 2;
-                $exp2_2 *= 2;
+                $pow2   *= 2;
+                $pow2_2 *= 2;
             } else {
-                $exp3   *= 3;
-                $tog31 = 4 - $tog31;
+                $pow3   *= 3;
+                $tog31  = 4 - $tog31; # 3 1 1 3 -> OEIS A084101
             }
         } # mod cond.
     } # while rules
     my $nrule = ($orule % 2 == 0) ? $orule * 2 + 1 : $orule * 2;
-    return ($nrule, $itarget);
-} # get_nrule_itarget
+    return ($nrule, $itarget, $k);
+} # get_nrule_itarget_k
 #----------------
 sub print_header {
     if (0) {
@@ -580,7 +632,7 @@ table   {  }
 .rule30 { background-color: Firebrick      ; color: white; }
 .seg    { font-weight: bold; }
 .sei    { /* font-weight: bold; */ 
-	      font-style    : italic; }
+          font-style    : italic; }
 </style>
 </head>
 <body style=\"font-family: Verdana,Arial,sans-serif;\" >
@@ -615,7 +667,9 @@ about the 3x+1 problem</a>
 <br />
 <a href="detail.html">Detailed</a>,
 <a href="comp.html">Compressed</a>,
-<a href="double.html">Double line</a> directory;
+<a href="double.html">Double line</a>,
+<a href="subset.html">Subset</a>
+ directory;
 <a href="#more">more information</a>
 </p>
 <table style=\"border-collapse: collapse; text-align: right;  padding-right: 4px;\">
@@ -631,7 +685,7 @@ sub print_double_head {
     } elsif ($mode =~ m{\Ahtm}) {
         print <<"GFis";
 <tr>
-<td class="arl bot" colspan="2">Column</td>
+<td class="arl bot" colspan="4">Column</td>
 <td class="arc">1</td>
 <td class="arc">3</td>
 <td class="arc">5</td>
@@ -644,8 +698,11 @@ sub print_double_head {
 <td class="arc">21</td>
 </tr>
 <tr>
-<td class="arr" colspan="2">Rule</td>
-<td class="arr bor           ">LHS</td>
+<td class="arc">&nbsp;</td>
+<td class="arc">k</td>
+<td class="arc bor           ">SR</td>
+<td class="arc bor           ">TR</td>
+<td class="arc bor           ">LHS</td>
 <td class="arc btr           ">&micro;</td>
 <td class="arc btr seg rule5 ">&micro;&micro;</td>
 <td class="arc btr           ">&micro;&micro;&delta;</td>
@@ -658,6 +715,7 @@ sub print_double_head {
 </tr>
 <tr>
 <td class="arc               ">&nbsp;</td>
+<td class="arr               ">&nbsp;</td>
 <td class="arr               ">&nbsp;</td>
 <td class="arr               ">&nbsp;</td>
 <td class="arc bbr           ">&delta;</td>
@@ -682,7 +740,7 @@ sub print_compress_head {
     } elsif ($mode =~ m{\Ahtm}) {
         print <<"GFis";
 <tr>
-<td class="arl bot" colspan="2">Column</td>
+<td class="arl bot" colspan="4">Column</td>
 <td class="arc">1</td>
 <td class="arc">5</td>
 <td class="arc">6</td>
@@ -698,8 +756,11 @@ GFis
         print <<"GFis";
 </tr>
 <tr>
-<td class="arr" colspan="2">Rule</td>
-<td class="arr bor           ">LHS</td>
+<td class="arc">&nbsp;</td>
+<td class="arc">k</td>
+<td class="arc bor           ">SR</td>
+<td class="arc bor           ">TR</td>
+<td class="arc bor           ">LHS</td>
 <td class="arc bor seg rule5 ">&micro;&micro;</td>
 <td class="arc bor seg rule6 ">&delta;&micro;&micro;</td>
 <td class="arc bor seg rule9 ">&micro;&micro;&sigma;<sup>1</sup></td>
@@ -723,7 +784,7 @@ sub print_detail_head {
     } elsif ($mode =~ m{\Ahtm}) {
         print <<"GFis";
 <tr>
-<td class="arl bot" colspan="2">Column</td>
+<td class="arl bot" colspan="4">Column</td>
 <td class="arc    ">1</td>
 <td class="arc    ">2</td>
 <td class="arc    ">3</td>
@@ -746,8 +807,11 @@ sub print_detail_head {
 <td class="arc    ">20</td>
 </tr>
 <tr>
-<td class="arr" colspan="2">Rule</td>
-<td class="arr bor           ">LHS</td>
+<td class="arc">&nbsp;</td>
+<td class="arc">k</td>
+<td class="arc bor           ">SR</td>
+<td class="arc bor           ">TR</td>
+<td class="arc bor           ">LHS</td>
 <td class="arc bor           ">&delta;</td>
 <td class="arc bor           ">&micro;</td>
 <td class="arc bor           ">&delta;&micro;</td>
@@ -767,12 +831,6 @@ sub print_detail_head {
 <td class="arc bor seg rule18">&delta;&micro;&micro;&sigma;<sup>3</sup></td>
 <td class="arc bor           ">&micro;&micro;&sigma;<sup>3</sup>&delta;</td>
 <td class="arc bor           ">&delta;&micro;&micro;&sigma;<sup>3</sup>&delta;</td>
-<!--
-<td class="arc bor seg">&micro;&micro;&sigma;<sup>4</sup></td>
-<td class="arc bor seg">&delta;&micro;&micro;&sigma;<sup>4</sup></td>
-<td class="arc bor    ">&micro;&micro;&sigma;<sup>4</sup>&delta;</td>
-<td class="arc bor    ">&delta;&micro;&micro;&sigma;<sup>4</sup>&delta;</td>
--->
 </tr>
 GFis
     } else { # invalid mode
