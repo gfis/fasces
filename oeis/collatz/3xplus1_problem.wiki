@@ -467,36 +467,31 @@ We first attach all even rows mentioned in (S3). Then we attach the even rows me
 * (S) Suppernodes occur only in the "longer" segments with ''i &#x2261; 1 mod 3''.
 * (S) If there is a supernode in the right part of a segment, it is either ''at the end'', i.e. in the last or the last-but-one column.
 * (S) There are at most two supernodes in every segment. 
-The occurrences of supernodes show a pattern which repeats after 18 rows in the segment directory C as shown in table (T6). The letters in (T6) indicate:
- b - both the left side and the end of the right part are a supernode
- r - supernode only at the end of the right part
- l - supernode only as left side
- n - the segment contains no supernode
-The digits indicate the degree of the supernode if it is &gt; 2. 
+The occurrences of supernodes show a pattern which repeats after 18 rows in the segment directory C as shown in table '''(T6)''':
 {| class="wikitable" style="text-align:center"
 |-
-!   i !!    s !! i + 3 !! i + 6 !! i + 9 !! i + 12!! i + 15!! 
+! Row i!! LHS !! i + 0 || i + 3 !! i + 6 !! i + 9 !! i + 12!! i + 15 
 |-                                                          
-|   4 ||   22 || b     || r     || l     || r     || b    || n   
-|-                                                                   
-|  22 ||  130 || b33   || r3    || l     || r     || b    || n   
-|-                                                                   
-|  40 ||  238 || b     || r     || l     || r4    || b    || n   
-|-                                                                   
-|  58 ||  346 || b32   || r     || l     || r     || b    || n   
-|-                                                                   
-|  76 ||  454 || b23   || r     || l     || r     || b    || n   
-|-                                                                   
-|  94 ||  562 || b32   || r     || l     || r3    || b23  || n   
-|-                                                                   
-| 112 ||  670 || b     || r     || l     || r     || b    || n   
-|-                                                                   
-| 130 ||  778 || b44   || r     || l     || r     || b    || n   
-|-                                                                   
-| ... ||      || b     || r     || l     || r     || b    || n   
-|-
+|   4 ||   22 || bf    || rv    || lf    || rf    || bv    || nf  
+|-                                                                    
+|  22 ||  130 || bf    || rv    || lf    || rf    || bv    || nf  
+|-                                                                    
+|  40 ||  238 || bf    || rv    || lf    || rf    || bv    || nf  
+|-                                                                    
+| ... ||  ... || bf    || rv    || lf    || rf    || bv    || nf  
+|-                                                         
 |}
-
+The letters in (T6) indicate the following variants:
+* b - Both the left side and the end of the right part are a supernode. 
+* r - There is a supernode only at the end of the right part. The rule of these segments shifts them left. * * l - Only the left side is a supernode.  
+* n - The segment contains no supernode.
+* f - The segments have a fixed length of 9.
+* v - The segments have a variable length &gt; 12.
+===Attachment of Segments with Supernodes===
+It is obvious that the supernodes inherit the properties of the nodes ''6 * i - 2'':
+* (S)  Supernodes occur exactly once as a left side and in the right part of the segment directory C.
+* (S) All nodes with degree 4 in column 9 occur in left-shifting segments except for rows 454, 1102*, 1750, 2398, 3046, 3694, 4342, 4990* ... (delta 648). Of these, all except the ones with "*" (every 6th) shift left for the target. If the left side has degree 4, then the segment is shifted left.
+* (S) All segments with a left side of degree 4 shift left and can be moved into the low forest.
 
 ===No Cycles===
 * '''(A8)''' The attachment process does not create any new cycle (in addition to the one in the root segment).

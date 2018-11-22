@@ -8,24 +8,31 @@ N=30000
 K=64
 D=0
 S=22
-I=36
+I=18
 M=html
 SRC=comp.html
 
 all: dirs  
 old:rails kernels kerneval eawefr
 #----
-dirs: comp double detail subset atab
+dirs: comp double detail subset atab degr
 comp: 
-	perl segment.pl         -n $(N)    -d $(D)                 -a comp   > comp.html
+	perl segment.pl         -n $(N)    -d $(D)                 -a comp   > $@.html
 double: 
-	perl segment.pl         -n $(N)    -d $(D)                 -a double > double.html
+	perl segment.pl         -n $(N)    -d $(D)                 -a double > $@.html
 detail: 
-	perl segment.pl         -n $(N)    -d $(D)                 -a detail > detail.html
+	perl segment.pl         -n $(N)    -d $(D)                 -a detail > $@.html
 subset: 
-	perl segment.pl         -n $(N)    -d $(D) -s $(S) -i $(I) -a subset > subset.html
+	perl segment.pl         -n $(N)    -d $(D) -s $(S) -i $(I) -a subset > $@.html
+degr: degree2 degree3 degree4
+degree2:
+	perl segment.pl         -n $(N)    -d $(D) -s 22   -i 18   -a subset > $@.html
+degree3:
+	perl segment.pl         -n $(N)    -d $(D) -s 130  -i 162  -a subset > $@.html
+degree4:
+	perl segment.pl         -n $(N)    -d $(D) -s 292  -i 486  -a subset > $@.html
 atab:
-	perl attachtab.pl > atab.wiki 2> x.tmp
+	perl attachtab.pl > $@.wiki 2> x.tmp
 deploy:
 	scp comp.html double.html detail.html subset.html \
 		gfis@punctum.com:/var/www/html/teherba.org/fasces/oeis/collatz/

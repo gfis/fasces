@@ -33,6 +33,7 @@ my $MAX_RULE  = 64; # rule 7 has 4 mod 16, rule 11 has 16 mod 64
 my @RULENS    = (0, 1, 7, 61
     , 547, 4921, 44287, 398581
     , 3587227, 32285041, 290565367, 2615088301); # OEIS A066443
+my $a = "a"; # = "a" ("x") => with (no) links
 #----------------
 # get commandline options
 my $debug  = 0;
@@ -535,10 +536,10 @@ sub cell_html { # print one table cell
         $result .= " $border";
     }
     if ($ir == 1) { # start element
-        $result .= "\" id=\"A$elem\"><a href=\"\#$elem\">$elem</a>";
+        $result .= "\" id=\"A$elem\"><$a href=\"\#$elem\">$elem</a>";
     } else {
         if ($elem < $maxn and $elem % $incr6 == $start4) {
-            $result .=           "\"><a href=\"\#A$elem\">$elem</a>";
+            $result .=           "\"><$a href=\"\#A$elem\">$elem</a>";
         } else {
             $result .=           "\">$elem";
         }
@@ -646,7 +647,19 @@ table   {  }
 .super2 { background-color: yellow         ; color: black; }
 .super3 { background-color: orange         ; color: white; }
 .super4 { background-color: crimson        ; color: white; }
+.super3 a { color: inherit; }
+.super4 a { color: inherit; }
+.super5 a { color: inherit; }
+.super6 a { color: inherit; }
+.super7 a { color: inherit; }
+.super8 a { color: inherit; }
+.super5 { background-color: firebrick      ; color: white; }
+.super6 { background-color: black          ; color: white; }
+.super7 { background-color: black          ; color: white; }
+.super8 { background-color: black          ; color: white; }
+/*
 .super5 { background-color: aqua           ; color: black; }
+*/
 .rule5  { background-color: Lime           ; color: black; }
 .rule6  { background-color: LawnGreen      ; color: black; }
 .rule9  { background-color: Chartreuse     ; color: black; }
@@ -690,17 +703,20 @@ GFis
         print <<"GFis";
 <p>
 Generated with
-<a href="https://github.com/gfis/fasces/blob/master/oeis/collatz/segment.pl">segment.pl</a>
+<a href="https://github.com/gfis/fasces/blob/master/oeis/collatz/segment.pl" target="_new">segment.pl</a>
 at $TIMESTAMP;<br />
-<a href="http://www.teherba.org/index.php/OEIS/3x%2B1_Problem">Article
+<a href="http://www.teherba.org/index.php/OEIS/3x%2B1_Problem" target="_new">Article
 about the 3x+1 problem</a>
  by <a href="mailto:Dr.Georg.Fischer\@gmail.com">Georg Fischer</a>
 <br />
-<a href="detail.html">Detailed</a>,
-<a href="comp.html">Compressed</a>,
-<a href="double.html">Double line</a>,
-<a href="subset.html">Subset</a>
- directory;
+<a href="detail.html"  target="_new">Detailed</a>,
+<a href="comp.html"    target="_new">Compressed</a>,
+<a href="double.html"  target="_new">Double line</a>,
+<a href="subset.html"  target="_new">Subset</a>, Degree
+<a href="degree2.html" target="_new">2</a>,
+<a href="degree3.html" target="_new">3</a>,
+<a href="degree4.html" target="_new">4</a> 
+ Directory;
 <a href="#more">more information</a>
 </p>
 <table style=\"border-collapse: collapse; text-align: right;  padding-right: 4px;\">
