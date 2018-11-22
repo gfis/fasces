@@ -462,7 +462,42 @@ That are a rather simple consequences of the segment construction rules. We stat
 ** or a supernode as its left side.
 
 We first attach all even rows mentioned in (S3). Then we attach the even rows mentioned in (S4).
- 
+
+===Distribution of Supernodes ===
+* (S) Suppernodes occur only in the "longer" segments with ''i &#x2261; 1 mod 3''.
+* (S) If there is a supernode in the right part of a segment, it is either ''at the end'', i.e. in the last or the last-but-one column.
+* (S) There are at most two supernodes in every segment. 
+The occurrences of supernodes show a pattern which repeats after 18 rows in the segment directory C as shown in table (T6). The letters in (T6) indicate:
+ b - both the left side and the end of the right part are a supernode
+ r - supernode only at the end of the right part
+ l - supernode only as left side
+ n - the segment contains no supernode
+The digits indicate the degree of the supernode if it is &gt; 2. 
+{| class="wikitable" style="text-align:center"
+|-
+!   i !!    s !! i + 3 !! i + 6 !! i + 9 !! i + 12!! i + 15!! 
+|-                                                          
+|   4 ||   22 || b     || r     || l     || r     || b    || n   
+|-                                                                   
+|  22 ||  130 || b33   || r3    || l     || r     || b    || n   
+|-                                                                   
+|  40 ||  238 || b     || r     || l     || r4    || b    || n   
+|-                                                                   
+|  58 ||  346 || b32   || r     || l     || r     || b    || n   
+|-                                                                   
+|  76 ||  454 || b23   || r     || l     || r     || b    || n   
+|-                                                                   
+|  94 ||  562 || b32   || r     || l     || r3    || b23  || n   
+|-                                                                   
+| 112 ||  670 || b     || r     || l     || r     || b    || n   
+|-                                                                   
+| 130 ||  778 || b44   || r     || l     || r     || b    || n   
+|-                                                                   
+| ... ||      || b     || r     || l     || r     || b    || n   
+|-
+|}
+
+
 ===No Cycles===
 * '''(A8)''' The attachment process does not create any new cycle (in addition to the one in the root segment).
 :: Let a segment/tree ''t<sub>1</sub>'' with left side ''n<sub>1</sub>'' and right part ''R<sub>1</sub>'' be attached to node ''n<sub>1</sub>'' in the right part ''R<sub>2</sub>'' of the unique segment/tree ''t<sub>2</sub>'' which has the left side by ''n<sub>2</sub>''. ''t<sub>1</sub>'' and ''t<sub>2</sub>'' are disjoint trees by (C4), therefore the result of such a single attachment step is a tree again (''u<sub>2</sub>'', still with left side ''n<sub>2</sub>'').

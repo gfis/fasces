@@ -14,9 +14,9 @@
 #   perl segment.pl [-n maxn] [-d debug] [-s 4] [-i 6] [-a comp] > comp.html
 #       -n  maximum start value
 #       -s  index of first segment to be printed
-#       -i  index increment for printing 
+#       -i  index increment for printing
 #       -m  output mode: tsv, htm (no css), html, wiki, latex
-#       -a  type of directory to be produced: detail, compress, double, subset
+#       -a  type of directory to be produced: detail, compress, double, subset, testi
 #       -d  debug level: 0 (none), 1 (some), 2 (more)
 #
 # See http://www.teherba.org/index.php/OEIS/3x%2B1_Problem
@@ -66,13 +66,14 @@ my %text   =
     ( "detail"  , " Detailed   Segment Directory S"
     , "comp"    , " Compressed Segment Directory C"
     , "double"  , " Double Line Segment Directory S"
-    , "subset"   , "Directory Subset ($incr * i + $start)"
+    , "subset"  , " Directory Subset ($incr * i + $start)"
+    , "test"    , " Directory Test"
     );
 #----------------
 # initialization
 my $ffsegms  = 0;
 my @segms;
-my $isegms;
+my $isegm;
 while ($ffsegms < $start4) { # $segms[0..3] are not used
     push(@segms, $ffsegms);
     $ffsegms ++;
@@ -91,55 +92,55 @@ while ($ffsegms < $maxn) {
 if (0) { # switch action
 
 } elsif ($action =~ m{\Acomp})   { # like "detail", but compressed segments
-    $isegms = $start;
+    $isegm = $start;
     &print_compress_head();
-    while ($isegms < $maxn) {
-        if (! defined($segms[$isegms])) {
-            $isegms = $maxn; # break loop
+    while ($isegm < $maxn) {
+        if (! defined($segms[$isegm])) {
+            $isegm = $maxn; # break loop
         } else {
-            &print_1_compress($isegms);
+            &print_1_compress($isegm);
         }
-        $isegms += $incr;
-    } # while $isegms
+        $isegm += $incr;
+    } # while $isegm
     # case compress
 
 } elsif ($action =~ m{\Adouble}) { # two lines per segment
     &print_double_head();
-    $isegms = $start;
-    while ($isegms < $maxn) {
-        if (! defined($segms[$isegms])) {
-            $isegms = $maxn; # break loop
+    $isegm = $start;
+    while ($isegm < $maxn) {
+        if (! defined($segms[$isegm])) {
+            $isegm = $maxn; # break loop
         } else {
-            &print_1_double($isegms);
+            &print_1_double($isegm);
         }
-        $isegms += $incr;
-    } # while $isegms
+        $isegm += $incr;
+    } # while $isegm
     # case double
 
 } elsif ($action =~ m{\Adetail}) { # like "double", but in one line
     &print_detail_head();
-    $isegms = $start;
-    while ($isegms < $maxn) {
-        if (! defined($segms[$isegms])) {
-            $isegms = $maxn; # break loop
+    $isegm = $start;
+    while ($isegm < $maxn) {
+        if (! defined($segms[$isegm])) {
+            $isegm = $maxn; # break loop
         } else {
-            &print_1_detail($isegms);
+            &print_1_detail($isegm);
         }
-        $isegms += $incr;
-    } # while $isegms
+        $isegm += $incr;
+    } # while $isegm
     # case detail
 
-} elsif ($action =~ m{\Asubset})   { # subsetsegments
+} elsif ($action =~ m{\Asubset})   { # subset of segments
     &print_compress_head();
-    $isegms = $start;
-    while ($isegms < $maxn) {
-        if (! defined($segms[$isegms])) {
-            $isegms = $maxn; # break loop
+    $isegm = $start;
+    while ($isegm < $maxn) {
+        if (! defined($segms[$isegm])) {
+            $isegm = $maxn; # break loop
         } else {
-            &print_1_compress($isegms);
+            &print_1_compress($isegm);
         }
-        $isegms += $incr;
-    } # while $isegms
+        $isegm += $incr;
+    } # while $isegm
     # case subset
 
 } elsif ($action =~ m{\Asuper})   { # old supersegments
@@ -149,13 +150,13 @@ if (0) { # switch action
         print sprintf("%6s:%6s  %6s  | %6s %2s rul > %6s  ...[%2s]  %6s %2s Rul > %6s\n"
             , "index", "prev", "next", "lehs", "dg", "letar", "il", "last", "dg", "latar");
     }
-    $isegms = $start;
+    $isegm = $start;
     my $index;
-    while ($isegms < $maxn) {
-        if (! defined($segms[$isegms])) {
-            # $isegms = $maxn; # break loop
-        } elsif (($isegms - 1) % 3 == 0) { # only rows 1, 4, 7 ... targets of rules >= 3
-            my @segment  = split(/$SEP/, $segms[$isegms]);
+    while ($isegm < $maxn) {
+        if (! defined($segms[$isegm])) {
+            # $isegm = $maxn; # break loop
+        } elsif (($isegm - 1) % 3 == 0) { # only rows 1, 4, 7 ... targets of rules >= 3
+            my @segment  = split(/$SEP/, $segms[$isegm]);
             $index    = $segment[0];
             if ($index % 3 == 1) { # rows 1, 4, 7 ...
                 $prev[$index] = 0;
@@ -202,8 +203,8 @@ if (0) { # switch action
                 } # debug
             } # rows 1, 4, 7 ...
         } # targets of rules >= 3
-        $isegms += 3;
-    } # while $isegms
+        $isegm += 3;
+    } # while $isegm
 
     $index = 1;
     while ($index < $maxn) {
@@ -219,8 +220,37 @@ if (0) { # switch action
             print "\n";
         } # not attachable
         $index ++;
-    } # while $isegms
+    } # while $isegm
     # case super
+
+} elsif ($action =~ m{\Atest1})   { # test some condition
+    print join($SEP, "test1", "index", "k", "sr", "itar", "lhs") . "\n";
+    $isegm = $start;
+    while ($isegm < $maxn) {
+        if (! defined($segms[$isegm])) {
+            $isegm = $maxn; # break loop
+        } else {
+            my @segment  = split(/$SEP/, $segms[$isegm]);
+            my $index    = $segment[0];
+            if ($index % 3 == 1) { # rows 1, 4, 7 ...
+                my $lhs = $segment[1];
+                my ($nrule, $itarget, $k) = &get_nrule_itarget_k($index);
+                if ($k % 2 == 0) { # even k
+                    if (&is_increasing($nrule) == 1 and &get_degree($lhs) <= 1) {
+                        # even k and increasing and no supernode
+                        print join($SEP, "k even", $index, $k, $nrule, $itarget, $lhs), "\n";
+                    }
+                } else { # odd $k
+                    if ($nrule >= 7                 and &get_degree($lhs) <= 1) {
+                        # odd k and rule >= 7 and no supernode
+                        print join($SEP, "k odd ", $index, $k, $nrule, $itarget, $lhs), "\n";
+                    }
+                }
+            } # rows 1, 4, 7 ...
+        } # defined
+        $isegm += $incr;
+    } # while $isegm
+    # case test1
 
 } else {
     die "invalid action \"$action\"\n";
@@ -329,6 +359,7 @@ sub print_1_double {
             print "<tr>"
                 . "<td class=\"arl\">\&nbsp;</td>"
                 . "<td class=\"arl\">\&nbsp;</td>"
+                . "<td class=\"arr\">\&nbsp;</td>"
                 . "<td class=\"arr\">\&nbsp;</td>"
                 ;
             $ir = 2;
@@ -517,21 +548,21 @@ sub cell_html { # print one table cell
 } # cell_html
 #------------------------
 sub get_degree {
-    my ($irow) = @_;
+    my ($index) = @_;
     my $result = 0;
     if (0) { # A000400: 46656, 279936, 1679616, 10077696
              # A005610: 2, 14, 86, 518, 3110, 18662, 111974, 671846, 4031078
-    } elsif (1 and $irow %  46656 -  46656 ==  -18662) {
+    } elsif (1 and $index %  46656 -  46656 ==  -18662) {
         $result = 6;
-    } elsif (1 and $irow %   7776 -   7776 ==   -3110) {
+    } elsif (1 and $index %   7776 -   7776 ==   -3110) {
         $result = 5;
-    } elsif (1 and $irow %   1296 -   1296 ==    -518) {
+    } elsif (1 and $index %   1296 -   1296 ==    -518) {
         $result = 4;
-    } elsif (1 and $irow %    216 -    216 ==     -86) {
+    } elsif (1 and $index %    216 -    216 ==     -86) {
         $result = 3;
-    } elsif (1 and $irow %     36 -     36 ==     -14) {
+    } elsif (1 and $index %     36 -     36 ==     -14) {
         $result = 2;
-    } elsif (1 and $irow %      6 -      6 ==      -2) {
+    } elsif (1 and $index %      6 -      6 ==      -2) {
         $result = 1;
     }
     return $result;
@@ -551,7 +582,7 @@ sub get_nrule_itarget_k {
     while ($busy == 1 and $orule <= $MAX_RULE) {
         my $modfit = $pow2_2 * $tog31;
         if ($isource % $pow2 == $modfit) { # mod condition fits
-        	$k = ($isource / $pow2_2 - $tog31) / 4;
+            $k = ($isource / $pow2_2 - $tog31) / 4;
             $busy = 0;
             $itarget = $pow3 * ($isource - $modfit) / $pow2 + $RULENS[$irulen];
             if ($debug >= 3) {
@@ -631,7 +662,7 @@ table   {  }
 .rule29 { background-color: Firebrick      ; color: white; }
 .rule30 { background-color: Firebrick      ; color: white; }
 .seg    { font-weight: bold; }
-.sei    { /* font-weight: bold; */ 
+.sei    { /* font-weight: bold; */
           font-style    : italic; }
 </style>
 </head>
@@ -685,7 +716,7 @@ sub print_double_head {
     } elsif ($mode =~ m{\Ahtm}) {
         print <<"GFis";
 <tr>
-<td class="arl bot" colspan="4">Column</td>
+<td class="arl" colspan="4">Column</td>
 <td class="arc">1</td>
 <td class="arc">3</td>
 <td class="arc">5</td>
@@ -698,8 +729,20 @@ sub print_double_head {
 <td class="arc">21</td>
 </tr>
 <tr>
-<td class="arc">&nbsp;</td>
-<td class="arc">k</td>
+<td class="arl bot" colspan="4">&nbsp;</td>
+<td class="arc">2</td>
+<td class="arc">4</td>
+<td class="arc">6</td>
+<td class="arc">8</td>
+<td class="arc">10</td>
+<td class="arc">12</td>
+<td class="arc">14</td>
+<td class="arc">16</td>
+<td class="arc">18</td>
+<td class="arc">20</td>
+</tr>
+<tr>
+<td class="arc">i</td><td class="arc">k</td>
 <td class="arc bor           ">SR</td>
 <td class="arc bor           ">TR</td>
 <td class="arc bor           ">LHS</td>
@@ -756,8 +799,7 @@ GFis
         print <<"GFis";
 </tr>
 <tr>
-<td class="arc">&nbsp;</td>
-<td class="arc">k</td>
+<td class="arc">i</td><td class="arc">k</td>
 <td class="arc bor           ">SR</td>
 <td class="arc bor           ">TR</td>
 <td class="arc bor           ">LHS</td>
@@ -807,8 +849,7 @@ sub print_detail_head {
 <td class="arc    ">20</td>
 </tr>
 <tr>
-<td class="arc">&nbsp;</td>
-<td class="arc">k</td>
+<td class="arc">i</td><td class="arc">k</td>
 <td class="arc bor           ">SR</td>
 <td class="arc bor           ">TR</td>
 <td class="arc bor           ">LHS</td>
