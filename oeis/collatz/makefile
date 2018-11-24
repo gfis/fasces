@@ -23,14 +23,14 @@ double:
 detail: 
 	perl segment.pl         -n $(N)    -d $(D)                 -a detail > $@.html
 subset: 
-	perl segment.pl         -n $(N)    -d $(D) -s $(S) -i $(I) -a subset > $@.html
+	perl segment.pl         -n $(N)    -d $(D) -s 22   -i 36   -a subset > $@.html
 degr: degree2 degree3 degree4
 degree2:
-	perl segment.pl         -n $(N)    -d $(D) -s 22   -i 18   -a subset > $@.html
+	perl segment.pl         -n $(N)    -d $(D) -s 4    -i 18   -a subset > $@.html
 degree3:
-	perl segment.pl         -n $(N)    -d $(D) -s 130  -i 162  -a subset > $@.html
+	perl segment.pl         -n $(N)    -d $(D) -s 22   -i 54   -a subset > $@.html
 degree4:
-	perl segment.pl         -n $(N)    -d $(D) -s 292  -i 486  -a subset > $@.html
+	perl segment.pl         -n 100000  -d $(D) -s 292  -i 486  -a subset > $@.html
 atab:
 	perl attachtab.pl > $@.wiki 2> x.tmp
 deploy:

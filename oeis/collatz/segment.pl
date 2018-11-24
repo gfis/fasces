@@ -481,8 +481,14 @@ sub get_index {
     $result .= "<td class=\"arc bor\">$k1</td>";
     $result .= "<td class=\"arc rule$nrule1\" title=\"($nrule1)->$itarget1\">$nrule1</td>";
     if (&is_increasing($nrule1)) {
+    	my $target = 6 * $itarget1 - 2;
+    	my $deg_target1 = &get_degree($target);
         my ($nrule2, $itarget2, $k2) = &get_nrule_itarget_k($itarget1);
-        $result .= "<td class=\"arc rule$nrule2\" title=\"($nrule2)->$itarget2\">$nrule2</td>";
+        if ($deg_target1 >= 2) {
+        	$result .= "<td class=\"arc super$deg_target1\" title=\"($nrule2)->$itarget2\">$target</td>";
+        } else {
+        	$result .= "<td class=\"arc rule$nrule2\" title=\"($nrule2)->$itarget2\">$nrule2</td>";
+        }
     #   if (&is_increasing($nrule2)) {
     #       my ($nrule3, $itarget3, $k3) = &get_nrule_itarget_k($itarget2);
     #       $result .= "<td class=\"arc rule$nrule3\" title=\"($nrule3)->$itarget3\">$nrule3</td>";
@@ -553,17 +559,17 @@ sub get_degree {
     my $result = 0;
     if (0) { # A000400: 46656, 279936, 1679616, 10077696
              # A005610: 2, 14, 86, 518, 3110, 18662, 111974, 671846, 4031078
-    } elsif (1 and $index %  46656 -  46656 ==  -18662) {
+    } elsif ($index %  46656 -  46656 ==  -18662) {
         $result = 6;
-    } elsif (1 and $index %   7776 -   7776 ==   -3110) {
+    } elsif ($index %   7776 -   7776 ==   -3110) {
         $result = 5;
-    } elsif (1 and $index %   1296 -   1296 ==    -518) {
+    } elsif ($index %   1296 -   1296 ==    -518) {
         $result = 4;
-    } elsif (1 and $index %    216 -    216 ==     -86) {
+    } elsif ($index %    216 -    216 ==     -86) {
         $result = 3;
-    } elsif (1 and $index %     36 -     36 ==     -14) {
+    } elsif ($index %     36 -     36 ==     -14) {
         $result = 2;
-    } elsif (1 and $index %      6 -      6 ==      -2) {
+    } elsif ($index %      6 -      6 ==      -2) {
         $result = 1;
     }
     return $result;
@@ -642,7 +648,8 @@ table   {  }
 .d1     { background-color: lavender       ; color: black; }
 .d2     { background-color: white          ; color: black; }
 .d3     { background-color: lemonchiffon   ; color: black; }
-.d4     { background-color: papayawhip     ; color: black; }
+.super1
+.d4     { background-color: khaki          ; color: black; }
 .d5     { background-color: lavender       ; color: black; }
 .super2 { background-color: yellow         ; color: black; }
 .super3 { background-color: orange         ; color: white; }
@@ -703,19 +710,19 @@ GFis
         print <<"GFis";
 <p>
 Generated with
-<a href="https://github.com/gfis/fasces/blob/master/oeis/collatz/segment.pl" target="_new">segment.pl</a>
+<a href="https://github.com/gfis/fasces/blob/master/oeis/collatz/segment.pl" target="_blank">segment.pl</a>
 at $TIMESTAMP;<br />
-<a href="http://www.teherba.org/index.php/OEIS/3x%2B1_Problem" target="_new">Article
+<a href="http://www.teherba.org/index.php/OEIS/3x%2B1_Problem" target="_blank">Article
 about the 3x+1 problem</a>
  by <a href="mailto:Dr.Georg.Fischer\@gmail.com">Georg Fischer</a>
 <br />
-<a href="detail.html"  target="_new">Detailed</a>,
-<a href="comp.html"    target="_new">Compressed</a>,
-<a href="double.html"  target="_new">Double line</a>,
-<a href="subset.html"  target="_new">Subset</a>, Degree
-<a href="degree2.html" target="_new">2</a>,
-<a href="degree3.html" target="_new">3</a>,
-<a href="degree4.html" target="_new">4</a> 
+<a href="detail.html"  target="_blank">Detailed</a>,
+<a href="comp.html"    target="_blank">Compressed</a>,
+<a href="double.html"  target="_blank">Double line</a>,
+<a href="subset.html"  target="_blank">Subset</a>, Degree
+<a href="degree2.html" target="_blank">2</a>,
+<a href="degree3.html" target="_blank">3</a>,
+<a href="degree4.html" target="_blank">4</a> 
  Directory;
 <a href="#more">more information</a>
 </p>
@@ -760,8 +767,8 @@ sub print_double_head {
 <tr>
 <td class="arc">i</td><td class="arc">k</td>
 <td class="arc bor           ">SR</td>
-<td class="arc bor           ">TR</td>
-<td class="arc bor           ">LHS</td>
+<td class="arc bor           ">TdR</td>
+<td class="arc bor           ">LS</td>
 <td class="arc btr           ">&micro;</td>
 <td class="arc btr seg rule5 ">&micro;&micro;</td>
 <td class="arc btr           ">&micro;&micro;&delta;</td>
@@ -817,8 +824,8 @@ GFis
 <tr>
 <td class="arc">i</td><td class="arc">k</td>
 <td class="arc bor           ">SR</td>
-<td class="arc bor           ">TR</td>
-<td class="arc bor           ">LHS</td>
+<td class="arc bor           ">TdR</td>
+<td class="arc bor           ">LS</td>
 <td class="arc bor seg rule5 ">&micro;&micro;</td>
 <td class="arc bor seg rule6 ">&delta;&micro;&micro;</td>
 <td class="arc bor seg rule9 ">&micro;&micro;&sigma;<sup>1</sup></td>
@@ -867,8 +874,8 @@ sub print_detail_head {
 <tr>
 <td class="arc">i</td><td class="arc">k</td>
 <td class="arc bor           ">SR</td>
-<td class="arc bor           ">TR</td>
-<td class="arc bor           ">LHS</td>
+<td class="arc bor           ">TdR</td>
+<td class="arc bor           ">LS</td>
 <td class="arc bor           ">&delta;</td>
 <td class="arc bor           ">&micro;</td>
 <td class="arc bor           ">&delta;&micro;</td>
