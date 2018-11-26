@@ -362,6 +362,7 @@ sub print_1_double {
                 . "<td class=\"arl\">\&nbsp;</td>"
                 . "<td class=\"arr\">\&nbsp;</td>"
                 . "<td class=\"arr\">\&nbsp;</td>"
+                . "<td class=\"arr\">\&nbsp;</td>"
                 ;
             $ir = 2;
             while ($ir < scalar(@segment)) {
@@ -752,7 +753,7 @@ sub print_double_head {
 <td class="arc">21</td>
 </tr>
 <tr>
-<td class="arl bot" colspan="4">&nbsp;</td>
+<td class="arl bot" colspan="5">&nbsp;</td>
 <td class="arc">2</td>
 <td class="arc">4</td>
 <td class="arc">6</td>
@@ -781,6 +782,7 @@ sub print_double_head {
 </tr>
 <tr>
 <td class="arc               ">&nbsp;</td>
+<td class="arr               ">&nbsp;</td>
 <td class="arr               ">&nbsp;</td>
 <td class="arr               ">&nbsp;</td>
 <td class="arr               ">&nbsp;</td>
