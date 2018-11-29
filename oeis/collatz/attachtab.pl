@@ -3,11 +3,20 @@
 # https://github.com/gfis/fasces/blob/master/oeis/collatz/attachtab.pl
 # Generate and check attachment table
 # @(#) $Id$
+# 2018-11-27: comment "Generated at ..." before
 # 2018-11-19, Georg Fischer
 #------------------------------------------------------
 # Usage:
 #   perl attachtab.pl [-n maxn] [-d debug]
 #-----------------------------------------------
+use strict;
+use integer;
+#----------------
+# global constants
+my ($sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst) = localtime (time);
+my $TIMESTAMP = sprintf ("%04d-%02d-%02d %02d:%02d:%02d"
+        , $year + 1900, $mon + 1, $mday, $hour, $min, $sec);
+
 # get commandline options
 my $debug  = 0;
 my $maxn   = 4; # max. value for k
@@ -24,6 +33,9 @@ while (scalar(@ARGV) > 0 and ($ARGV[0] =~ m{\A\-})) {
 } # while $opt
 #---------------
 print <<"GFis"; # table header
+<!--Generated with
+<a href="https://github.com/gfis/fasces/blob/master/oeis/collatz/segment.pl" target="_blank">segment.pl</a>
+at $TIMESTAMP;--> 
 {| class="wikitable" style="text-align:left"
 |-
 !Rule /<br>column!!Source<br>segments||Condition /<br>remaining!!First source<br>segments!!Target<br>segments!!First target<br>segments!!Dir.
@@ -34,7 +46,7 @@ while (<DATA>) {
     s/\A\s+//; # trim leading whitespace
     my $line = $_;
     if (0) {
-	#----
+    #----
     } elsif ($line =~ m{\A\#\Z}) {
         print STDERR "#---------------------------------------------\n";
         $dir = "'''\&gt;'''";
@@ -43,27 +55,27 @@ while (<DATA>) {
         $ftsegments =~ m{(\d+)};
         my $ftn1 = $1;
         if ($fsn1 >= $ftn1) {
-        	$dir = "\&lt;";
+            $dir = "\&lt;";
         }
         print <<"GFis";
 |-
 |'''$rule'''||$ssegments||$cond<br>$remain||$fssegments||$tsegments||$ftsegments||$dir
 GFis
-	#----
+    #----
     } elsif ($line =~ m{\A\#R(\d+)}) {
-    	$rule = $1;
-    	print STDERR "$line\n";
+        $rule = $1;
+        print STDERR "$line\n";
     } elsif ($line =~ m{mod}) {
-    	print STDERR "$line\n";
-    	($cond, $remain) = map { 
-    		# s/ mod / \&\#x2261\; /; 
-    		s{\A\s+}{};
-    		$_ 
-    		} split(/\;\s+/, substr($line, 1));	
-	#----
+        print STDERR "$line\n";
+        ($cond, $remain) = map { 
+            # s/ mod / \&\#x2261\; /; 
+            s{\A\s+}{};
+            $_ 
+            } split(/\;\s+/, substr($line, 1)); 
+    #----
     } elsif ($line =~ m{\#}) { # ignore other comments
         print STDERR "$line\n";
-	#----
+    #----
     } else { # statement line
         print STDERR sprintf("#! %-40s || ", $line);
         $line =~ s{\A(\w+)\s*\=\s*}{}; # remove "S = "
@@ -72,21 +84,21 @@ GFis
         $expr =~ s{\*\*(\d+)}{<sup>\1<\/sup>}g;
         $expr =~ s{\*}{}g;
         $line =~ s{k}{\$k}g;
-		my $first = "";
+        my $first = "";
         for my $k (0..$maxn - 1) {
             $first .= ", " . (eval $line); # errors in $@
         } # for $k
-		print STDERR "#$first";
+        print STDERR "#$first";
         if ($st eq "s") {
-        	$ssegments = $expr;
-        	$fssegments = substr($first, 2);
+            $ssegments = $expr;
+            $fssegments = substr($first, 2);
         } else { # eq "t"
-        	$tsegments = $expr;
-        	$ftsegments = substr($first, 2);
+            $tsegments = $expr;
+            $ftsegments = substr($first, 2);
         }
         print STDERR "\n";
     } # statement line
-	#----
+    #----
 } # while DATA
 print <<"GFis"; # table trailer
 |-                                                                                     

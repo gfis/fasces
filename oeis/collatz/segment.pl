@@ -3,6 +3,7 @@
 # https://github.com/gfis/fasces/blob/master/oeis/collatz/segment.pl
 # Print a directory of segments in the Collatz graph
 # @(#) $Id$
+# 2018-11-27: test2
 # 2018-11-21: SR, TR
 # 2018-11-15: copied from collatz_rails.pl
 # 2018-11-12: mark supersegments
@@ -40,6 +41,7 @@ my $debug  = 0;
 my $maxn   = 30000; # max. start value
 my $start4 = 4;
 my $incr6  = 6;
+my $min2   = $incr6 - $start4;
 my $start  = $start4;
 my $incr   = $incr6;
 my $mode   = "html";
@@ -176,14 +178,14 @@ if (0) { # switch action
                 } elsif ($ilast == 0) { # no degree >= 2 in whole segment
                 } elsif ($ilast == 1) { # lehs only has degree >= 2
                         $prev[$index] = $lehs_tar;
-                    #   $next[$index] = ($last + 2) / 6;
+                    #   $next[$index] = ($last + $min2) / $incr6;
                 } else { # there is a degree >= 2 in the right part
                     if ($lehs_deg >= 2) { # both have degree >= 2
                         $prev[$index] = $lehs_tar;
-                        $next[$index] = ($last + 2) / 6;
+                        $next[$index] = ($last + $min2) / $incr6;
                     } else { # only in the right part
                     #   $prev[$index] = $lehs_tar;
-                        $next[$index] = ($last + 2) / 6;
+                        $next[$index] = ($last + $min2) / $incr6;
                     }
                 } # degree >= 2 in the right part
 
@@ -239,12 +241,12 @@ if (0) { # switch action
                 if ($k % 2 == 0) { # even k
                     if (&is_increasing($nrule) == 1 and &get_degree($lhs) <= 1) {
                         # even k and increasing and no supernode
-                        print join($SEP, "k even", $index, $k, $nrule, $itarget, $lhs), "\n";
+                        print join($SEP, "test1_0", $index, $k, $nrule, $itarget, $lhs), "\n";
                     }
                 } else { # odd $k
                     if ($nrule >= 7                 and &get_degree($lhs) <= 1) {
                         # odd k and rule >= 7 and no supernode
-                        print join($SEP, "k odd ", $index, $k, $nrule, $itarget, $lhs), "\n";
+                        print join($SEP, "test1_1", $index, $k, $nrule, $itarget, $lhs), "\n";
                     }
                 }
             } # rows 1, 4, 7 ...
@@ -252,6 +254,33 @@ if (0) { # switch action
         $isegm += $incr;
     } # while $isegm
     # case test1
+
+} elsif ($action =~ m{\Atest2})   { # test some condition
+    print join($SEP, "test2", "index", "k", "sr", "tr", "itar", "tlhs") . "\n";
+    $isegm = $start;
+    while ($isegm < $maxn) {
+        if (! defined($segms[$isegm])) {
+            $isegm = $maxn; # break loop
+        } else {
+            my @segment  = split(/$SEP/, $segms[$isegm]);
+            my $index    = $segment[0];  
+            # now copied from get_idnex
+            my  ($nrule1, $itarget1, $k1) = &get_nrule_itarget_k($index);
+            if (&is_increasing($nrule1)) {
+                my $target1 = $incr6 * $itarget1 - $min2;
+                my $deg_target1 = &get_degree($target1);
+                my ($nrule2, $itarget2, $k2) = &get_nrule_itarget_k($itarget1);
+                if ($deg_target1 >= 2 or &is_increasing($nrule2) == 0) {
+                    # ok
+                } else {
+                    # neither decreasing nor supernode
+                    print join($SEP, "test2", $index, $k1, $nrule1, $nrule2, $itarget1, $target1), "\n";
+                }
+            }
+        } # defined
+        $isegm += $incr;
+    } # while $isegm
+    # case test2
 
 } else {
     die "invalid action \"$action\"\n";
@@ -264,7 +293,7 @@ sub generate_segment { # build and return a single segment starting with $selem
     my ($selem) = @_;
     my @elem    = ($selem, $selem); # 2 parallel tracks: $elem[0] (upper, left), $elem[1] (lower, right)
     my $len     = 0;
-    my @result  = (($selem + 2) / 6, $selem); # (n, 6*n-2)
+    my @result  = (($selem + $min2) / $incr6, $selem); # (n, 6*n-2)
     my $state   = "step0";
     my $busy    = 1; # as long as we can still do another step
     while ($busy == 1) { # stepping
@@ -314,7 +343,7 @@ sub generate_segment { # build and return a single segment starting with $selem
 sub print_1_double {
     my ($index) = @_;
     if (! defined($segms[$index])) {
-        $index = ($index + 2) / 6;
+        $index = ($index + $min2) / $incr6;
         if (0) {
         } elsif ($mode =~ m{\Atsv} ) {
             print "$index\n";
@@ -386,7 +415,7 @@ sub print_1_double {
 sub print_1_compress {
     my ($index) = @_;
     if (! defined($segms[$index])) {
-        $index = ($index + 2) / 6;
+        $index = ($index + $min2) / $incr6;
         if (0) {
         } elsif ($mode =~ m{\Atsv} ) {
             print "$index\n";
@@ -432,7 +461,7 @@ sub print_1_compress {
 sub print_1_detail {
     my ($index) = @_;
     if (! defined($segms[$index])) {
-        $index = ($index + 2) / 6;
+        $index = ($index + $min2) / $incr6;
         if (0) {
         } elsif ($mode =~ m{\Atsv} ) {
             print "$index\n";
@@ -477,44 +506,20 @@ sub is_increasing {
 #----------------
 sub get_index {
     my  ($index) = @_;
-    my  ($nrule1,  $itarget1, $k1) = &get_nrule_itarget_k($index);
-    my  $result =  "<td class=\"arc\">$index</td>";
-    $result .= "<td class=\"arc bor\">$k1</td>";
-    $result .= "<td class=\"arc rule$nrule1\" title=\"($nrule1)->$itarget1\">$nrule1</td>";
+    my  ($nrule1, $itarget1, $k1) = &get_nrule_itarget_k($index);
+    my  $result = "<td class=\"arc\">$index</td>"
+                . "<td class=\"arc bor\">$k1</td>"
+                . "<td class=\"arc rule$nrule1\" title=\"($nrule1)->$itarget1\">$nrule1</td>";
     if (&is_increasing($nrule1)) {
-    	my $target = 6 * $itarget1 - 2;
-    	my $deg_target1 = &get_degree($target);
+        my $target1 = $incr6 * $itarget1 - $min2;
+        my $deg_target1 = &get_degree($target1);
         my ($nrule2, $itarget2, $k2) = &get_nrule_itarget_k($itarget1);
         if ($deg_target1 >= 2) {
-        	$result .= "<td class=\"arc super$deg_target1\" title=\"($nrule2)->$itarget2\">$target</td>";
+            $result .= "<td class=\"arc super$deg_target1\" title=\"($nrule2)->$itarget2\">$target1</td>";
         } else {
-        	$result .= "<td class=\"arc rule$nrule2\" title=\"($nrule2)->$itarget2\">$nrule2</td>";
+            $result .= "<td class=\"arc rule$nrule2\" title=\"($nrule2)->$itarget2\">$nrule2</td>";
         }
-    #   if (&is_increasing($nrule2)) {
-    #       my ($nrule3, $itarget3, $k3) = &get_nrule_itarget_k($itarget2);
-    #       $result .= "<td class=\"arc rule$nrule3\" title=\"($nrule3)->$itarget3\">$nrule3</td>";
-    #       if (&is_increasing($nrule3)) {
-    #           my ($nrule4, $itarget4, $k4) = &get_nrule_itarget_k($itarget3);
-    #           $result .= "<td class=\"arc rule$nrule4\" title=\"($nrule4)->$itarget4\">$nrule4</td>";
-    #           if (&is_increasing($nrule4)) {
-    #               my ($nrule5, $itarget5, $k5) = &get_nrule_itarget_k($itarget4);
-    #               $result .= "<td class=\"arc rule$nrule5\" title=\"($nrule5)->$itarget5\">$nrule5</td>";
-    #           } else {
-    #               $result .= "<td class=\"arc bor\">&nbsp;</td>";
-    #           }
-    #       } else {
-    #           $result .= "<td class=\"arc bor\">&nbsp;</td>";
-    #           $result .= "<td class=\"arc bor\">&nbsp;</td>";
-    #       }
-    #   } else {
-    #           $result .= "<td class=\"arc bor\">&nbsp;</td>";
-    #           $result .= "<td class=\"arc bor\">&nbsp;</td>";
-    #           $result .= "<td class=\"arc bor\">&nbsp;</td>";
-    #   }
     } else {
-    #   $result .= "<td class=\"arc bor\">&nbsp;</td>";
-    #   $result .= "<td class=\"arc bor\">&nbsp;</td>";
-    #   $result .= "<td class=\"arc bor\">&nbsp;</td>";
         $result .= "<td class=\"arc bor\">&nbsp;</td>";
     }
     return $result;
@@ -529,9 +534,9 @@ sub cell_html { # print one table cell
     }
     my $degree = &get_degree($elem);
     if ($degree >= 1) {
-        my $isource = ($elem + 2) / 6;
+        my $isource = ($elem + $min2) / $incr6;
         my ($nrule, $itarget, $k) = &get_nrule_itarget_k($isource);
-        my $target = $itarget * 6 - 2;
+        my $target = $itarget * $incr6 - $min2;
         if ($rest == $start4) {
             $result .= " title=\"($nrule)->$target\"";
         }

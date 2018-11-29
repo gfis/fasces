@@ -100,9 +100,9 @@ The following table '''(T2)''' tells how the columns ''j'' in one row ''i'' of '
 |-                                                                            
 | 7 || <nowiki>C[i, 5]</nowiki> &sigma;                || 96 * (i - 7) / 27    + 22|| i &#x2261; 7 mod 27  || 22, 118, 214, 310 ...
 |-                                                                            
-| 8 || <nowiki>C[i, 6]</nowiki> &sigma;                || 192 * (i - 7) / 27   + 46|| i &#x2261; 7  mod 27 || 46, 238, 430, 622 ...
+| 8 || <nowiki>C[i, 6]</nowiki> &sigma;                ||192 * (i - 7) / 27   + 46 || i &#x2261; 7  mod 27 || 46, 238, 430, 622 ...
 |-
-| 9 || <nowiki>C[i, 7]</nowiki> &sigma;                || 192 * (i - 61) / 81 + 142|| i &#x2261; 61 mod 81 || 142, 334 ...
+| 9 || <nowiki>C[i, 7]</nowiki> &sigma;                ||192 * (i - 61) / 81 + 142 || i &#x2261; 61 mod 81 || 142, 334 ...
 |-
 |...|| ... || ... || ... || ...
 |-
@@ -167,11 +167,33 @@ There is a more elaborated '''[http://www.teherba.org/fasces/oeis/collatz/comp.h
 The segment directory contains an infinite number of little subtrees from which we aim to build the single Collatz tree.
 ===Left Side and Right Part===
 The first column(s) ''<nowiki>C[i, 1]</nowiki>'' will be denoted as the '''left side''' of the segments (or of the whole directory), while the columns ''<nowiki>C[i, j], j &gt; 4</nowiki>'' are called the '''right part'''.
+====Properties of the Segment Directory====
+We make a number of claims for the segment directory C:
+* (C1) All nodes in the segment directory have the form ''6n - 2''.
+:: This follows from the formula for columns ''<nowiki>C[i, 1..3]</nowiki>'', and for any higher column numbers from the 3-by-2 replacement property of the &sigma; operation.
+* (C2) All segments have a finite length.
+:: At some point the &sigma; operations will have replaced all factors 3 by 2.
+* (C3) All nodes in the right part of a segment have the form ''6(3<sup>n</sup> * 2<sup>m</sup> * f) - 2'' with the same "3-2-free" factor ''f''.
+:: This follows from the operations for columns <nowiki>C[i, 1..3]</nowiki>, and from the fact that the &sigma; operation maintains this property.
+* (C4) All nodes in the right part of a particular segment are
+** different among themselves, and
+** different from the left side of that segment (except for the first segment for the root 4).
+:: For ''<nowiki>C[i, 1..2]</nowiki>'' we see that the values modulo 24 are different. For the remaining columns, we see that the exponents of the factors 2 and 3 are different. They are shifted by the &sigma; operations, but they alternate, for example (in the segment with left part 40):
+ 160 = 6 * (3<sup>3</sup> * 2<sup>0</sup> * 1) - 2
+  52 = 6 * (3<sup>2</sup> * 2<sup>0</sup> * 1) - 2
+ 106 = 6 * (3<sup>2</sup> * 2<sup>1</sup> * 1) - 2
+  34 = 6 * (3<sup>1</sup> * 2<sup>1</sup> * 1) - 2
+  70 = 6 * (3<sup>1</sup> * 2<sup>2</sup> * 1) - 2
+  22 = 6 * (3<sup>0</sup> * 2<sup>2</sup> * 1) - 2
+  46 = 6 * (3<sup>0</sup> * 2<sup>3</sup> * 1) - 2
+* (C5) There is no cycle in a segment (except for the first segment for the root 4).
+* (C??) There is no limit on the length of a segment.
+:: We only need to take a segment which, in its right part, has a factor of 3 with a sufficiently high power, and the &sigma; operations will stretch out the segment accordingly.
 
 ==Coverage==
 ===Coverage of Non-Forks===
 We now show that
-* (C1) All numbers ''n &gt; 0'' are either forks (4 mod 6) or can be reached from forks. 
+* (C??) All numbers ''n &gt; 0'' are either forks (4 mod 6) or can be reached from forks. 
 We investigate the residues modulo 6 in the following table (T5):
 {| class="wikitable" style="text-align:left"
 |-
@@ -191,34 +213,45 @@ We investigate the residues modulo 6 in the following table (T5):
 |-
 |}
 Furthermore, as can be seen from the possible reverse operations:
-* (C2) There is only one subpath from some fork to a specific non-fork.
+* (C??) There is only one subpath from some fork to a specific non-fork.
 
 ===Coverage of Forks===
 We want to show:
-* (C3) Any fork node of the form ''6n - 2'' occurs exactly 
-** once in the left part and 
+* (C??) Any fork node of the form ''6n - 2'' occurs exactly 
+** once in the left side and 
 ** once in the right part of the segment directory.
-The first claim is fulfilled by the construction of the segment directory. The following table (T3) shows how the second claim is proven. The modular conditions for the fork nodes are successively narrowed up to arbitrarily high powers of 2.
-
+** There is a bijective mapping between the left sides and the elements of the right parts.
+The nodes in the left side are different by the construction of the segment directory. The following table (T3) shows the uniqueness in the columns of the right part. The sequence in one specific column has a particular modulus condition which is different from the ones in all other columns. Therefore the columns all contain disjoint sets of numbers:
 {| class="wikitable" style="text-align:left"
-!Columns j !! Covered         !! Remaining
-|-
-| 2-3      ||   4, 16 mod 24  || 10, 22, 34, 46 mod 48
-|-         
-| 3-4      ||  10, 34 mod 48  || 22, 46, 70, 94 mod 96
-|-         
-| 5-6      ||  70, 22 mod 96  || 46, 94, 142, 190 mod 192
-|-         
-| 7-8      ||  46, 142 mod 192|| 94, 190, 286, 382 mod 384
-|-         
-| ...      ||  ...            || ...
+!Column  j !!  Operation                     !! Expression           !! Covered        !! Remaining
+|-                                                        
+| 1||                                        || n = 6i - 2           || (none)         || 4, 10, 16, 22 mod 24     
+|-                                                        
+| 2|| &micro;&micro;                         || 24i - 8              || 16 mod 24      || 4, 10, 22 mod 24
+|-                                                
+| 3|| &delta;&micro;&micro;                  || 8i - 4, i = 3k + 1   || 4 mod 24       || 10, 22, 34, 46 mod 48
+|-                                                
+| 4|| &micro;&micro;&sigma<sup>1</sup>       ||                      || 10 mod 48      || 22, 34, 46 mod 48
+|-                                                
+| 5|| &delta;&micro;&micro;&sigma<sup>1</sup>||                      || 34 mod 48      || 22, 46, 70, 94 mod 96
+|-                                                
+| 6|| &micro;&micro;&sigma<sup>2</sup>       ||                      || 70 mod 96      || 22, 46, 94 mod 96 
+|-                                                
+| 7|| &delta;&micro;&micro;&sigma<sup>2</sup>||                      || 22 mod 96      || 46, 94, 142, 190 mod 192
+|-                                                
+| 8|| &micro;&micro;&sigma<sup>3</sup>       ||                      || 46 mod 96      || 94, 142, 190 mod 192
+|-                                                
+| 9|| &delta;&micro;&micro;&sigma<sup>3</sup>||                      || 142 mod 192    || 94, 190, 286, 382 mod 384
+|-                                                
+|10|| &micro;&micro;&sigma<sup>4</sup>       ||                      || 94 mod 192     || 190, 286, 382 mod 384  
+|-                                                
+|11|| &delta;&micro;&micro;&sigma<sup>4</sup>||                      || 190 mod 192    || 286, 382, 670, 766 mod 768
+|-                                                                                                                     
+|...|| ...                                   ||...                   || ...            || ...   
 |}
-We can always exclude the first and the third element remaining so far by looking in the next two columns of segments with sufficient length.
+We can always exclude one of the elements remaining so far by looking in the next column of segments with sufficient length.
 
-* (C6) There is no limit on the length of a segment.
-:: We only need to take a segment which, in its right part, has a factor of 3 with a sufficiently high power, and the &sigma; operations will stretch out the segment accordingly.
-Therefore we can continue the modulus table above indefinitely, which leads us to the claim:
-* '''(C7)''' All numbers of the form ''6m - 2'' occur exactly once in the right part of the segment directory, and once as a left side. There is a bijective mapping between the left sides and the elements of the right parts.
-:: The sequences defined by the columns in the right part all have different modulus conditions. Therefore they are all disjoint. The left sides are disjoint by construction.
-
-
+===Degree 2===
+* All supernodes with odd ''i'' follow rules 5 or 6.
+* All other source rows either are a supernode, follow a rule 5 or 6, or their target is a supernode.
+* If the target is a supernode, then ''k'' is odd.

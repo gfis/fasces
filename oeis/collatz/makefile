@@ -26,15 +26,20 @@ subset:
 	perl segment.pl         -n $(N)    -d $(D) -s 22   -i 36   -a subset > $@.html
 degr: degree2 degree3 degree4
 degree2:
-	perl segment.pl         -n $(N)    -d $(D) -s 4    -i 18   -a subset > $@.html
+	perl segment.pl         -n $(N)    -d $(D) -s 22   -i 36   -a subset > $@.html
 degree3:
 	perl segment.pl         -n $(N)    -d $(D) -s 22   -i 54   -a subset > $@.html
 degree4:
 	perl segment.pl         -n 100000  -d $(D) -s 292  -i 486  -a subset > $@.html
+tests: test1 test2
+test1:
+	perl segment.pl         -n 1000000 -d $(D) -m tsv          -a test1 | tee $@.html
+test2:
+	perl segment.pl         -n 1000000 -d $(D) -m tsv          -a test2 | tee $@.html
 atab:
 	perl attachtab.pl > $@.wiki 2> x.tmp
 deploy:
-	scp comp.html double.html detail.html subset.html \
+	scp comp.html double.html detail.html degree2.html degree3.html degree4.html \
 		gfis@punctum.com:/var/www/html/teherba.org/fasces/oeis/collatz/
 #----
 rails: 
