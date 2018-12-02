@@ -12,10 +12,10 @@ I=18
 M=html
 SRC=comp.html
 
-all: dirs  
+all: dirs exam
 old:rails kernels kerneval eawefr
 #----
-dirs: comp double detail subset atab degr
+dirs: comp double detail subset atab degr 
 comp: 
 	perl segment.pl         -n $(N)    -d $(D)                 -a comp   > $@.html
 double: 
@@ -38,6 +38,11 @@ test2:
 	perl segment.pl         -n 1000000 -d $(D) -m tsv          -a test2 | tee $@.html
 atab:
 	perl attachtab.pl > $@.wiki 2> x.tmp
+exam: e1 e2
+e1:
+	perl segment.pl -n 46 -m htm -a comp > $@.htm
+e2:
+	perl segment.pl -n 370 -m htm -a comp | perl filter_exam.pl -h 0 -l 7 -n 61 > $@.htm
 deploy:
 	scp comp.html double.html detail.html degree2.html degree3.html degree4.html \
 		gfis@punctum.com:/var/www/html/teherba.org/fasces/oeis/collatz/

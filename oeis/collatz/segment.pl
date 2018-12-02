@@ -16,7 +16,7 @@
 #       -n  maximum start value
 #       -s  index of first segment to be printed
 #       -i  index increment for printing
-#       -m  output mode: tsv, htm (no css), html, wiki, latex
+#       -m  output mode: tsv, htm (no css), htm[l], latex
 #       -a  type of directory to be produced: detail, compress, double, subset, testi
 #       -d  debug level: 0 (none), 1 (some), 2 (more)
 #
@@ -509,15 +509,15 @@ sub get_index {
     my  ($nrule1, $itarget1, $k1) = &get_nrule_itarget_k($index);
     my  $result = "<td class=\"arc\">$index</td>"
                 . "<td class=\"arc bor\">$k1</td>"
-                . "<td class=\"arc rule$nrule1\" title=\"($nrule1)->$itarget1\">$nrule1</td>";
+                . "<td class=\"arc rule$nrule1\" title=\"($nrule1)-$itarget1\">$nrule1</td>";
     if (&is_increasing($nrule1)) {
         my $target1 = $incr6 * $itarget1 - $min2;
         my $deg_target1 = &get_degree($target1);
         my ($nrule2, $itarget2, $k2) = &get_nrule_itarget_k($itarget1);
         if ($deg_target1 >= 2) {
-            $result .= "<td class=\"arc super$deg_target1\" title=\"($nrule2)->$itarget2\">$target1</td>";
+            $result .= "<td class=\"arc super$deg_target1\" title=\"($nrule2)-$itarget2\">$target1</td>";
         } else {
-            $result .= "<td class=\"arc rule$nrule2\" title=\"($nrule2)->$itarget2\">$nrule2</td>";
+            $result .= "<td class=\"arc rule$nrule2\" title=\"($nrule2)-$itarget2\">$nrule2</td>";
         }
     } else {
         $result .= "<td class=\"arc bor\">&nbsp;</td>";
@@ -528,17 +528,18 @@ sub get_index {
 sub cell_html { # print one table cell
     my ($elem, $border, $ir, $id) = @_;
     my $rest = $elem % $incr6;
+    my $isource = ($elem + $min2) / $incr6;
+    my ($nrule, $itarget, $k, $target) = ("", "", "", "");
     my $result = "<td";
     if ($id ne "") {
         $result .= " id=\"$id\"";
     }
     my $degree = &get_degree($elem);
     if ($degree >= 1) {
-        my $isource = ($elem + $min2) / $incr6;
-        my ($nrule, $itarget, $k) = &get_nrule_itarget_k($isource);
-        my $target = $itarget * $incr6 - $min2;
+        ($nrule, $itarget, $k) = &get_nrule_itarget_k($isource);
+        $target = $itarget * $incr6 - $min2;
         if ($rest == $start4) {
-            $result .= " title=\"($nrule)->$target\"";
+            $result .= " title=\"($nrule)-$target\"";
         }
         $result .= " class=\"super$degree";
     } else {
@@ -548,12 +549,16 @@ sub cell_html { # print one table cell
         $result .= " $border";
     }
     if ($ir == 1) { # start element
-        $result .= "\" id=\"A$elem\"><$a href=\"\#$elem\">$elem</a>";
-    } else {
-        if ($elem < $maxn and $elem % $incr6 == $start4) {
-            $result .=           "\"><$a href=\"\#A$elem\">$elem</a>";
+        if ($target ne "" and $target < $maxn           and ($mode !~ m{htm\Z})) {
+            $result .= "\" id=\"A$elem\"><$a href=\"\#$elem\">$elem</a>";
         } else {
-            $result .=           "\">$elem";
+            $result .= "\" id=\"A$elem\">$elem";
+        }
+    } else {
+        if ($elem < $maxn and $elem % $incr6 == $start4 and ($mode !~ m{htm\Z})) {
+            $result .=               "\"><$a href=\"\#A$elem\">$elem</a>";
+        } else {
+            $result .=               "\">$elem";
         }
     }
     $result .= "</td>";
@@ -642,14 +647,20 @@ GFis
 <meta name="generator" content="https://github.com/gfis/fasces/blob/master/oeis/collatz/segment.pl" />
 <meta name="author"    content="Georg Fischer" />
 <style>
-table   {  }
+table   { }
 .arr    { background-color: white          ; color: black; text-align: right        }
 .arc    { background-color: white          ; color: black; text-align: center;      }
 .arl    { background-color: white          ; color: black; text-align: left;        }
-.bor    { border-left  : 1px solid gray    ; border-top   : 1px solid gray ; border-right : 1px solid gray    ; border-bottom: 1px solid gray ; }
+.bor    { border-left  : 1px solid gray    ; border-top   : 1px solid gray ; 
+	      border-right : 1px solid gray    ; border-bottom: 1px solid gray ; 
+	/* 
+	      border-bottom-left-radius: 50px; 
+	      padding: 5px; 
+	*/
+	    }
 .btr    { border-left  : 1px solid gray    ; border-top   : 1px solid gray ; border-right : 1px solid gray    ; }
 .bbr    { border-left  : 1px solid gray    ; border-right : 1px solid gray ; border-bottom: 1px solid gray ; }
-.bot    { border-bottom: 1px solid gray ; }
+.bot    { border-bottom: 1px solid gray ;  }
 .d0     { background-color: lemonchiffon   ; color: black; }
 .d1     { background-color: lavender       ; color: black; }
 .d2     { background-color: white          ; color: black; }
@@ -710,7 +721,7 @@ sub print_preface {
 GFis
     } elsif ($mode =~ m{\Ahtm\Z}) {
         print <<"GFis";
-<table style=\"border-collapse: collapse; text-align: right;  padding-right: 4px;\">
+<table style=\"border-collapse: collapse; text-align: right;  padding-right: 4px;\"><!--$TIMESTAMP-->
 GFis
     } elsif ($mode =~ m{\Ahtml}) {
         print <<"GFis";
@@ -914,6 +925,7 @@ sub print_trailer {
         print "# End of directory\n";
     } elsif ($mode =~ m{\Ahtm\Z}) {
         print <<"GFis";
+</table>
 <!-- End of directory -->
 GFis
     } elsif ($mode =~ m{\Ahtml}) {

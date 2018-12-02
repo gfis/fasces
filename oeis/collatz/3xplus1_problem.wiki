@@ -53,7 +53,7 @@ The alternating pattern of operations can be continued to the left with addition
   n? u [ 62 d  31 u  94 d  47 u 142 d ...
  126 d [ 63 u 190 d  95 u 286 d 143 u ...
 The pattern stops here since there is no integer ''n'' such that ''n * 3 + 1 = 62''.
-Beginning at some node (364 &#x2261; 4 mod 6 in the example), these sequences join and follow the same path down to the root 4. The two differing parts of the sequences show a regular pattern. Proceeding from right to left, and thereby using the inverse operations, we see the following operations:
+Beginning at some node (364 &#x2261; 4 mod 6 in the example), these sequences join and follow the same path down to the root 4. The two differing parts of the sequences show a regular pattern. Proceeding from right to left, and thereby using the inverse operations, we see the following operations (example (E1)):
  364 &delta; 121 &micro;  242 &micro; 484 &delta; 161 &micro; 322 &delta; 107 &micro; 214 &delta;  71 &micro; 142 &delta;  47 &micro;  94 &delta;  31 &micro; 62
  364 &micro; 728 &micro; 1456 &delta; 485 &micro; 970 &delta; 323 &micro; 646 &delta; 215 &micro; 430 &delta; 143 &micro; 286 &delta;  95 &micro; 190 &delta; 63
 
@@ -116,52 +116,8 @@ The general formula for a column ''j >= 4'' uses the following parameters:
 * ''h = a(j)'', where ''a(n)'' is the OEIS sequence [http://oeis.org/A084101 A084101] with period 4: ''a(0..3) = 1, 3, 3, 1; a(n) = a(n - 4) for n &gt; 3''.
 (This results in ''k = 2, l = 1, m = 1, h = 1 for j = 4''.)
 
-The first few lines of the segment directory are the following:
-
-<table style="border-collapse: collapse;>
-<tr>
-<td style="text-align:center"> </td>
-<td style="text-align:center">&nbsp;1&nbsp;</td>
-<td style="text-align:center">&nbsp;2&nbsp;</td>
-<td style="text-align:center">&nbsp;3&nbsp;</td>
-<td style="text-align:center">&nbsp;4&nbsp;</td>
-<td style="text-align:center">&nbsp;5&nbsp;</td>
-<td style="text-align:center">&nbsp;6&nbsp;</td>
-<td style="text-align:center">&nbsp;7&nbsp;</td>
-<td style="text-align:center">&nbsp;8&nbsp;</td>
-<td style="text-align:center">&nbsp;9&nbsp;</td>
-<td style="text-align:center">&nbsp;10&nbsp;</td>
-<td style="text-align:center">&nbsp;11&nbsp;</td>
-<td style="text-align:center">...</td>
-<td style="text-align:center">2*j</td>
-<td style="text-align:center">2*j+1</td>
-</tr>
-<tr>
-<td style="border:1px solid gray;text-align:right" >&nbsp;&nbsp;i&nbsp;&nbsp;</td>
-<td style="border:1px solid gray;text-align:right" >6*i&#8209;2</td>
-<td style="border:1px solid gray;text-align:right" >&micro;&micro;</td>
-<td style="border:1px solid gray;text-align:right" >&delta;&micro;&micro;</td>
-<td style="border:1px solid gray;text-align:right" >&micro;&micro;&sigma;</td>
-<td style="border:1px solid gray;text-align:right" >&delta;&micro;&micro;&sigma;</td>
-<td style="border:1px solid gray;text-align:right" >&micro;&micro;&sigma;&sigma;</td>
-<td style="border:1px solid gray;text-align:right" >&delta;&micro;&micro;&sigma;&sigma;</td>
-<td style="border:1px solid gray;text-align:right" >&micro;&micro;&sigma;<sup>3</sup></td>
-<td style="border:1px solid gray;text-align:right" >&delta;&micro;&micro;&sigma;<sup>3</sup></td>
-<td style="border:1px solid gray;text-align:right" >&micro;&micro;&sigma;<sup>4</sup></td>
-<td style="border:1px solid gray;text-align:right" >&delta;&micro;&micro;&sigma;<sup>4</sup></td>
-<td style="border:1px solid gray;text-align:right" >...</td>
-<td style="border:1px solid gray;text-align:right" >&micro;&micro;&sigma;<sup>j-1</sup></td>
-<td style="border:1px solid gray;text-align:right" >&delta;&micro;&micro;&sigma;<sup>j-1</sup></td>
-</tr>
-<tr><td align="center">&nbsp;1&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip;">&nbsp; 4&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;" >&nbsp; 16&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;">&nbsp;4&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;">&nbsp;10&nbsp;</td></tr>
-<tr><td align="center">&nbsp;2&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip;">&nbsp;10&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;" >&nbsp; 40&nbsp;</td></tr>
-<tr><td align="center">&nbsp;3&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip;">&nbsp;16&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;" >&nbsp; 64&nbsp;</td></tr>
-<tr><td align="center">&nbsp;4&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip;">&nbsp;22&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;" >&nbsp; 88&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;">&nbsp;28&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;">&nbsp;58&nbsp;</td></tr>
-<tr><td align="center">&nbsp;5&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip;">&nbsp;28&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;" >&nbsp;112&nbsp;</td></tr>
-<tr><td align="center">&nbsp;6&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip;">&nbsp;34&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;" >&nbsp;136&nbsp;</td></tr>
-<tr><td align="center">&nbsp;7&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip;">&nbsp;40&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;" >&nbsp;160&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;">&nbsp;52&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;">&nbsp;106&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;">&nbsp;34&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;">&nbsp;70&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;">&nbsp;22&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;">&nbsp;46&nbsp;</td></tr>
-</table>
-
+The following example (E2) shows the first few lines of the segment directory, together with the segment for 364 from example (E1) above:
+{{Collatz_exam2}}
 There is a more elaborated '''[http://www.teherba.org/fasces/oeis/collatz/comp.html segment directory]''' with several thousand rows.
 
 The segment directory contains an infinite number of little subtrees from which we aim to build the single Collatz tree.
@@ -193,26 +149,22 @@ We make a number of claims for the segment directory C:
 ==Coverage==
 ===Coverage of Non-Forks===
 We now show that
-* (C??) All numbers ''n &gt; 0'' are either forks (4 mod 6) or can be reached from forks. 
-We investigate the residues modulo 6 in the following table (T5):
+* (C??) All numbers ''n &gt; 0'' are either forks (4 mod 6), or there is a unique path from a fork to ''n''. 
+Table (T5) shows the residues modulo 6 For some fork (source) node ''n = 6i - 2'':
 {| class="wikitable" style="text-align:left"
 |-
-!Operation                  !! Condition    !! Target<br>Nodes  !! Reverse<br>Op.!!Covered<br>Residues !! Remaining<br>Residues
-|-                                                                   
-|n = 6i - 2                 ||                     || 6i - 2       ||d ||4 mod 6      || 0, 1, 2, 3, 5 mod 6
-|-                                                                                    
-|n &delta;                  ||                     || 2i - 1       ||u ||1, 3, 5 mod 6|| 0, 2, 6, 8 mod 12
-|-                                                                                   
-|n &micro;                  ||                     || 12i - 4      ||d ||8 mod 12     || 0, 2, 6 mod 12
-|-                                                                                    
-|n &delta;&micro;<sup>1/sup>||i &#x2261; 1, 2 mod 3|| 4i - 2       ||d ||2, 6 mod 12  || 0, 12 mod 24
-|-                                                                                    
-|n &delta;&micro;<sup>2/sup>||i &#x2261; 2 mod 3   || 8i - 4       ||d ||12 mod 24    || 0 mod 24
-|-                                                                                    
-|n &delta;&micro;<sup>3/sup>||i &#x2261; 2 mod 3   || 16i - 8      ||d ||0 mod 24     || (none)
-|-
+!  Source       !!Operation     !! Target  !!Reached<br>Nodes!! Remaining<br>Nodes
+|-                                  
+|  6i - 2       ||(none)        || 6i - 2  ||4 mod 6         || 0, 1, 2, 3, 5 mod 6
+|-                                                               
+|  6i - 2       ||&delta;       || 2i - 1  ||1, 3, 5 mod 6   || 0, 2, 6, 8 mod 12
+|-                                                               
+|  6(3k + 1) - 2||&delta;&micro;|| 12k + 2 ||2 mod 12        || 0, 6, 8 mod 12
+|-                                                               
+|  6i - 2       ||&micro;       || 12i - 4 ||8 mod 12        || 0 mod 6      
+|-                                                               
 |}
-Furthermore, as can be seen from the possible reverse operations:
+The second row reaches all odd multiples of 3. The remaining multiples of 6 can be reached from there by a &micro; operation.
 * (C??) There is only one subpath from some fork to a specific non-fork.
 
 ===Coverage of Forks===
