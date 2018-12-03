@@ -34,7 +34,7 @@ while (scalar(@ARGV) > 0 and ($ARGV[0] =~ m{\A\-})) {
 #---------------
 print <<"GFis"; # table header
 <!--Generated with
-<a href="https://github.com/gfis/fasces/blob/master/oeis/collatz/attachtab.pl" target="_blank">segment.pl</a>
+<a href="https://github.com/gfis/fasces/blob/master/oeis/collatz/atab2.pl" target="_blank">segment.pl</a>
 at $TIMESTAMP;--> 
 {| class="wikitable" style="text-align:left"
 |-

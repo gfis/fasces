@@ -4,7 +4,7 @@
 # @(#) $Id$
 # 2018-08-17, Georg Fischer 
 #---------------------------------
-N=30000
+N=10000
 K=64
 D=0
 S=22
@@ -12,39 +12,58 @@ I=18
 M=html
 SRC=comp.html
 
-all: dirs exam
+all: style dirs exam
 old:rails kernels kerneval eawefr
 #----
-dirs: comp double detail subset atab degr 
+dirs: comp double detail atab degr 
 comp: 
 	perl segment.pl         -n $(N)    -d $(D)                 -a comp   > $@.html
 double: 
 	perl segment.pl         -n $(N)    -d $(D)                 -a double > $@.html
 detail: 
 	perl segment.pl         -n $(N)    -d $(D)                 -a detail > $@.html
-subset: 
-	perl segment.pl         -n $(N)    -d $(D) -s 22   -i 36   -a subset > $@.html
-degr: degree2 degree3 degree4
-degree2:
-	perl segment.pl         -n $(N)    -d $(D) -s 22   -i 36   -a subset > $@.html
-degree3:
-	perl segment.pl         -n $(N)    -d $(D) -s 22   -i 54   -a subset > $@.html
-degree4:
-	perl segment.pl         -n 100000  -d $(D) -s 292  -i 486  -a subset > $@.html
-tests: test1 test2
-test1:
-	perl segment.pl         -n 1000000 -d $(D) -m tsv          -a test1 | tee $@.html
-test2:
-	perl segment.pl         -n 1000000 -d $(D) -m tsv          -a test2 | tee $@.html
+
+t7_13_18:
+	perl segment.pl         -n $(N)    -d $(D) -s 7,13    -i 18   -a comp   > $@.html
+t10_18:                                                   
+	# only lhs is yellow ("ending")
+	perl segment.pl         -n $(N)    -d $(D) -s 10      -i 18   -a comp   > $@.html
+t16_18:                                                   
+	# yellow target                                       
+	perl segment.pl         -n $(N)    -d $(D) -s 16      -i 18   -a comp   > $@.html
+r9_10:                                                    
+	# rules 9, 10; rather structured                
+	# perl segment.pl         -n $(N)    -d $(D) -s 10,22   -i 24   -a comp   > $@.html
+	perl segment.pl         -n $(N)    -d $(D) -s 2,6     -i 8    -a comp   > $@.html
+#----                                                     
+degr: degree2 degree3                                     
+degree2:                                                  
+	perl segment.pl         -n $(N)    -d $(D) -s 1       -i 3    -a comp   > $@.html
+degree3:                                                  
+	perl segment.pl         -n $(N)    -d $(D) -s 22      -i 36   -a comp   > $@.html
+degree4:                                                  
+	perl segment.pl         -n 10000   -d $(D) -s 49      -i 81   -a comp   > $@.html
+#----                                                     
+t18:                                                      
+	perl segment.pl         -n 10000   -d $(D) -s 7,16    -i 18   -a comp   > $@.html
+tests: test1 test2                                        
+test1:                                                    
+	perl segment.pl         -n 100000  -d $(D) -m tsv             -a test1 | tee $@.html
+test2:                                                    
+	perl segment.pl         -n 100000  -d $(D) -m tsv             -a test2 | tee $@.html
+#----
+style:
+	perl segment.pl -a style | tee stylesheet.css
 atab:
 	perl attachtab.pl > $@.wiki 2> x.tmp
+#----
 exam: e1 e2
 e1:
-	perl segment.pl -n 46 -m htm -a comp > $@.htm
+	perl segment.pl -n 8  -m htm -a comp > $@.htm
 e2:
-	perl segment.pl -n 370 -m htm -a comp | perl filter_exam.pl -h 0 -l 7 -n 61 > $@.htm
+	perl segment.pl -n 62  -m htm -a comp | perl filter_exam.pl -h 0 -l 7 -n 61 > $@.htm
 deploy:
-	scp comp.html double.html detail.html degree2.html degree3.html degree4.html \
+	scp stylesheet.css comp.html double.html detail.html degree2.html degree3.html degree4.html \
 		gfis@punctum.com:/var/www/html/teherba.org/fasces/oeis/collatz/
 #----
 rails: 

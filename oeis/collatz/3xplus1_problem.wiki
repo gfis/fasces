@@ -164,7 +164,7 @@ Table (T5) shows the residues modulo 6 For some fork (source) node ''n = 6i - 2'
 |  6i - 2       ||&micro;       || 12i - 4 ||8 mod 12        || 0 mod 6      
 |-                                                               
 |}
-The second row reaches all odd multiples of 3. The remaining multiples of 6 can be reached from there by a &micro; operation.
+The second row reaches all odd multiples of 3. All even multiples of 3 can be reached from there by one or more &micro; operations.
 * (C??) There is only one subpath from some fork to a specific non-fork.
 
 ===Coverage of Forks===
@@ -175,35 +175,66 @@ We want to show:
 ** There is a bijective mapping between the left sides and the elements of the right parts.
 The nodes in the left side are different by the construction of the segment directory. The following table (T3) shows the uniqueness in the columns of the right part. The sequence in one specific column has a particular modulus condition which is different from the ones in all other columns. Therefore the columns all contain disjoint sets of numbers:
 {| class="wikitable" style="text-align:left"
-!Column  j !!  Operation                     !! Expression           !! Covered        !! Remaining
+!Column  j !!  Operation                      !! Expression           !! Covered        !! Remaining
 |-                                                        
-| 1||                                        || n = 6i - 2           || (none)         || 4, 10, 16, 22 mod 24     
+| 1||                                         || n = 6i - 2           || (none)         || 4, 10, 16, 22 mod 24     
 |-                                                        
-| 2|| &micro;&micro;                         || 24i - 8              || 16 mod 24      || 4, 10, 22 mod 24
+| 2|| &micro;&micro;                          || 24i - 8              || 16 mod 24      || 4, 10, 22 mod 24
 |-                                                
-| 3|| &delta;&micro;&micro;                  || 8i - 4, i = 3k + 1   || 4 mod 24       || 10, 22, 34, 46 mod 48
+| 3|| &delta;&micro;&micro;                   || 8i - 4, i = 3k + 1   || 4 mod 24       || 10, 22, 34, 46 mod 48
 |-                                                
-| 4|| &micro;&micro;&sigma<sup>1</sup>       ||                      || 10 mod 48      || 22, 34, 46 mod 48
+| 4|| &micro;&micro;&sigma;<sup>1</sup>       ||                      || 10 mod 48      || 22, 34, 46 mod 48
 |-                                                
-| 5|| &delta;&micro;&micro;&sigma<sup>1</sup>||                      || 34 mod 48      || 22, 46, 70, 94 mod 96
+| 5|| &delta;&micro;&micro;&sigma;<sup>1</sup>||                      || 34 mod 48      || 22, 46, 70, 94 mod 96
 |-                                                
-| 6|| &micro;&micro;&sigma<sup>2</sup>       ||                      || 70 mod 96      || 22, 46, 94 mod 96 
+| 6|| &micro;&micro;&sigma;<sup>2</sup>       ||                      || 70 mod 96      || 22, 46, 94 mod 96 
 |-                                                
-| 7|| &delta;&micro;&micro;&sigma<sup>2</sup>||                      || 22 mod 96      || 46, 94, 142, 190 mod 192
+| 7|| &delta;&micro;&micro;&sigma;<sup>2</sup>||                      || 22 mod 96      || 46, 94, 142, 190 mod 192
 |-                                                
-| 8|| &micro;&micro;&sigma<sup>3</sup>       ||                      || 46 mod 96      || 94, 142, 190 mod 192
+| 8|| &micro;&micro;&sigma;<sup>3</sup>       ||                      || 46 mod 96      || 94, 142, 190 mod 192
 |-                                                
-| 9|| &delta;&micro;&micro;&sigma<sup>3</sup>||                      || 142 mod 192    || 94, 190, 286, 382 mod 384
+| 9|| &delta;&micro;&micro;&sigma;<sup>3</sup>||                      || 142 mod 192    || 94, 190, 286, 382 mod 384
 |-                                                
-|10|| &micro;&micro;&sigma<sup>4</sup>       ||                      || 94 mod 192     || 190, 286, 382 mod 384  
+|10|| &micro;&micro;&sigma;<sup>4</sup>       ||                      || 94 mod 192     || 190, 286, 382 mod 384  
 |-                                                
-|11|| &delta;&micro;&micro;&sigma<sup>4</sup>||                      || 190 mod 192    || 286, 382, 670, 766 mod 768
+|11|| &delta;&micro;&micro;&sigma;<sup>4</sup>||                      || 190 mod 192    || 286, 382, 670, 766 mod 768
 |-                                                                                                                     
-|...|| ...                                   ||...                   || ...            || ...   
+|...|| ...                                    ||...                   || ...            || ...   
 |}
 We can always exclude one of the elements remaining so far by looking in the next column of segments with sufficient length.
 
+* (S??) All source segments are either 
+** contracting, or 
+** k is even and the target segment is contracting, or 
+** k is odd  and the target segment has degree 2 and left side ''&#x2261; 94 mod 108''.
+From the attachment table (T4) we see:
+* Segments with odd index ''i &#x2261; 1,3,5,7 mod 8'' follow rule 5 or 6 and are contracting.
+::Only rules 5, 6 can have odd ''i''.
+* ''i &#x2261; 2 mod 8'' follow rule 9 and are contracting.
+::Directly from (T4) 
+ k even -&gt;  target row odd -&gt; rule 5/6
+ 6 mod 8 follows rule 10. Split it in:
+ 6 mod 16  (k = 2m, even)    : target row 18m+7 (odd) follows rule 5/6. 
+ 14 mod 16 (k = 2m + 1, odd) : target row 18m+16 = 6(3m + 3) - 2 super.
+ Rule 14: 2^2(4k+1) |-&gt; 3^3*k+7 = 54m + 34 = 6(9m + 6) - 2 super
+ Rule 18: |-> 3^4*k + 61 = 162m + 81 + 61 = 6(27m + 24) - 2 super
+ (A066443 = 1,7,61 ...) = 9 * odd - 2
+ 3^m*k + 9 * odd - 2 -&gt; 18n - 2  -&gt; 16 mod 18 or 94 mod 108 (
+ t16_18 = degree2 landing segments 94, 202, 310 ... (16, 34, 52, 70 ...)
+ 3^m*k with at least a factor 9 starts in rule 10 for odd k
 ===Degree 2===
 * All supernodes with odd ''i'' follow rules 5 or 6.
 * All other source rows either are a supernode, follow a rule 5 or 6, or their target is a supernode.
-* If the target is a supernode, then ''k'' is odd.
+* If the target is a supernode, then ''k'' is odd???
+* Index 7  mod 18 has degree 2,3  only in last of right part, column &gt;= 10 for degree2, column = 10 for degree 3, rule 5/6
+* Index 13 mod 18 has degree &gt;= 2 only in last of right part, column 9; 49 mod 54 has degree &gt;= 3; 49 mod 162 has degree = 4
+ t7_13_18: right part only, follows rule 5/6
+ t10_18: left side only
+ prove these "only", and "both" = lhs + last only
+===Degree 3===
+ i &#x2261; 22 mod 36 for lhs with degree 3
+ if i &#x2261; 58 mod 72 then rule = 9, else 10
+ if i &#x2261; 94 mod 144 then rule 10 and yellow itarget 634 mod 972 (critical)
+ if i &#x2261; 130 mod 216 then lhs = degree 4, rule 9 
+ 
+ 
