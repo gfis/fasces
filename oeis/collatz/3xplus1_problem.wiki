@@ -12,7 +12,7 @@ Simple visualizations of Collatz sequences show no obvious structure. The sequen
 </p>
 ===References===
 * Jeffry C. Lagarias, Ed.: ''The Ultimate Challenge: The 3x+1 Problem'', Amer. Math. Soc., 2010, ISBN 978-8218-4940-8. [http://www.ams.org/bookpages/mbk-78 MBK78]
-* OEIS A07165: [http://oeis.org/A070165/a070165.txt  File of first 10K Collatz sequences], ascending start values, with lengths
+* OEIS A070165: [http://oeis.org/A070165/a070165.txt  File of first 10K Collatz sequences], ascending start values, with lengths
 * Manfred Tr&uuml;mper: ''The Collatz Problem in the Light of an Infinite Free Semigroup''. Chinese Journal of Mathematics, Vol. 2014, [http://dx.doi.org/10.1155/2014/756917 Article ID 756917], 21 p.
 
 ==Collatz Graph==
@@ -47,42 +47,55 @@ The operations will be noted as ''infix'' operators, with the source node as lef
 
 ===Motivation: Patterns in sequences with the same length===
 A closer look at the Collatz sequences shows a lot of pairs of adjacent start values which have the same sequence length, for example (from [https://oeis.org/A070165 OEIS A070165]):
- 142/104: 142 d  71 u 214 d 107 u 322 d 161 u 484 d  242 d 121 u 364 ] d 182 ... 4 d 2 d 1
  143/104: 143 u 430 d 215 u 646 d 323 u 970 d 485 u 1456 d 728 d 364 ] d 182 ... 4 d 2 d 1
-The alternating pattern of operations can be continued to the left with additional pairs of steps:
-  n? u [ 62 d  31 u  94 d  47 u 142 d ...
+ 142/104: 142 d  71 u 214 d 107 u 322 d 161 u 484 d  242 d 121 u 364 ] d 182 ... 4 d 2 d 1
+Beginning at some node of the form ''6i - 2'' (364 in the example), these sequences join and follow the same path down to the root 4. The two differing parts of the sequences show a regular pattern, where nodes of the form ''6i - 2'' alternate with other nodes, and where the operations ''u'' and ''d'' also alternate. 
+This pattern of operations can be continued to the left with additional ''d'' and ''u'' operations:
  126 d [ 63 u 190 d  95 u 286 d 143 u ...
-The pattern stops here since there is no integer ''n'' such that ''n * 3 + 1 = 62''.
-Beginning at some node (364 &#x2261; 4 mod 6 in the example), these sequences join and follow the same path down to the root 4. The two differing parts of the sequences show a regular pattern. Proceeding from right to left, and thereby using the inverse operations, we see the following operations (example (E1)):
- 364 &delta; 121 &micro;  242 &micro; 484 &delta; 161 &micro; 322 &delta; 107 &micro; 214 &delta;  71 &micro; 142 &delta;  47 &micro;  94 &delta;  31 &micro; 62
- 364 &micro; 728 &micro; 1456 &delta; 485 &micro; 970 &delta; 323 &micro; 646 &delta; 215 &micro; 430 &delta; 143 &micro; 286 &delta;  95 &micro; 190 &delta; 63
+  n? u [ 62 d  31 u  94 d  47 u 142 d ...
+Finally the pattern stops because there is no integer ''n'' such that ''n * 3 + 1 = 62''. 
 
-==Segments==
-These patterns lead us to the construction of special subsets of paths in the Collatz graph which we call '''segments'''. Starting at some node ''n &#x2261; 4 mod 6'', the ''fork'', two subpaths lead away from the root in a prescribed, finite sequence of operations.
-:The nodes ''n &#x2261; 4 mod 6'' play a special role because they are the only ones for which both a &delta; and a &micro; operation is possible.
+Example (E1) shows the sequences above, read from right to left, with the inverse operations:
+ [ 364 &micro; 728 &micro; 1456 &delta; 485 &micro; 970 &delta; 323 &micro; 646 &delta; 215 &micro; 430 &delta; 143 &micro; 286 &delta;  95 &micro; 190 &delta; 63 ]
+ [ 364 &delta; 121 &micro;  242 &micro; 484 &delta; 161 &micro; 322 &delta; 107 &micro; 214 &delta;  71 &micro; 142 &delta;  47 &micro;  94 &delta;  31 &micro; 62 ]
+If we keep only the nodes of the form ''6i - 2'', and if we use the combined &sigma; operation, we get example (E2):
+ [ 364        &micro;&micro; 1456 &sigma; 970 &sigma; 646 &sigma; 430 &sigma; 286 &sigma; 190]
+ [ 364 &delta;&micro;&micro;  484 &sigma; 322 &sigma; 214 &sigma; 142 &sigma;  94 ]
 
-===Segment Construction Rules===
-Informally, the segments are constructed beginning at the fork with a few differing operations, followed by a sequence of &sigma; operations in both subpaths.
-
-The segment construction process stops when the next node in one of the two subpaths becomes divisible by 3, i.e. when a &delta; (resp. &sigma;) operation is no more possible. We will show that this is always the case.
-
+These patterns lead us to the construction of special subtrees in the Collatz graph which we call '''segments'''. Starting at some node of the form ''6i - 2'' (the ''left side''), two subpaths  (the ''upper branch'' and the ''lower branch'') continue to the right by a prescribed sequence of operations. The two branches form the ''right part'' of the segment.
+<!--
+:The nodes ''6i - 2'' play a special role because both a &delta; and a &micro; operation are a possible continuation. 
+-->
+Informally, a segment is constructed as follows:
+* Start with some node ''6i - 2'' as the left side.
+** Apply &micro;&micro; to reach the first node in the upper branch.
+** Apply &delta;&micro;&micro; to reach the first node in the lower branch.
+* In a loop, and for both branches, apply a &sigma; operation to the last node and append the resulting node as long as the &delta; part of the &sigma; operation is possible. 
+First we show that this segment construction process always stops.
+<!--
+First we justify the construction steps by claiming:
+* (S1) If the operation &micro;&micro; is applicable, it maintains the form ''6n - 2''. For &micro;&micro;&sigma;<sup>m</sup> and &delta&micro;&micro;&sigma;<sup>m</sup> and all ''m &gt;= 1'' this is also the case, províded that those operations are applied to a node of the form ''6(3k + 1) - 2''.
+ 6i - 2 &micro;&micro 24i - 8 + 6 - 6 = 6(4i - 1) - 2
+ 6(3k + 1) - 2 &micro;&micro&sigma; (2(4(3k + 1) - 1) - 1) * 2 = 
+ 6(4i - 1) - 2 &sigma; (2(4i - 1) - 1) * 2 = 2(8i - 3) = 
+ 6i - 2 &sigma; (2i - 1) * 2 = 4i - 2 
+ 6(3k + 1) - 2 &delta;&micro;&micro (2(3k + 1) - 1) * 4 = 24k + 4 = 6(4k + 1) - 2 
+--> 
 ===&sigma; replaces 3 by 2===
-The &sigma; operation, when applied to fork nodes of the form ''6i - 2'' with ''i = 3k'', has the interesting property that it maintains the general form ''6n - 2'':
+For this purpose, we observe that the &sigma; operation, when applied to left sides of the form ''6(3k) - 2''  has the interesting property that it maintains the general form ''6n - 2'':
  6(3k) - 2 &sigma; (2(3k) - 1) * 2 = 12k - 2 = 6(2k) - 2
-That means that &sigma; replaces one factor 3 by a factor 2 (it "squeezes" a 3 into a 2). In the opposite direction, the ''s ("spike")'' operation replaces one factor 2 in ''i'' by a factor 3.
-In the same way we could have used the form ''6n + 4'' with ''i = 3k - 1'':
+That means that &sigma; replaces one factor 3 by a factor 2 (it "squeezes" a 3 into a 2). In the opposite direction, the ''s ("spike")'' operation replaces one factor 2 by a factor 3.
+In the same way we could have used the form ''6n + 4'':
  6(3k - 1) + 4 &sigma; (2 * (3k - 1) + 1) * 2 = 12k - 4 + 2 = 6(2k - 1) + 4
 Whether the resulting formulas are more simple may be a matter of taste. We use the previous form ''6n - 2'' in the rest of this article.
 
-With this property it is easy to state:
-* (S??) For any possible fork node, the corresponding segment is of finite length.
-:: The length of the segment is proportional to the power of 3 contained in the factor ''i'' of the fork node, which is finite.
+The branch prolongation in the segment construction process must stop when the successive &sigma; operations have exhausted all factors of 3. Therefore we claim:
+* (S1) For any possible left side, the corresponding segment is of finite length.
 
 ===Segment Directory Construction===
-For the presentation of various properties of the segments, we use a linearized notation of the two subpaths. 
-We list the segments for all possible fork nodes of the form ''6i - 2, i &gt; 0'' as rows of an infinite array ''<nowiki>C[i, j]</nowiki>'' which we call the '''segment directory'''. 
-
-The following table '''(T2)''' tells how the columns ''j'' in one row ''i'' of ''C'' must be constructed if the condition is fulfilled: 
+For a convenient presentation of various properties of the segments, we linearize the notation for the subtrees by interleaving the two branches. Example (E2) then becomes:
+ 364 1456 484 970 322 646 214 430 142 286 94 190
+For the possible left sides of the form ''6i - 2, i &gt; 0'' we list the linearized form of the segments as rows of an array ''<nowiki>C[i, j]</nowiki>'' which we call the '''segment directory'''. The rows are indexed (numbered) by ''i''. They have a varying number of columns ''j &gt; 0''. The columns with even numbers correspond to the nodes in the upper branch, while the odd columns ''j &gt;= 3'' correspond to the nodes in the lower branch. The following table '''(T1)''' tells how these columns in one row of ''C'' are to be constructed, and what conditions must be fulfilled such that the operation is applicable (that means that the column exists): 
 {| class="wikitable" style="text-align:left"
 !Column j               !! Operation                   !! Formula                  !! Condition            !! First elements
 |-
@@ -112,25 +125,19 @@ The following table '''(T2)''' tells how the columns ''j'' in one row ''i'' of '
 The general formula for a column ''j >= 4'' uses the following parameters:
 * ''k = floor(j / 2)'' 
 * ''l = floor(j - 1) / 2)'' 
-* ''m = a(floor((j - 1) / 4)'',  where ''a(n)'' is the OEIS sequence ([http://oeis.org/A066443 A066443]: ''a(0) = 1; a(n) = 9 * a(n-1) - 2 for n &gt; 0'' . The values are the indexes 1, 7, 61, 547, 4921 ... of the variable length segments with left sides (4), 40, 364, 3280, 29524 ([http://oeis.org/A191681 OEIS A191681]). The constants appear first in columns 2-4 (in segment 1), 5-8 (in segment 7), 9-12 (in segment 61) and so on 
+* ''m = a(floor((j - 1) / 4)'',  where ''a(n)'' is the OEIS sequence ([http://oeis.org/A066443 A066443]: ''a(0) = 1; a(n) = 9 * a(n-1) - 2 for n &gt; 0'' . The values are the indexes 1, 7, 61, 547, 4921 ... of the variable length segments with left sides 4, 40, 364, 3280, 29524 ([http://oeis.org/A191681 OEIS A191681]). The constants appear first in columns 2-4 (in segment 1), 5-8 (in segment 7), 9-12 (in segment 61) and so on 
 * ''h = a(j)'', where ''a(n)'' is the OEIS sequence [http://oeis.org/A084101 A084101] with period 4: ''a(0..3) = 1, 3, 3, 1; a(n) = a(n - 4) for n &gt; 3''.
-(This results in ''k = 2, l = 1, m = 1, h = 1 for j = 4''.)
+For example, this results in ''k = 2, l = 1, m = 1, h = 1 for j = 4''.
 
-The following example (E2) shows the first few lines of the segment directory, together with the segment for 364 from example (E1) above:
+The following example (E3) shows the first few rows of the segment directory, together with the segment with index ''i = 61'' for left side 364  from example (E2) above:
 {{Collatz_exam2}}
 There is a more elaborated '''[http://www.teherba.org/fasces/oeis/collatz/comp.html segment directory]''' with several thousand rows.
 
-The segment directory contains an infinite number of little subtrees from which we aim to build the single Collatz tree.
-===Left Side and Right Part===
-The first column(s) ''<nowiki>C[i, 1]</nowiki>'' will be denoted as the '''left side''' of the segments (or of the whole directory), while the columns ''<nowiki>C[i, j], j &gt; 4</nowiki>'' are called the '''right part'''.
 ====Properties of the Segment Directory====
-We make a number of claims for the segment directory C:
+As for the segments, we denote the set of nodes in ''<nowiki>C[i, 1]</nowiki>'' as the ''left side'' of ''C'', and the set of nodes in ''<nowiki>C[i, j], j &gt;= 2</nowiki>'' as the right part of the segment directory.
+We make a number of observations and claims for the segment directory C:
 * (C1) All nodes in the segment directory have the form ''6n - 2''.
-:: This follows from the formula for columns ''<nowiki>C[i, 1..3]</nowiki>'', and for any higher column numbers from the 3-by-2 replacement property of the &sigma; operation.
-* (C2) All segments have a finite length.
-:: At some point the &sigma; operations will have replaced all factors 3 by 2.
-* (C3) All nodes in the right part of a segment have the form ''6(3<sup>n</sup> * 2<sup>m</sup> * f) - 2'' with the same "3-2-free" factor ''f''.
-:: This follows from the operations for columns <nowiki>C[i, 1..3]</nowiki>, and from the fact that the &sigma; operation maintains this property.
+:: This follows from the construction by table (T1).
 * (C4) All nodes in the right part of a particular segment are
 ** different among themselves, and
 ** different from the left side of that segment (except for the first segment for the root 4).
@@ -147,10 +154,10 @@ We make a number of claims for the segment directory C:
 :: We only need to take a segment which, in its right part, has a factor of 3 with a sufficiently high power, and the &sigma; operations will stretch out the segment accordingly.
 
 ==Coverage==
-===Coverage of Non-Forks===
+===Coverage of Non-left sides===
 We now show that
-* (C??) All numbers ''n &gt; 0'' are either forks (4 mod 6), or there is a unique path from a fork to ''n''. 
-Table (T5) shows the residues modulo 6 For some fork (source) node ''n = 6i - 2'':
+* (C??) All numbers ''n &gt; 0'' are either left sides (&#x2261; 4 mod 6), or there is a unique path from a left side to ''n''. 
+Table (T5) shows the residues modulo 6 for some left side (source) node ''n = 6i - 2'':
 {| class="wikitable" style="text-align:left"
 |-
 !  Source       !!Operation     !! Target  !!Reached<br>Nodes!! Remaining<br>Nodes
@@ -164,12 +171,12 @@ Table (T5) shows the residues modulo 6 For some fork (source) node ''n = 6i - 2'
 |  6i - 2       ||&micro;       || 12i - 4 ||8 mod 12        || 0 mod 6      
 |-                                                               
 |}
-The second row reaches all odd multiples of 3. All even multiples of 3 can be reached from there by one or more &micro; operations.
-* (C??) There is only one subpath from some fork to a specific non-fork.
+The second row reaches all odd multiples of 3. All even multiples of 3 can be reached from there by one or more &micro; operation.
+* (C??) There is only one subpath from some left side to a specific non-left side.
 
-===Coverage of Forks===
+===Coverage of left sides===
 We want to show:
-* (C??) Any fork node of the form ''6n - 2'' occurs exactly 
+* (C??) Any left side of the form ''6n - 2'' occurs exactly 
 ** once in the left side and 
 ** once in the right part of the segment directory.
 ** There is a bijective mapping between the left sides and the elements of the right parts.
@@ -195,7 +202,7 @@ The nodes in the left side are different by the construction of the segment dire
 |-                                                
 | 9|| &delta;&micro;&micro;&sigma;<sup>3</sup>||                      || 142 mod 192    || 94, 190, 286, 382 mod 384
 |-                                                
-|10|| &micro;&micro;&sigma;<sup>4</sup>       ||                      || 94 mod 192     || 190, 286, 382 mod 384  
+|10|| &micro;&micro;&sigma;<sup>4</sup>       ||                      || 94??? mod 192     || 190, 286, 382 mod 384  
 |-                                                
 |11|| &delta;&micro;&micro;&sigma;<sup>4</sup>||                      || 190 mod 192    || 286, 382, 670, 766 mod 768
 |-                                                                                                                     
@@ -223,6 +230,10 @@ From the attachment table (T4) we see:
  t16_18 = degree2 landing segments 94, 202, 310 ... (16, 34, 52, 70 ...)
  3^m*k with at least a factor 9 starts in rule 10 for odd k
 ===Degree 2===
+* (D1) At most one supernode can occur in the right part of a segment, and if so, it is the last or the last-but-one entry.
+:: We cannot continue a supernode ''6(6i - 2) - 2'' with a &delta;&micro; operation: 
+ (6(6i - 2) - 2 - 1) / 3 * 2 = 4(6i - 2) - 2 = 24i - 10 &#x2261 2 mod 6
+:: The result is no node of the form ''6i - 2''.
 * All supernodes with odd ''i'' follow rules 5 or 6.
 * All other source rows either are a supernode, follow a rule 5 or 6, or their target is a supernode.
 * If the target is a supernode, then ''k'' is odd???
