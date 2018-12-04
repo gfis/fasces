@@ -18,7 +18,8 @@
 #       -s  residues of segment indexes to be printed
 #       -i  segment index block size for printing
 #       -m  output mode: tsv, htm (no css), htm[l], latex
-#       -a  type of directory to be produced: detail, compress, double, style, testi
+#       -a  type of directory to be produced: 
+#           deta[il}, comp[ress], doub[le], style, test<i>, super
 #       -d  debug level: 0 (none), 1 (some), 2 (more)
 #
 # See http://www.teherba.org/index.php/OEIS/3x%2B1_Problem
@@ -36,6 +37,7 @@ my @RULENS    = (0, 1, 7, 61
     , 547, 4921, 44287, 398581
     , 3587227, 32285041, 290565367, 2615088301); # OEIS A066443
 my $a = "a"; # = "a" ("x") => with (no) links
+my $index_mask = 0b1111; # index = 0b1000, k = 0b0100, source rule, target rule/segment 
 #----------------
 # get commandline options
 my $debug  = 0;
@@ -71,21 +73,22 @@ my %text   =
     ( "detail"  , " Detailed   Segment Directory  S$subset"
     , "comp"    , " Compressed Segment Directory  C$subset"
     , "double"  , " Double Line Segment Directory S$subset"
+    , "super"   , " Chains of supersegments"                
     , "test"    , " Directory Test"
     );
 #----------------
 sub left_side  { # increase the degree by 1
-	my ($isegm) = @_;
-	return $incr6 * $isegm + $start4 - $incr6;
+    my ($isegm) = @_;
+    return $incr6 * $isegm + $start4 - $incr6;
 } # left_side
 #----------------
 sub segm_index { # decrease the degree by 1
-	my ($lhs) = @_;
-	return ($lhs - $start4 + $incr6) / $incr6;
+    my ($lhs) = @_;
+    return ($lhs - $start4 + $incr6) / $incr6;
 } # segm_index
 #----------------
 # initialization
-&print_header();
+&print_html_header();
 &print_preface();
 #----------------
 # generate the segment directory
@@ -97,32 +100,6 @@ while ($isegm < $imax) {
     $isegm ++;
 } # while $isegm
 #----------------
-sub print_head {
-	if (0) { # switch action
-	} elsif ($action =~ m{\Acomp})   { 
-		&print_compress_head();
-	} elsif ($action =~ m{\Adeta})   { 
-		&print_detail_head  ();
-	} elsif ($action =~ m{\Adoub})   { 
-		&print_double_head  ();
-	} else { 
-	}		
-} # print_head
-#----------------
-sub print_1_segment {
-	my ($isegm) = @_;
-	if (0) { # switch action
-	} elsif ($action =~ m{\Acomp})   { 
-		&print_1_compress($isegm);
-	} elsif ($action =~ m{\Adeta})   { 
-		&print_1_detail  ($isegm);
-	} elsif ($action =~ m{\Adoub})   { 
-		&print_1_double  ($isegm);
-	} else { 
-		&print_1_compress($isegm);
-	}		
-} # print_1_segment
-#----------------
 # action for one of the possible forms of directories
 my $iblock = 0;
 my @mods   = split(/\D/, $start); # comma-separated
@@ -132,17 +109,86 @@ if (0) { # switch action
 } elsif ($action =~ m{\A(comp|deta|doub)})   { # like "detail", but compressed segments
     &print_head();
     while ($iblock < $imax) {
-    	foreach my $mod (@mods) {
-    		$isegm = $iblock + $mod;
-        	&print_1_segment($isegm);
+        foreach my $mod (@mods) {
+            $isegm = $iblock + $mod;
+            if (0) {
+            } elsif ($mode =~ m{^tsv}) {
+                print          &get_1_segment($isegm) . "\n";
+            } elsif ($mode =~ m{^htm}) {
+                print "<tr>" . &get_1_segment($isegm) . "</tr>\n";
+            } 
         } # foreach $mod
         $iblock += $incr;
     } # while $isegm
     # case comp|deta|doub
 
+} elsif ($action =~ m{\Asuper})   { # chains while expanding only
+    @mods = (1, 4, 7, 10, 13, 16); # 1 has no supernode
+    $incr = 18;
+    &print_head();
+    while ($iblock < $imax) {
+        foreach my $mod (@mods) {
+            $isegm = $iblock + $mod;
+            my ($nrule, $itarget, $k) = &get_nrule_itarget_k($isegm);
+            if (&is_contracting($nrule) == 1) {
+                $index_mask = 0b1111;
+                print "<tr>";
+                print &get_1_segment($isegm);
+                my $last_super = &get_last_super($isegm);
+                while ($last_super != 0) { # follow chain
+                    $isegm = &segm_index($last_super);
+                    ($nrule, $itarget, $k) = &get_nrule_itarget_k($isegm);
+                    if (&is_contracting($nrule) == 1) {
+                        $last_super = 0; # break loop
+                    } else { # not contracting
+                        if ($isegm < $imax) {
+                            $index_mask = 0b0010;
+                            print &get_1_segment($isegm);
+                            $last_super = &get_last_super($isegm);
+                        } else {
+                            print "<td>... ?</td>";
+                            $last_super = 0;
+                        }
+                    } # not contracting
+                } # while chain
+                print "</tr>\n";
+            } # is_contracting
+        } # foreach $mod
+        $iblock += $incr;
+    } # while $isegm
+    # case super
+
+} elsif ($action =~ m{\Asuper})   { # chains independant of contraction/expansion
+    @mods = (7, 13);
+    $incr = 18;
+    &print_head();
+    while ($iblock < $imax) {
+        foreach my $mod (@mods) {
+            $isegm = $iblock + $mod;
+            $index_mask = 0b1111;
+            print "<tr>";
+            print &get_1_segment($isegm);
+            my $last_super = &get_last_super($isegm);
+            while ($last_super != 0) { # follow chain
+                $isegm = &segm_index($last_super);
+                if ($isegm < $imax) {
+                    $index_mask = 0b0010;
+                    print &get_1_segment($isegm);
+                    $last_super = &get_last_super($isegm);
+                } else {
+                    print "<td>... ?</td>";
+                    $last_super = 0;
+                }
+            } # while chain
+            print "</tr>\n";
+        } # foreach $mod
+        $iblock += $incr;
+    } # while $isegm
+    # case super
+
 } elsif ($action =~ m{\Astyle})   { # print stylesheet
-	&print_style();
-	# case style
+    &print_style();
+    # case style
 
 } elsif ($action =~ m{\Atest1})   { # test some condition
     print join($SEP, "test1", "index", "k", "sr", "itar", "lhs") . "\n";
@@ -174,8 +220,8 @@ if (0) { # switch action
     # case test1
 
 } elsif ($action =~ m{\Atest2})   { 
-	# either contracting or attaching to a supersegment == 94 mod 108
-	# this leaves us with degree 2 segments only
+    # either contracting or attaching to a supersegment == 94 mod 108
+    # this leaves us with degree 2 segments only
     print join($SEP, "test2", "index", "k", "sr", "tr", "itar", "tlhs") . "\n";
     $isegm = $start;
     while ($isegm < $imax) {
@@ -203,86 +249,6 @@ if (0) { # switch action
         $isegm += $incr;
     } # while $isegm
     # case test2
-
-} elsif ($action =~ m{\Asuper})   { # old supersegments
-    my @prev = (); # where the segment must be attached, or 0
-    my @next = (); # which segment attaches to the last, or 0
-    if ($debug >= 1) {
-        print sprintf("%6s:%6s  %6s  | %6s %2s rul > %6s  ...[%2s]  %6s %2s Rul > %6s\n"
-            , "index", "prev", "next", "lehs", "dg", "letar", "il", "last", "dg", "latar");
-    }
-    $isegm = $start;
-    my $index;
-    while ($isegm < $imax) {
-        if (! defined($segms[$isegm])) {
-            # $isegm = $imax; # break loop
-        } elsif (($isegm - 1) % 3 == 0) { # only rows 1, 4, 7 ... targets of rules >= 3
-            my @segment  = split(/$SEP/, $segms[$isegm]);
-            $index    = $segment[0];
-            if ($index % 3 == 1) { # rows 1, 4, 7 ...
-                $prev[$index] = 0;
-                $next[$index] = 0;
-                my $lehs      = $segment[1];
-                my ($lehs_rule, $lehs_tar, $lehs_k) = get_nrule_itarget_k($index);
-                my $lehs_deg  = &get_degree($lehs);
-                my $ilast     = scalar(@segment) - 1;
-                while ($ilast > 0 and $segment[$ilast] % 36 != 22) { # look for degree >= 2
-                    $ilast --;
-                }
-                my $last      = $segment[$ilast];
-                my ($last_rule, $last_tar, $last_k) = get_nrule_itarget_k($last);
-                my $last_deg  = &get_degree($last);
-                if (0) {
-                } elsif ($ilast == 0) { # no degree >= 2 in whole segment
-                } elsif ($ilast == 1) { # lehs only has degree >= 2
-                        $prev[$index] = $lehs_tar;
-                    #   $next[$index] = ($last + $min2) / $incr6;
-                } else { # there is a degree >= 2 in the right part
-                    if ($lehs_deg >= 2) { # both have degree >= 2
-                        $prev[$index] = $lehs_tar;
-                        $next[$index] = ($last + $min2) / $incr6;
-                    } else { # only in the right part
-                    #   $prev[$index] = $lehs_tar;
-                        $next[$index] = ($last + $min2) / $incr6;
-                    }
-                } # degree >= 2 in the right part
-
-                if ($debug >= 1) {
-                    # print join(" ", map { sprintf("%4d", $_) } @segment) . " # ";
-                    print sprintf("%6d:%6dp %6dn | %6d %2s r%-2s > %6d  ...[%2d]  %6d %2s R%-2s > %6d\n"
-                        , $index
-                        , $prev[$index], $next[$index]
-                        , $lehs
-                        , ($lehs_deg  <= 1 ? "  " : $lehs_deg )
-                        , ($lehs_rule <= 3 ? "  " : $lehs_rule)
-                        , $lehs_tar
-                        , $ilast, $last
-                        , ($last_deg  <= 1 ? "  " : $last_deg )
-                        , $last_rule
-                        , $last_tar
-                        );
-                } # debug
-            } # rows 1, 4, 7 ...
-        } # targets of rules >= 3
-        $isegm += 3;
-    } # while $isegm
-
-    $index = 1;
-    while ($index < $imax) {
-        if (defined($prev[$index]) and $prev[$index] == 0) { # was not attachable
-            my  ($node_rule, $node_tar, $node_k) = &get_nrule_itarget_k($index);
-            print sprintf("%6d %2d: ", $index, $node_rule);
-            my $tar = $next[$index];
-            while ($tar > 0) {
-                ($node_rule, $node_tar, $node_k) = &get_nrule_itarget_k($tar);
-                print "\t$tar,$node_rule";
-                $tar = $next[$tar];
-            }
-            print "\n";
-        } # not attachable
-        $index ++;
-    } # while $isegm
-    # case super
 
 } else {
     die "invalid action \"$action\"\n";
@@ -342,31 +308,44 @@ sub generate_segment { # build and return a single segment starting with $selem
     return join($SEP, @result);
 } # generate_segment
 #----------------
-sub print_1_double {
-    my ($index) = @_;
-    if (! defined($segms[$index])) {
-        $index = ($index + $min2) / $incr6;
+sub get_1_segment {
+    my ($isegm) = @_;
+    my ($result0, $result1);
+    if (0) { # switch action
+    } elsif ($action =~ m{\Acomp})   { 
+        $result0 = &get_1_compress($isegm);
+    } elsif ($action =~ m{\Adeta})   { 
+        $result0 = &get_1_detail  ($isegm);
+    } elsif ($action =~ m{\Adoub})   { 
+        ($result0, $result1) = &get_1_double  ($isegm);
         if (0) {
-        } elsif ($mode =~ m{\Atsv} ) {
-            print "$index\n";
-        } elsif ($mode =~ m{\Ahtm}) {
-            print "<tr>" . &get_index($index) . "</tr>\n";
-        } # mode
-    } else {
+        } elsif ($mode =~ m{^tsv}) {
+            $result0 .= "\n" . $result1;
+        } elsif ($mode =~ m{^htm}) {
+            $result0 .= "</tr><tr>" . $result1;
+        } 
+    } else { # e.g. "super"
+        $result0 = &get_1_compress($isegm);
+    }       
+    return $result0;
+} # get_1_segment
+#----------------
+sub get_1_double {
+        my ($index) = @_;
         my @segment  = split(/$SEP/, $segms[$index]);
         my $ir;
+        my $bold;
+        my ($result0, $result1);
         if (0) {
         } elsif ($mode =~ m{tsv} ) {
             print join($SEP, @segment) . "\n";
         } elsif ($mode =~ m{\Ahtm}) {
-
             # print the northern track
             $ir = 1;
-            print "<tr>"
+            $result0 = ""
                 . &get_index($segment[0])
-                . &cell_html(            $segment[1], "bor", $ir, "");
+                . &get_cell_html(            $segment[1], "bor", $ir, "");
             $ir += 2;
-            my $bold;
             while ($ir < scalar(@segment)) {
                 my $id = "";
                 $bold = "";
@@ -382,13 +361,12 @@ sub print_1_double {
                 if ($ir < 5) {
                     $bold = " sei";
                 }
-                print &cell_html($segment[$ir], "btr$bold", $ir, $id);
+                $result0 .= &get_cell_html($segment[$ir], "btr$bold", $ir, $id);
                 $ir += 2;
             } # while $ir
-            print "</tr>\n";
 
             # print the southern track
-            print "<tr>"
+            $result1 = ""
                 . "<td class=\"arl\">\&nbsp;</td>"
                 . "<td class=\"arl\">\&nbsp;</td>"
                 . "<td class=\"arr\">\&nbsp;</td>"
@@ -406,85 +384,69 @@ sub print_1_double {
                 if ($ir < 5) {
                     $bold = " sei";
                 }
-                print &cell_html($segment[$ir], "bbr$bold", $ir, "");
+                $result1 .= &get_cell_html($segment[$ir], "bbr$bold", $ir, "");
                 $ir += 2;
             } # while $ir
-            print "</tr>\n";
         } # mode
-    } # if defined
-} # print_1_double
+        return ($result0, $result1);
+} # get_1_double
 #----------------
-sub print_1_compress {
-    my ($index) = @_;
-    if (! defined($segms[$index])) {
-        $index = ($index + $min2) / $incr6;
-        if (0) {
-        } elsif ($mode =~ m{\Atsv} ) {
-            print "$index\n";
-        } elsif ($mode =~ m{\Ahtm}) {
-            print "<tr>" . &get_index($index) . "</tr>\n";
-        } # mode
-    } else {
+sub get_1_compress {
+        my ($index) = @_;
         my @segment = split(/$SEP/, $segms[$index]);
         my $ir;
+        my $step;
+        my ($result0, $result1);
         if (0) {
         } elsif ($mode =~ m{tsv} ) {
-            print join($SEP, $segment[0], $segment[1]);
+            $result0 = join($SEP, $segment[0], $segment[1]);
             $ir = 5;
-            my $step = 1;
+            $step = 1;
             while ($ir < scalar(@segment)) {
                 if ($segment[$ir] % $incr6 == $start4) {
-                    print "$SEP$segment[$ir]";
+                    $result0 .= "$SEP$segment[$ir]";
                 }
                 $ir += $step;
                 $step = $step == 1 ? 3 : 1;
             } # while $ir
-            print "\n";
         } elsif ($mode =~ m{\Ahtm}) {
-            print "<tr>"
+            $result0 = ""
                 . &get_index($segment[0])
-                . &cell_html($segment[1], "bor", 1, "");
+                . &get_cell_html($segment[1], "bor", 1, "");
             $ir = 5;
-            my $step = 1;
+            $step = 1;
             while ($ir < scalar(@segment)) {
                 my $id = "";
                 if ($segment[$ir] % $incr6 == $start4) {
                     $id = $segment[$ir];
-                    print &cell_html($segment[$ir], "bor seg", $ir, $id);
+                    $result0 .= &get_cell_html($segment[$ir], "bor seg", $ir, $id);
                 }
                 $ir += $step;
                 $step = $step == 1 ? 3 : 1;
             } # while $ir
-            print "</tr>\n";
         } # mode
-    } # if defined
-} # print_1_compress
+        return $result0;
+} # get_1_compress
 #----------------
-sub print_1_detail {
-    my ($index) = @_;
-    if (! defined($segms[$index])) {
-        $index = ($index + $min2) / $incr6;
-        if (0) {
-        } elsif ($mode =~ m{\Atsv} ) {
-            print "$index\n";
-        } elsif ($mode =~ m{\Ahtm}) {
-            print "<tr>" . &get_index($index) . "</tr>\n";
-        } # mode
-    } else {
+sub get_1_detail {
+        my ($index) = @_;
         my @segment = split(/$SEP/, $segms[$index]);
         my $ir;
+        my $step;
+        my $bold;
+        my ($result0, $result1);
         if (0) {
         } elsif ($mode =~ m{tsv} ) {
-            print join($SEP, @segment) . "\n";
+            $result0 = join($SEP, @segment);
         } elsif ($mode =~ m{\Ahtm}) {
-            print "<tr>"
+            $result0 = ""
                 . &get_index($segment[0])
-                . &cell_html($segment[1], "bor", 1, "");
+                . &get_cell_html($segment[1], "bor", 1, "");
             $ir = 2;
-            my $step = 1;
+            $step = 1;
             while ($ir < scalar(@segment)) {
                 my $id = $segment[$ir];
-                my $bold = "";
+                $bold = "";
                 if ($segment[$ir] % $incr6 == $start4) {
                     if ($ir % 4 == 1 or ($ir % 4 == 2 and $ir > 5)) {
                         $bold = " seg";
@@ -493,41 +455,66 @@ sub print_1_detail {
                 if ($ir < 5) {
                     $bold = " sei";
                 }
-                print &cell_html($segment[$ir], "bor$bold", $ir, $id);
+                $result0 .= &get_cell_html($segment[$ir], "bor$bold", $ir, $id);
                 $ir += $step;
             } # while $ir
-            print "</tr>\n";
         } # mode
-    } # if defined
-} # print_1_detail
+        return $result0;
+} # get_1_detail
 #----------------
 sub is_contracting { # left-shiftig, decreasing
     my ($nrule) = @_;
     return ($nrule == 10 or $nrule == 14 or $nrule >= 18) ? 0 : 1;
 } # is_contracting
 #----------------
-sub get_index {
+sub get_index { # get the index prefix of a row (without the left side)
+    # global: $index_mask
     my  ($index) = @_;
     my  ($nrule1, $itarget1, $k1) = &get_nrule_itarget_k($index);
-    my  $result = "<td class=\"arc\">$index</td>"
-                . "<td class=\"arc bor\">$k1</td>"
-                . "<td class=\"arc rule$nrule1\" title=\"($nrule1)-$itarget1\">$nrule1</td>";
-    if (&is_contracting($nrule1) == 0) {
-        my $target1 = $incr6 * $itarget1 - $min2;
-        my $deg_target1 = &get_degree($target1);
-        my ($nrule2, $itarget2, $k2) = &get_nrule_itarget_k($itarget1);
-        if ($deg_target1 >= 2) {
-            $result .= "<td class=\"arc super$deg_target1\" title=\"($nrule2)-$itarget2\">$target1</td>";
-        } else {
-            $result .= "<td class=\"arc rule$nrule2\" title=\"($nrule2)-$itarget2\">$nrule2</td>";
-        }
-    } else {
-        $result .= "<td class=\"arc bor\">&nbsp;</td>";
+    my  $result = "";
+    if (($index_mask & 0b1000) > 0) {
+        $result .= "<td class=\"arc\">$index</td>" 
     }
+    if (($index_mask & 0b0100) > 0) {
+        $result .= "<td class=\"arc bor\">$k1</td>";
+    }
+    if (($index_mask & 0b0010) > 0) {
+        $result .= "<td class=\"arc rule$nrule1\" title=\"($nrule1)-$itarget1\">$nrule1</td>";
+    }
+    if (($index_mask & 0b0001) > 0) {
+        if (&is_contracting($nrule1) == 0) {
+            my $target1 = $incr6 * $itarget1 - $min2;
+            my $deg_target1 = &get_degree($target1);
+            my ($nrule2, $itarget2, $k2) = &get_nrule_itarget_k($itarget1);
+            if ($deg_target1 >= 2) {
+                $result .= "<td class=\"arc super$deg_target1\" title=\"($nrule2)-$itarget2\">$target1</td>";
+            } else {
+                $result .= "<td class=\"arc rule$nrule2\" title=\"($nrule2)-$itarget2\">$nrule2</td>";
+            }
+        } else {
+            $result .= "<td class=\"arc bor\">&nbsp;</td>";
+        }
+    } # mask 0b0001
     return $result;
 } # get_index
 #----------------
-sub cell_html { # print one table cell
+sub get_last_super { # get the last segment element with degree >= 2, or 0 if no supernode in right part
+    my  ($index) = @_;
+    my @segment = split(/$SEP/, $segms[$index]);
+    my $ir = scalar(@segment) - 1;
+    my $result = 0;
+    my $degree = &get_degree($segment[$ir]);
+    while ($ir >= 2 and $degree < 2) {
+        $ir --;
+        $degree = &get_degree($segment[$ir]);
+    } # while $ir
+    if ($ir >= 2) {
+        $result = $segment[$ir];
+    }
+    return $result;
+} # get_last_super
+#----------------
+sub get_cell_html { # get the HTML of one table cell
     my ($elem, $border, $ir, $id) = @_;
     my $rest = $elem % $incr6;
     my $isource = ($elem + $min2) / $incr6;
@@ -565,24 +552,24 @@ sub cell_html { # print one table cell
     }
     $result .= "</td>";
     return $result;
-} # cell_html
+} # get_cell_html
 #------------------------
 sub get_degree {
-    my ($index) = @_;
+    my ($elem) = @_;
     my $result = 0;
     if (0) { # A000400: 46656, 279936, 1679616, 10077696
              # A005610: 2, 14, 86, 518, 3110, 18662, 111974, 671846, 4031078
-    } elsif ($index %  46656 -  46656 ==  -18662) {
+    } elsif ($elem %  46656 -  46656 ==  -18662) {
         $result = 6;
-    } elsif ($index %   7776 -   7776 ==   -3110) {
+    } elsif ($elem %   7776 -   7776 ==   -3110) {
         $result = 5;
-    } elsif ($index %   1296 -   1296 ==    -518) {
+    } elsif ($elem %   1296 -   1296 ==    -518) {
         $result = 4;
-    } elsif ($index %    216 -    216 ==     -86) {
+    } elsif ($elem %    216 -    216 ==     -86) {
         $result = 3;
-    } elsif ($index %     36 -     36 ==     -14) {
+    } elsif ($elem %     36 -     36 ==     -14) {
         $result = 2;
-    } elsif ($index %      6 -      6 ==      -2) {
+    } elsif ($elem %      6 -      6 ==      -2) {
         $result = 1;
     }
     return $result;
@@ -628,7 +615,7 @@ sub get_nrule_itarget_k {
 } # get_nrule_itarget_k
 #----------------
 sub print_style {
-	my $stylesheet = <<"GFis";
+    my $stylesheet = <<"GFis";
 .arr    { background-color: white          ; color: black; text-align: right        }
 .arc    { background-color: white          ; color: black; text-align: center;      }
 .arl    { background-color: white          ; color: black; text-align: left;        }
@@ -650,54 +637,63 @@ sub print_style {
 .d4     { background-color: khaki          ; color: black; }
 .d5     { background-color: lavender       ; color: black; }
 .super2 { background-color: yellow         ; color: black; }
-.super3 { background-color: orange         ; color: white; }
-.super4 { background-color: crimson        ; color: white; }
+.super3 { background-color: gold           ; color: black; }
+.super4 { background-color: coral          ; color: white; }
+.super5 { background-color: crimson        ; color: white; }
+.super6 { background-color: firebrick      ; color: white; }
+.super7 { background-color: black          ; color: white; }
+.super8 { background-color: black          ; color: white; }
 .super3 a { color: inherit; }
 .super4 a { color: inherit; }
 .super5 a { color: inherit; }
 .super6 a { color: inherit; }
 .super7 a { color: inherit; }
 .super8 a { color: inherit; }
-.super5 { background-color: firebrick      ; color: white; }
-.super6 { background-color: black          ; color: white; }
-.super7 { background-color: black          ; color: white; }
-.super8 { background-color: black          ; color: white; }
-/*
-.super5 { background-color: aqua           ; color: black; }
-*/
 .rule5  { background-color: Lime           ; color: black; }
 .rule6  { background-color: LawnGreen      ; color: black; }
 .rule9  { background-color: Chartreuse     ; color: black; }
-.rule10 { background-color: LightSalmon    ; color: black; }
+.rule10 { background-color: LightBlue      ; color: black; }
 .rule13 { background-color: SpringGreen    ; color: black; }
-.rule14 { background-color: DarkSalmon     ; color: black; }
+.rule14 { background-color: SkyBlue        ; color: black; }
 .rule17 { background-color: LightGreen     ; color: black; }
-.rule18 { background-color: LightCoral     ; color: white; }
-.rule21 { background-color: IndianRed      ; color: white; }
-.rule22 { background-color: Crimson        ; color: white; }
-.rule25 { background-color: Firebrick      ; color: white; }
-.rule26 { background-color: Firebrick      ; color: white; }
-.rule29 { background-color: Firebrick      ; color: white; }
-.rule30 { background-color: Firebrick      ; color: white; }
+.rule18 { background-color: DeepSkyBlue    ; color: black; }
+.rule21 { background-color: Blue           ; color: white; }
+.rule22 { background-color: DarkBlue       ; color: white; }
+.rule25 { background-color: DarkBlue       ; color: white; }
+.rule26 { background-color: DarkBlue       ; color: white; }
+.rule29 { background-color: DarkBlue       ; color: white; }
+.rule30 { background-color: DarkBlue       ; color: white; }
 .seg    { font-weight: bold; }
 .sei    { /* font-weight: bold; */
           font-style    : italic; }
 GFis
     if (0) {
     } elsif ($action =~ m{\Astyle}) {
-    	print "$stylesheet\n";
+        print "$stylesheet\n";
     } elsif ($mode =~ m{\Ahtm\Z}) {
     } elsif ($mode =~ m{\Ahtml}) {
-    	print "<link rel=\"stylesheet\" href=\"stylesheet.css\" />\n"; # new code; separate stylesheet
+        print "<link rel=\"stylesheet\" href=\"stylesheet.css\" />\n"; # new code; separate stylesheet
     } elsif ($mode =~ m{\Ahtml}) { # old code, stylesheet included in HTML
-    	print "<style>\n$stylesheet\n</style>\n";
-	} # ignore for tsv etc.
+        print "<style>\n$stylesheet\n</style>\n";
+    } # ignore for tsv etc.
 } # print_style
+#----------------
+sub print_head {
+    if (0) { # switch action
+    } elsif ($action =~ m{\Acomp})   { 
+        &print_compress_head();
+    } elsif ($action =~ m{\Adeta})   { 
+        &print_detail_head  ();
+    } elsif ($action =~ m{\Adoub})   { 
+        &print_double_head  ();
+    } else { 
+    }       
+} # print_head
 #------------------------
-sub print_header {
+sub print_html_header {
     if (0) {
     } elsif ($action =~ m{\Astyle}) {
-    	# ignore
+        # ignore
     } elsif ($mode =~ m{\Atsv}) {
         print <<"GFis";
 # 3x+1 $text{$action}
@@ -718,20 +714,20 @@ GFis
 <meta name="generator" content="https://github.com/gfis/fasces/blob/master/oeis/collatz/segment.pl" />
 <meta name="author"    content="Georg Fischer" />
 GFis
-		&print_style();
-		print <<"GFis";
+        &print_style();
+        print <<"GFis";
 </head>
 <body style=\"font-family: Verdana,Arial,sans-serif;\" >
 <h3 id="start">3x+1 $text{$action}</h3>
 GFis
     } else { # invalid mode
     }
-} # print_header
+} # print_html_header
 #----------------
 sub print_preface {
     if (0) {
     } elsif ($action =~ m{\Astyle}) {
-    	# ignore
+        # ignore
     } elsif ($mode =~ m{\Atsv}) {
         print <<"GFis";
 #
@@ -942,7 +938,7 @@ GFis
 sub print_trailer {
     if (0) {
     } elsif ($action =~ m{\Astyle}) {
-    	# ignore
+        # ignore
     } elsif ($mode =~ m{\Atsv}) {
         print "# End of directory\n";
     } elsif ($mode =~ m{\Ahtm\Z}) {

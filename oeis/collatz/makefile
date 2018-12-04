@@ -15,13 +15,15 @@ SRC=comp.html
 all: style dirs exam
 old:rails kernels kerneval eawefr
 #----
-dirs: comp double detail atab degr 
+dirs: comp double detail atab degr super
 comp: 
 	perl segment.pl         -n $(N)    -d $(D)                 -a comp   > $@.html
 double: 
 	perl segment.pl         -n $(N)    -d $(D)                 -a double > $@.html
 detail: 
 	perl segment.pl         -n $(N)    -d $(D)                 -a detail > $@.html
+super: 
+	perl segment.pl         -n $(N)    -d $(D)                 -a super  > $@.html
 
 t7_13_18:
 	perl segment.pl         -n $(N)    -d $(D) -s 7,13    -i 18   -a comp   > $@.html
