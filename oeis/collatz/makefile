@@ -12,12 +12,17 @@ I=18
 M=html
 SRC=comp.html
 
-all: style dirs exam
-old:rails kernels kerneval eawefr
+all: style dirs templates
 #----
 dirs: comp double detail atab degr super
 comp: 
 	perl segment.pl         -n $(N)    -d $(D)                 -a comp   > $@.html
+root1: 
+	perl segment.pl -r 1    -n $(N)    -d $(D)                 -a comp   > $@.html
+root2_18: 
+	perl segment.pl -r 2    -n $(N)    -d $(D) -s 4  -i 18     -a comp   > $@.html 
+root2_3:  
+	perl segment.pl -r 2    -n $(N)    -d $(D) -s 1  -i 3      -a comp   > $@.html 
 double: 
 	perl segment.pl         -n $(N)    -d $(D)                 -a double > $@.html
 detail: 
@@ -38,13 +43,13 @@ r9_10:
 	# perl segment.pl         -n $(N)    -d $(D) -s 10,22   -i 24   -a comp   > $@.html
 	perl segment.pl         -n $(N)    -d $(D) -s 2,6     -i 8    -a comp   > $@.html
 #----                                                     
-degr: degree2 degree3                                     
+degr: degree2 degree3 degree4                                    
 degree2:                                                  
-	perl segment.pl         -n $(N)    -d $(D) -s 1       -i 3    -a comp   > $@.html
+	perl segment.pl         -n $(N)    -d $(D) -s 4       -i 6    -a comp   > $@.html
 degree3:                                                  
 	perl segment.pl         -n $(N)    -d $(D) -s 22      -i 36   -a comp   > $@.html
 degree4:                                                  
-	perl segment.pl         -n 10000   -d $(D) -s 49      -i 81   -a comp   > $@.html
+	perl segment.pl         -n $(N)    -d $(D) -s 22      -i 108  -a comp   > $@.html
 #----                                                     
 t18:                                                      
 	perl segment.pl         -n 10000   -d $(D) -s 7,16    -i 18   -a comp   > $@.html
@@ -59,15 +64,44 @@ style:
 atab:
 	perl attachtab.pl > $@.wiki 2> x.tmp
 #----
-exam: e1 e2
+templates: e1 exam2
 e1:
 	perl segment.pl -n 8  -m htm -a comp > $@.htm
-e2:
-	perl segment.pl -n 62  -m htm -a comp | perl filter_exam.pl -h 0 -l 7 -n 61 > $@.htm
+exam2:
+	perl segment.pl -n 62 -b 1000 -m htm -a comp \
+	| perl filter_exam.pl -h 0 -l 7 -n 61 | tee $@.htm
 deploy:
-	scp stylesheet.css comp.html double.html detail.html degree2.html degree3.html degree4.html \
+	scp stylesheet.css \
+		comp.html double.html detail.html \
+		super.html \
+		degree2.html degree3.html degree4.html \
 		gfis@punctum.com:/var/www/html/teherba.org/fasces/oeis/collatz/
-#----
+#--------
+a32tab: a32t1 a32t2 a32t3 a32t4
+a32t1:
+	perl a32tab.pl 10000000 > a32tab.tmp
+	sed -e "s/ /\n/g" a32tab.tmp | sort -n | uniq -c \
+	| sed -e "s/^ *//" > a32_uniqc.tmp 
+a32t2:
+	# all counts are 1?
+	grep -v "^1 " a32_uniqc.tmp	|| :
+a32t3:
+	cut -d " " -f 2 a32_uniqc.tmp                              > a32_d1.tmp
+	cat -n a32_uniqc.tmp | sed -e "s/^ *//" | cut -d "	" -f 1 > a32_d2.tmp
+a32t4:
+	diff -w --suppress-common-lines --width=32 -y a32_d1.tmp a32_d2.tmp | head -8
+# result for 10 mio. is (delta 16384):
+#              > 65536
+#              > 81920
+#              > 90112
+#              > 98304
+#              > 118784
+#              > 122880
+#              > 131072
+#              > 135168
+#==========================
+# old targets
+
 rails: 
 	perl collatz_rails.pl   -n $(N)    -d $(D) -s $(S) -i $(I) -a simple > rails.html
 eawefr: west east free

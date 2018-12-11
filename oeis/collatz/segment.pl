@@ -3,7 +3,8 @@
 # https://github.com/gfis/fasces/blob/master/oeis/collatz/segment.pl
 # Print a directory of segments in the Collatz graph
 # @(#) $Id$
-# 2018-12-03: indexin 0, 1, 2 ...
+# 2018-12-07: -m root
+# 2018-12-03: index in 0, 1, 2 ...
 # 2018-11-27: test2
 # 2018-11-21: SR, TR
 # 2018-11-15: copied from collatz_rails.pl
@@ -14,13 +15,15 @@
 #------------------------------------------------------
 # Usage:
 #   perl segment.pl [-n maxn] [-d debug] [-s 4] [-i 6] [-a comp] > comp.html
-#       -n  maximum segment index
-#       -s  residues of segment indexes to be printed
-#       -i  segment index block size for printing
-#       -m  output mode: tsv, htm (no css), htm[l], latex
 #       -a  type of directory to be produced: 
 #           deta[il}, comp[ress], doub[le], style, test<i>, super
+#       -b  bit mask for &get_index
 #       -d  debug level: 0 (none), 1 (some), 2 (more)
+#       -i  segment index block size for printing
+#       -m  output mode: tsv, htm (no css), htm[l], latex
+#       -n  maximum segment index
+#       -r  degree of rooting: 0 (none), 1 (index), 2 (supernode) 
+#       -s  residues of segment indexes to be printed
 #
 # See http://www.teherba.org/index.php/OEIS/3x%2B1_Problem
 #--------------------------------------------------------
@@ -40,6 +43,7 @@ my $a = "a"; # = "a" ("x") => with (no) links
 my $index_mask = 0b1111; # index = 0b1000, k = 0b0100, source rule, target rule/segment 
 #----------------
 # get commandline options
+my $action = "comp";
 my $debug  = 0;
 my $imax   = 10000; # max. start value
 my $start4 = 4;
@@ -48,12 +52,15 @@ my $min2   = $incr6 - $start4;
 my $start  = 1;
 my $incr   = 1;
 my $mode   = "html";
-my $action = "comp";
+my $root   = 0;
+
 while (scalar(@ARGV) > 0 and ($ARGV[0] =~ m{\A\-})) {
     my $opt = shift(@ARGV);
     if (0) {
     } elsif ($opt =~ m{a}) {
         $action = shift(@ARGV);
+    } elsif ($opt =~ m{b}) {
+        $index_mask = oct("0b" . shift(@ARGV));
     } elsif ($opt =~ m{d}) {
         $debug  = shift(@ARGV);
     } elsif ($opt =~ m{i}) {
@@ -62,6 +69,8 @@ while (scalar(@ARGV) > 0 and ($ARGV[0] =~ m{\A\-})) {
         $mode   = shift(@ARGV);
     } elsif ($opt =~ m{n}) {
         $imax   = shift(@ARGV);
+    } elsif ($opt =~ m{r}) {
+        $root   = shift(@ARGV);
     } elsif ($opt =~ m{s}) {
         $start  = shift(@ARGV);
     } else {
@@ -531,6 +540,17 @@ sub get_cell_html { # get the HTML of one table cell
             $result .= " title=\"($nrule)-$target\"";
         }
         $result .= " class=\"super$degree";
+        if (0) {
+        } elsif ($root == 1) {
+        	$elem = $isource;
+        } elsif ($root == 2) {
+        	$elem = $isource;
+        	if (($elem + $min2) % $incr6 == 0) {
+        		$elem = ($elem + $min2) / $incr6;
+        	} else {
+        		$elem = "";
+        	}
+        }
     } else {
         $result .= " class=\"d$rest";
     }
@@ -710,7 +730,7 @@ GFis
 ]>
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-<title>3x+1 $text{$action}</title>
+<title>$text{$action}</title>
 <meta name="generator" content="https://github.com/gfis/fasces/blob/master/oeis/collatz/segment.pl" />
 <meta name="author"    content="Georg Fischer" />
 GFis

@@ -2,6 +2,7 @@
 
 # Filter example HTM files 
 # @(#) $Id$
+# 2018-12-05: debug
 # 2018-12-02, Georg Fischer
 #------------------------------------------------------
 # Usage:
@@ -39,34 +40,39 @@ while (scalar(@ARGV) > 0 and ($ARGV[0] =~ m{\A\-})) {
 # processing 
 my $iseg;
 while (<>) {
-	s{\s+\Z}{}; # chompr
-	my $line = $_;
-	if (0) {
-	} elsif ($head == 0 and ($line =~ m{\A\<(\/?tr\>\Z|td )})) {
-		# skip
-	} elsif ($line =~ m{\"\>(\d+)\<\/td}) { # table body row
-		;
-		$iseg = $1;
-		if (0) {
-		} elsif ($iseg == $limit) {
-			print "$line\n";
-			&ellipsis();
-		} elsif ($iseg == $maxn ) {
-			print "$line\n";
-			&ellipsis();
-		} elsif ($iseg <  $limit) {
-			print "$line\n";
-		}
-		# table body row
-	} else {
-		print "$line\n";
-	}
+    s{\s+\Z}{}; # chompr
+    my $line = $_;
+    if (0) {
+    } elsif (($line =~ m{\"\>(\d+)\<\/td\>\<td})) { # table body row
+        $iseg = $1;
+        print STDERR "match1 $line\n" if $debug > 0;
+        if (0) {
+        } elsif ($iseg == $limit) {
+            print "$line\n";
+            &ellipsis();
+        } elsif ($iseg == $maxn ) {
+            print "$line\n";
+            &ellipsis();
+        } elsif ($iseg <  $limit) {
+            print "$line\n";
+        } else {
+        print STDERR "match5 $line\n" if $debug > 0;
+        }
+        # table body row
+    } elsif ($head == 0 and ($line =~ m{\A\<\/?tr\>\Z})) {
+        print STDERR "match2 $line\n" if $debug > 0;
+    } elsif ($head == 0 and ($line =~ m{\A\<td})) {
+        print STDERR "match3 $line\n" if $debug > 0;
+    } else {
+        print STDERR "match4 $line\n" if $debug > 0;
+        print "$line\n";
+    }
 } # while $itr
 
 # end main
 #================================
 sub ellipsis {
-	print "<tr><td>...</td></tr>\n";
+    print "<tr><td>...</td></tr>\n";
 } # ellipsis
 #----------------
 __DATA__

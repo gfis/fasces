@@ -1,34 +1,36 @@
 #!/usr/bin/perl
 
-# Wvaluate wget logfile.
+# Evaluate wget logfile.
 # determine whether the connection failed, or which
 # return code was received. 
 # For 3xx codes, get the redirect location
-# 2009-01-07, Georg Fischer <punctum (at) punctum.com> 
-
+# 2018-12-112: revived
+# 2009-01-07, Georg Fischer 
+#-----------------------------------
 use strict;
+
 $/ = "\n--"; # split into blocks separated by "\n--"
 
-	while (<>) {
-		my $block = $_;
-		$block =~ m[\-\- ([^\n]+)];
-		my $url = $1;
-		my $result = "unknown";
-		my $redirect = "";
-		if (0) {
-		} elsif ($block =~m[\.\.\.\s*failed.\s*([^\n]*)]) {
-			$result = $1;		
-		} elsif ($block =~ m[HTTP request sent\, awaiting response\.\.\.\s*(\S+)]) {
-			$result = $1;		
-			if ($result =~ m[\A3]) {
-				if ($block =~ m[Location:\s*(\S+)]) {
-					$redirect = $1;
-				}
-			}
-		}
-		print "$result\t$url\t$redirect\n";
-	} # while <>
-	
+while (<>) {
+    my $block = $_;
+    $block =~ m[\-\- ([^\n]+)];
+    my $url = $1;
+    my $result = "unknown";
+    my $redirect = "";
+    if (0) {
+    } elsif ($block =~m[\.\.\.\s*failed.\s*([^\n]*)]) {
+        $result = $1;       
+    } elsif ($block =~ m[HTTP request sent\, awaiting response\.\.\.\s*(\S+)]) {
+        $result = $1;       
+        if ($result =~ m[\A3]) {
+            if ($block =~ m[Location:\s*(\S+)]) {
+                $redirect = $1;
+            }
+        }
+    }
+    print "$result\t$url\t$redirect\n";
+} # while <>
+
 __DATA__
 --00:17:01--  http://contentdm.lib.byu.edu/cdm4/item_viewer.php?CISOROOT=/ETD&CISOPTR=388&CISOBOX=1&REC=3
            => `item_viewer.php?CISOROOT=%2FETD&CISOPTR=388&CISOBOX=1&REC=3'

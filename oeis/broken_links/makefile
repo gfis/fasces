@@ -1,13 +1,53 @@
 #!/bin/make
 
 # makefile for OEIS URL checking
+# 2018-12-11: use bigout1 with 389420 %H lines and A-numbers
 # 2018-10-16: revived
 # 2009-01-07, Georg Fischer, punctum(at)punctum.com
-# The database files are named like
+# The database files were formerly named like
 #	http://www.research.att.com/~njas/sequences/eisBTfry00000.txt
 #----------------------------------------
-all: 
+LIM=99999
+
+all: clean nonlocal nocommon tilde
 	# do not call make without a target
+clean:
+	rm -f *.tmp
+nonlocal:
+	wc -l bigout1
+	grep -vE "href=\"/"     bigout1  > x.tmp
+	grep -vE "\/oeis.org\/" x.tmp    > $@.tmp
+	grep  -E "\/oeis.org\/" x.tmp    > $@.local-http.tmp
+	wc -l $@.*tmp
+nocommon:
+	grep -vE "(doi.org|en.wikipedia.org|mathworld.wolfram.com|arxiv.org|web.archive.org|lacim.uqam.ca|emis.de)"  nonlocal.tmp > $@.tmp
+	wc -l $@.tmp
+tilde: tilde_full tilde_root
+tilde_full:
+	grep -E "(~|\%E7)" nocommon.tmp  > $@.tmp
+	perl grepurl.pl $@.tmp           > $@.url.tmp
+	cut -d "	" -f 2 $@.url.tmp | sort | uniq -c > $@.uniq.tmp
+	wc -l $@.*tmp 
+tilde_root:
+	grep -E "(~|\%E7)" nocommon.tmp  > $@.tmp
+	perl grepurl.pl -t $@.tmp        > $@.url.tmp
+	cut -d "	" -f 2 $@.url.tmp | sort | uniq -c > $@.uniq.tmp
+	wc -l $@.*tmp 
+test_urls: test1 test2
+test1:
+	cat tilde_root.uniq.tmp \
+	| sort -rn \
+	| cut -b 9- | head -$(LIM)  > url.tmp.lst
+	wget --spider --tries=1 --timeout=2 -i url.tmp.lst -o wget.log || :
+test2:
+	perl eval_log.pl wget.log \
+	| sort \
+	| tee url_result.log
+test3:
+	cut -d "	" -f 1 url_result.log \
+	| sort | uniq -c | tee tilde_return_codes.tmp
+#-------------------------
+# old targets
 check: down geturls spider eval
 
 geturls:
@@ -43,4 +83,3 @@ split:
 gather:
 	rm -f url.tmp.lst
 	find url -name "*.lst" | sort | xargs -l cat >> url.tmp.lst
-	

@@ -49,6 +49,9 @@ The operations will be noted as ''infix'' operators, with the source node as lef
 A closer look at the Collatz sequences shows a lot of pairs of adjacent start values which have the same sequence length, for example (from [https://oeis.org/A070165 OEIS A070165]):
  143/104: 143 u 430 d 215 u 646 d 323 u 970 d 485 u 1456 d 728 d 364 ] d 182 ... 4 d 2 d 1
  142/104: 142 d  71 u 214 d 107 u 322 d 161 u 484 d  242 d 121 u 364 ] d 182 ... 4 d 2 d 1
+<!--
+           +1   
+--> 
 Beginning at some node of the form ''6i - 2'' (364 in the example), these sequences join and follow the same path down to the root 4. The two differing parts of the sequences show a regular pattern, where nodes of the form ''6i - 2'' alternate with other nodes, and where the operations ''u'' and ''d'' also alternate. 
 This pattern of operations can be continued to the left with additional ''d'' and ''u'' operations:
  126 d [ 63 u 190 d  95 u 286 d 143 u ...
@@ -209,7 +212,16 @@ The nodes in the left side are different by the construction of the segment dire
 |...|| ...                                    ||...                   || ...            || ...   
 |}
 We can always exclude one of the elements remaining so far by looking in the next column of segments with sufficient length.
+==Proof Outline==
+The proof that the Collatz graph is a tree and that it contains all numbers is split into the following steps:
+* Reduction to segments nodes
+** Reduction to Degree 2
+** Reduction to Degree 3
+** Reduction to Degree 4
+* Contraction to the Root Node
+* Insertion of Degree 0 nodes
 
+====Reduction to Degree 2 ====
 * (S??) All source segments are either 
 ** contracting, or 
 ** k is even and the target segment is contracting, or 
@@ -242,10 +254,18 @@ From the attachment table (T4) we see:
  t7_13_18: right part only, follows rule 5/6
  t10_18: left side only
  prove these "only", and "both" = lhs + last only
-===Degree 3===
- i &#x2261; 22 mod 36 for lhs with degree 3
- if i &#x2261; 58 mod 72 then rule = 9, else 10
- if i &#x2261; 94 mod 144 then rule 10 and yellow itarget 634 mod 972 (critical)
- if i &#x2261; 130 mod 216 then lhs = degree 4, rule 9 
- 
- 
+
+ rule  9 : 10, 34, 58  &Delta; 24; contracting
+ rule 10 : 22, 46, 70  &Delta; 24; 22 &Delta;  48 has target rules 5/6; 46 &Delta; 24 has odd k
+ rule 13 : 28, 76      &Delta; 48; contracting
+ rule 14 :  4, 52      &Delta; 48;  4 &Delta;  96 has target rules 5/6; ... odd k
+ rule 17 : 40,136,232  &Delta; 96; contracting
+ rule 18 : 88,184      &Delta; 96; 88 &Delta; 192 has target rules 5/6; ... odd k
+ rule 21+: 16, 64,112  &Delta; 48; c c e e e c c c c e e c e e c e c e e e e c c c c c e
+===Degree 3 LHS===
+ rule  9 : 58,130,202  &Delta; 72; contracting
+ rule 10 : 22, 94,166  &Delta; 72; 22 &Delta; 144 has target rules 5/6; 
+ critical: rule 10, 94 &Delta; 144 with odd k;
+ rule 10 expands by 6(k + 1)
+===Degree 4 LHS===
+ rule  9 :130,346      &Delta;216; contracting
