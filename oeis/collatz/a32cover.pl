@@ -1,8 +1,12 @@
 #!perl
 # @(#) $Id$
 # 2018-12-09, Georg Fischer
-use integer; use strict;
-my $n = 1; my $an; my $i = 1; 
+use integer; 
+use strict;
+
+my $n = 1;    # b-file count (not used)
+my $an; 
+my $i = 1; 
 my $limit = shift(@ARGV); 
 my @segms = (0, 1, 1, 1); # segment index if the segment is computed
 my $uncovered = scalar(@segms);

@@ -20,7 +20,7 @@ nonlocal:
 	grep  -E "\/oeis.org\/" x.tmp    > $@.local-http.tmp
 	wc -l $@.*tmp
 nocommon:
-	grep -vE "(doi.org|en.wikipedia.org|mathworld.wolfram.com|arxiv.org|web.archive.org|lacim.uqam.ca|emis.de)"  nonlocal.tmp > $@.tmp
+	grep -vEi "(doi.org|en.wikipedia.org|mathworld.wolfram.com|arXiv.org|web.archive.org|lacim.uqam.ca|emis.de)"  nonlocal.tmp > $@.tmp
 	wc -l $@.tmp
 tilde: tilde_full tilde_root
 tilde_full:
@@ -46,6 +46,26 @@ test2:
 test3:
 	cut -d "	" -f 1 url_result.log \
 	| sort | uniq -c | tee tilde_return_codes.tmp
+hosts: hosts1 hosts2 hosts4
+hosts1:
+	perl grepurl.pl -h 1 nocommon.tmp > $@.name.tmp
+	cut -d "	" -f 2 $@.name.tmp | sort | uniq -c > $@.uniq.tmp
+	wc -l $@.*tmp 
+hosts2: 
+	make hosts3 2>&1 | tee $@.log
+hosts3:
+	cat hosts1.uniq.tmp \
+	| sort -rn \
+	| cut -b 9- | head -$(LIM)  > $@.tmp
+	cat $@.tmp | xargs -l nslookup 2>&1 > $@.log
+	# cat $@.tmp | xargs -l ping -w 2 -c 1 > $@.log
+hosts4:
+	grep -E "\*\*\* " hosts2.log \
+	| cut -b 5- \
+	| sed -e "s/ wurde von Speedport.ip nicht gefunden: /	/" | tee $@.1.log || :
+	grep -B1 -E "62.138.23[89].45" hosts3.log | grep "Name:" \
+	| cut -b 10- | sed -e "s/$$/	Unknown domain/" | tee $@.2.log
+	wc $@.*.log
 #-------------------------
 # old targets
 check: down geturls spider eval

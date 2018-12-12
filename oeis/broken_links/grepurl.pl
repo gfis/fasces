@@ -11,13 +11,23 @@
 #------------------------------------
 use strict;
 
+my $debug      = 0;
+my $host_only  = 0;
 my $tilde_only = 0;
-my $opt = "";
-if (0) {
-} elsif ($ARGV[0] =~ m{^-t}) {
-	$opt = shift(@ARGV);
-	$tilde_only = 1;
-}
+while (scalar(@ARGV) > 0 and ($ARGV[0] =~ m{\A\-})) {
+    my $opt = shift(@ARGV);
+    if (0) {
+    } elsif ($opt =~ m{d}) {
+        $debug  = shift(@ARGV);
+    } elsif ($opt =~ m{h}) {
+        $host_only = shift(@ARGV);
+    } elsif ($opt =~ m{t}) {
+        $tilde_only = shift(@ARGV);
+    } else {
+        die "invalid option \"$opt\"\n";
+    }
+} # while $opt
+
 while (<>) {
     next if ! m[^\%H];
     s/\r?\n//; # chompr
@@ -26,6 +36,10 @@ while (<>) {
         m[^\%H\s*(A\d{6})];
         my $seqno = $1;
         if (0) {
+        } elsif ($host_only  == 1) {
+        	if (($url =~ s{^\w+\:\/\/([^\:\/]+)[\:\/].*}{$1}) >= 1) {
+	        	print "$seqno\t$url\n";
+	        }
         } elsif ($tilde_only == 1) {
         	if (($url =~ s{((\~|\%E7)[^\/]*\/).*}{$1}) >= 1) {
 	        	print "$seqno\t$url\n";
