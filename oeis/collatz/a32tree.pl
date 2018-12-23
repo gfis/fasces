@@ -12,6 +12,7 @@ use integer;
 # get options
 my $jtree = 0;
 my $debug = 1;
+my $start = 1;
 while (scalar(@ARGV) > 0 and ($ARGV[0] =~ m{\A\-})) {
     my $opt = shift(@ARGV);
     if (0) {
@@ -19,6 +20,8 @@ while (scalar(@ARGV) > 0 and ($ARGV[0] =~ m{\A\-})) {
         $debug  = shift(@ARGV);
     } elsif ($opt =~ m{n}) {
         $jtree  = shift(@ARGV);
+    } elsif ($opt =~ m{s}) {
+        $start  = shift(@ARGV);
     } else {
         die "invalid option \"$opt\"\n";
     }
@@ -55,7 +58,7 @@ sub tree1 {
         $irow ++;
     } # while $irow
 
-    print "# check coverage     of tree $jtree up to $limit[$jtree]\n";
+    print "# check coverage     of tree $jtree up to node $limit[$jtree] in $maxseg[$jtree] segments\n";
     my
     $icov = 1;
     my
@@ -66,28 +69,28 @@ sub tree1 {
         }
         if ($cover[$icov] != 1) {
             $busy = 0;
-            print "## $icov in tree $jtree occurs $cover[$icov] times\n";
+            print "## node $icov in tree $jtree occurs $cover[$icov] times\n";
         }
         $icov ++;
     } # while covered
 
-    print "# check connectivity of tree $jtree up to $limit[$jtree]\n";
+    print "# check connectivity of tree $jtree up to node $limit[$jtree] in $maxseg[$jtree] segments\n";
     @cover = ();
-    &enqueue(1); # enqueue row[1] = (3, 1, 2);
+    &enqueue($start); # enqueue row[1] = (3, 1, 2);
     while (scalar(@queue) > 0) { # expand tree
         my $node = shift(@queue);
         &enqueue($node);
     } # while expanding tree
 
-    $icov = 2;
+    $icov = $start + 1;
     $busy = 1;
-    while ($busy >= 1) { # look whether all counts are 1
+    while ($icov <= $limit[$jtree]) { # look whether all counts are 1
         if (! defined($cover[$icov])) {
             $cover[$icov] = 0;
         }
         if ($cover[$icov] != 1) {
             $busy = 0;
-            print "## $icov in tree $jtree occurs $cover[$icov] times\n";
+            print "## node $icov in tree $jtree occurs $cover[$icov] times\n";
         }
         $icov ++;
     } # while covered
@@ -103,7 +106,7 @@ sub row1 { # generate 1 row
         print sprintf("%4d:", $irow);
     }
     my $icol = 0;
-    my $an = 4 * $irow - 1; &append($irow, ++ $icol, $an);
+    my $an = 4 * $irow - $start; &append($irow, ++ $icol, $an);
     while ($an % 3 == 0) {
         $an /= 3; &append($irow, ++ $icol, $an);
         $an *= 2; &append($irow, ++ $icol, $an);
@@ -125,7 +128,7 @@ sub enqueue { # queue all nodes in a row
     my $icol = 1;
     while ($icol <= $tlen[$irow]) {
         my $node = $tab[$irow][$icol];
-        if ($node > 1 and $node <= $max) {
+        if ($node != $start and $node <= $max) {
             if (! defined($cover[$node])) {
                 $cover[$node] = 1;
             } else {
@@ -156,21 +159,66 @@ sub append {
         print sprintf(" %d", $tab[$irow][$icol]);
     }
 } # append
-#----
-sub attach {
-} # attach
+#-----------------------------------
 __DATA__
-# check coverage     of tree 1 up to 8 in 18 nodes
-# check connectivity of tree 1 up to 8
-# check coverage     of tree 2 up to 32 in 128 nodes
-# check connectivity of tree 2 up to 32
-# check coverage     of tree 3 up to 128 in 1102 nodes
-# check connectivity of tree 3 up to 128
-# check coverage     of tree 4 up to 512 in 9852 nodes
-# check connectivity of tree 4 up to 512
-# check coverage     of tree 5 up to 2048 in 88586 nodes
-# check connectivity of tree 5 up to 2048
-# check coverage     of tree 6 up to 8192 in 797176 nodes
+# check coverage     of tree 1 up to node 8 in 7 segments
+## node 13 in tree 1 occurs 0 times
+# check connectivity of tree 1 up to no 8 in 7 segments
+## node 8 in tree 1 occurs 0 times
+----------------
+# check coverage     of tree 2 up to node 32 in 61 segments
+## node 52 in tree 2 occurs 0 times
+# check connectivity of tree 2 up to no 32 in 61 segments
+## node 14 in tree 2 occurs 0 times
+## node 16 in tree 2 occurs 0 times
+## node 21 in tree 2 occurs 0 times
+## node 24 in tree 2 occurs 0 times
+## node 28 in tree 2 occurs 0 times
+## node 32 in tree 2 occurs 0 times
+----------------
+# check coverage     of tree 3 up to node 128 in 547 segments
+## node 208 in tree 3 occurs 0 times
+# check connectivity of tree 3 up to node 128 in 547 segments
+----------------
+# check coverage     of tree 4 up to node 512 in 4921 segments
+## node 832 in tree 4 occurs 0 times
+# check connectivity of tree 4 up to node 512 in 4921 segments
+## node 320 in tree 4 occurs 0 times
+## node 352 in tree 4 occurs 0 times
+## node 436 in tree 4 occurs 0 times
+## node 469 in tree 4 occurs 0 times
+## node 480 in tree 4 occurs 0 times
+----------------
+# check coverage     of tree 5 up to node 2048 in 44287 segments
+## node 3328 in tree 5 occurs 0 times
+# check connectivity of tree 5 up to node 2048 in 44287 segments
+## node 910 in tree 5 occurs 0 times
+## node 958 in tree 5 occurs 0 times
+## node 1024 in tree 5 occurs 0 times
+## node 1078 in tree 5 occurs 0 times
+## node 1213 in tree 5 occurs 0 times
+## node 1277 in tree 5 occurs 0 times
+## node 1280 in tree 5 occurs 0 times
+## node 1365 in tree 5 occurs 0 times
+## node 1437 in tree 5 occurs 0 times
+## node 1536 in tree 5 occurs 0 times
+## node 1617 in tree 5 occurs 0 times
+## node 1820 in tree 5 occurs 0 times
+## node 1916 in tree 5 occurs 0 times
+## node 1920 in tree 5 occurs 0 times
+## node 1972 in tree 5 occurs 0 times
+## node 2048 in tree 5 occurs 0 times
+----------------
+# check coverage     of tree 6 up to 8192
+## 13312 in tree 6 occurs 0 times
 # check connectivity of tree 6 up to 8192
-# check coverage     of tree 7 up to 32768 in 7174470 nodes
+## 2128 in tree 6 occurs 0 times
+----------------
+# check coverage     of tree 7 up to 32768
+## 53248 in tree 7 occurs 0 times
 # check connectivity of tree 7 up to 32768
+## 10448 in tree 7 occurs 0 times
+----------------
+# check coverage     of tree 8 up to 131072
+## 212992 in tree 8 occurs 0 times
+# check connectivity of tree 8 up to 131072
