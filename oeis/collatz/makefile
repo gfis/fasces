@@ -1,7 +1,8 @@
 #!make
 
-# Roads in the thicket of the Collatz graph
+# Order in the thicket of the Collatz graph
 # @(#) $Id$
+# 2018-12-21: a32tree.pl
 # 2018-08-17, Georg Fischer 
 #---------------------------------
 N=10000
@@ -12,7 +13,8 @@ I=18
 M=html
 SRC=comp.html
 
-all: style dirs templates
+all: a32tree
+lists: style dirs templates
 #----
 dirs: comp double detail atab degr super
 comp: 
@@ -99,6 +101,8 @@ a32t4:
 #              > 122880
 #              > 131072
 #              > 135168
+a32tree:
+	perl a32tree.pl
 #==========================
 # old targets
 

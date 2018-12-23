@@ -72,7 +72,8 @@ sub attach {
         while (defined($segms[$unattached])) {
             $unattached ++;
         } # while increasing  
-        print sprintf("increased in segment %d (0x%x), now %d (0x%x) unattached\n", 		$cind, $cind, $unattached, $unattached);
+        print sprintf("increased in segment %d (0x%x), now %d (0x%x) unattached\n", 
+        	$cind, $cind, $unattached, $unattached);
     } # if connected
 } # attach
 __DATA__
