@@ -64,6 +64,7 @@ if ($known > 0) { # known values (delta = 3)
             &line($start    ,              1, 1,  2, "k1"); # right, down
             &line($start + 1, $start * 2 - 2, 1, -2, "k2"); # left, down
             &line($start + 2, $start * 2 - 7, 1, -6, "k3"); # left, down
+            &line($start + 3, $start * 2 -19, 1,-14, "k4"); # left, down
             $start += $delta;
         } # last 3
         $start -= $delta;
