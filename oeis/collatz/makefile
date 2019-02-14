@@ -5,7 +5,7 @@
 # 2018-12-21: a32tree.pl
 # 2018-08-17, Georg Fischer 
 #---------------------------------
-N=10000
+N=2000
 K=64
 D=0
 S=22
@@ -16,7 +16,8 @@ SRC=comp.html
 all: a32tree
 lists: style dirs templates
 #----
-dirs: comp double detail atab degr super
+dirs: comp double detail atab degr super roots
+roots: root1 root2_18 root2_3
 comp: 
 	perl segment.pl         -n $(N)    -d $(D)                 -a comp   > $@.html
 root1: 

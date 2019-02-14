@@ -3,18 +3,24 @@
 # Build the Kimberling expulsion array in a triangle in HTML
 # and show lines of known values
 # @(#) $Id$
+# 2019-01-09: var. renamed
 # 2018-08-07: 1st and 2nd level known values (delta 3)
 # 2018-05-07, Georg Fischer
 #--------------------------------------------------------
 # usage:
-#   perl kea_html.pl [maxrow [center]]
+#   perl kea_html.pl [maxrow] [-c] [-k]
+#       -c center
+#       -k known values
+#       -p known places
 #--------------------------------------------------------
 use strict;
 use integer;
 
 my $maxrow = 100;
-my $center = 1;
-my $known  = 1;
+my $center = 0;
+my $known  = 0;
+my $maind  = 0;
+my $places = 0;
 my $debug  = 0;
 while (scalar(@ARGV) > 0) {
     my $opt = shift(@ARGV);
@@ -27,119 +33,49 @@ while (scalar(@ARGV) > 0) {
         $debug  = shift(@ARGV);
     } elsif ($opt =~ m{k}) {
         $known  = shift(@ARGV);
+    } elsif ($opt =~ m{m}) {
+        $maind  = shift(@ARGV);
+    } elsif ($opt =~ m{p}) {
+        $places = shift(@ARGV);
     } else {
         die "invalid option \"$opt\"\n";
     }
 } # while $opt
-my @karr;
-$karr[0][0]  = 0;
-$karr[1][0]  = 0;
-$karr[1][1]  = 1;
-my @c;              # assembled class attribute for K[i,j]
+my @kear; # left lower triangle of Kimberling's expulsion array
+my @clar; # assembled class attribute for $kear[i,j]
+my @kfol; # whether the cell was visited when +3 chains are followed
+$kear[0][0]  = 0;
+$kear[1][0]  = 0;
+$kear[1][1]  = 1;
 my @orow = (0, 1);  # old row of  triangle
-&print_html_head();
-my $irow  = 1; # index for rows in @karr
+my 
+$irow  = 1; # index for rows in @kear
 while ($irow <= $maxrow) { # fill with Kimberling's rule
-    &advance();
+    &advance(); # computes [$irow + 1]
     $irow ++;
 } # while advancing
-#--------
-# set special attributes
-my $i3;
-my $start;
-my $delta;
 
-if ($known > 0) { # known values (delta = 3)
-    # last 3 are known
-    $start = 2;
-    for ($i3 = 1; $i3 <= 3; $i3 ++) { # last 3
-        &line($start, $i3, 1, 2, "k0"); # was k0
-        #     row     col dr dc
-    } # last 3
-    # known lanes: 3 x {2, 5, 11, 23, 47 ...} starting at delta i = 2^n
-    $start = 3;
-    $delta = 1;
-    while ($start <= $maxrow) {
-        for ($i3 = 1; $i3 <= 3; $i3 ++) { #
-            &line($start    ,              1, 1,  2, "k1"); # right, down
-            &line($start + 1, $start * 2 - 2, 1, -2, "k2"); # left, down
-            &line($start + 2, $start * 2 - 7, 1, -6, "k3"); # left, down
-            &line($start + 3, $start * 2 -19, 1,-14, "k4"); # left, down
-            $start += $delta;
-        } # last 3
-        $start -= $delta;
-        $delta *= 2;
-        $start += $delta;
-    } # while $start
-} # known values
+$irow  = 1; # index for rows in @kear
+while ($irow <= $maxrow) { # fill with Kimberling's rule
+    &follow_chains($irow);
+    $irow ++;
+} # while advancing
 
-# |-> means: position in next row
-# last interesting element is $karr[i][2*i-1]
-# main diagonal,   darkred
-&line(  1,  1, 1, 1, "d0");
-# 1st derivatives, crimson
-&line(  3,  1, 2, 1, "d1"); # d1,1  |->od0,1  left  4,7,8,9,24,14 ...
-&line(  4,  7, 2, 3, "d1"); # d1,3  |->ed0,1  right 10,15,20,18,31 ...
-# 2nd derivatives, orangered
-&line(  9,  1, 4, 1, "d2"); # d2,1  |->od1,3  18,28,33,36,62...
-&line(  4,  3, 4, 3, "d2"); # d2,3  |->ed1,1  7,9,14,35,6
-&line(  2,  3, 4, 5, "d2"); # d2,5  |->od1,1  8,24,22,46
-&line( 11, 21, 4, 7, "d2"); # d2,7  |->ed1,3  31,42,53,2,76
-# 3rd derivatives, orange
-&line( 22,  1, 8, 1, "d3"); # d3,1  |->ed2,7  2,34,58,82
-&line(  5,  1, 8, 3, "d3"); # d3,3  |->od2,5  8,22,23
-&line(  7,  4, 8, 5, "d3"); # d3,5  |->od2,3  9,35,55,48
-&line(  4,  4, 8, 7, "d3"); # d3,7  |->ed2,1  4,28,36,54
-&line(  8,  9, 8, 9, "d3"); # d3,9  |->ed2,1  18,33,62,70
-&line( 11, 16, 8,11, "d3"); # d3,11 |->od2,3  14,6
-&line(  9, 16, 8,13, "d3"); # d3,13 |->od2,5  24,46,59
-&line( 26, 51, 8,15, "d3"); # d3,15 |->ed2,7  76,99
-# 4th derivatives, yellow
-&line( 49,  1,16, 1, "d4"); # d4,1  |-> d3,15 67,21
-&line( 24,  3,16, 3, "d4"); # d4,3  |-> d3,13 59,13
-&line( 10,  2,16, 5, "d4"); # d4,5  |-> d3,11 14,65
-&line( 15,  6,16, 7, "d4"); # d4,7  |-> d3,9  33,70
-&line(  3,  1,16, 9, "d4"); # d4,9  |-> d3,7  4,36,44
-&line(  6,  4,16,11, "d4"); # d4,11 |-> d3,5  9,55
-&line( 12, 10,16,13, "d4"); # d4,13 |-> d3,3  22,11,115
-&line( 29, 28,16,15, "d4"); # d4,15 |-> d3,1  34.82
-&line( 21, 22,16,17, "d4"); # d4,17 |-> d3,1  2,58
-&line(  4,  5,16,19, "d4"); # d4,19 |-> d3,3  8,23,97
-&line( 14, 19,16,21, "d4"); # d4,21 |-> d3,5  35,48
-&line( 11, 17,16,23, "d4"); # d4,23 |-> d3,7  28,54
-&line(  7, 12,16,25, "d4"); # d4,25 |-> d3,9  18,62
-&line( 18, 32,16,27, "d4"); # d4,27 |-> d3,11 6,95
-&line( 16, 31,16,29, "d4"); # d4,29 |-> d3,13 46,79
-&line( 57,113,16,31, "d4"); # d4,31 |-> d3,15 169.216
-#--------
+&attributes();
+
 # print the whole array
-# &print_head();
+&print_html_head();
 $irow = 1;
 while ($irow <= $maxrow) {
     &print_row();
     $irow ++;
 } # while $irow
+
 &print_html_tail();
 # end main
 #***********************************************
-sub line { # draw the styles for a line
-    my ($i1, $j1, $idelta, $jdelta, $style) = @_;
-    my $i = $i1;
-    my $j = $j1;
-    while ($i <= $maxrow and $j >= 1) {
-        $c[$i][$j] .= " $style";
-        if ($c[$i][$j]  =~ m{k|meet}) {
-            # $c[$i][$j] .= " meet";
-            my $jn = ($i > $j) ? ($i - $j) << 1 : (($j - $i) << 1) - 1;
-            my $in = $i + 1;
-            # $c[$in][$jn] .= " k1";
-        }
-        $i += $idelta;
-        $j += $jdelta;
-    } # while
-} # line
 #----------------
-sub advance { # compute next row
+sub advance { # compute next row [$irow + 1]
     # $orow[$irow] is the element to be expelled
     my $busy = 1; # whether there is a left element
     my $iofs = 1; # offset to the right and to the left
@@ -169,14 +105,171 @@ sub advance { # compute next row
     } # while busy
     for (my $jcol = 0; $jcol < scalar(@nrow) - 1; $jcol ++) {
         $orow[$jcol] = $nrow[$jcol];
-        print STDERR sprintf("%4d", $orow[$jcol]) if $debug > 0;
-        $karr[$irow + 1][$jcol] = $orow[$jcol];
-        $c[$irow + 1][$jcol] = ($jcol < 2 * $irow - 1 ?  " arr" : " "); # initially
+        print STDERR sprintf("%4d", $orow[$jcol]) if $debug >= 2;
+        $kear[$irow + 1][$jcol] = $orow[$jcol];
+        $clar[$irow + 1][$jcol] = " ";
+        $kfol[$irow + 1][$jcol] = 0; # not visited yet
     }
-    if ($debug > 0) {
+    if ($debug >= 2) {
         print STDERR "\n" . sprintf("#     |\n");
     }
 } # advance
+#--------
+sub follow_chains {
+    my ($irow) = @_;
+    if ($debug >= 1) {
+        print STDERR "follow irow=$irow\n";
+    }
+    my @in_diags = (); # 
+    my $jcol = 1;
+    while ($jcol < $irow * 2) {
+        if ($kfol[$irow][$jcol] == 0) { # not yet followed
+            my $elem = $kear[$irow][$jcol];
+            if ($debug >= 2) {
+                print STDERR "follow? $elem = kear[$irow][$jcol]\n";
+            }
+            my $busy = 1;
+            my $kcol = 1; 
+            while ($busy == 1 and $kcol < $irow * 2) {
+                if ($elem + 3 <= $kear[$kcol][$kcol]) { # found in diagonal
+                    push(@in_diags, $elem);
+                    $busy = 0;
+                } # found in diagonal
+                $kcol ++;
+            } # while $kcol
+            if (0 and $busy == 0) {
+                $kfol[$irow][$jcol] = 1;
+            } else { # not in diag
+                print STDERR "# chain " . join("", &follow_1_chain($irow, $jcol)) . "\n";
+            } # not in diag
+        } # not yet followed
+        $jcol ++;
+    } # while $jcol
+    print STDERR "# row $irow - in diag - " . join(",", sort { $a <=> $b } @in_diags) . "\n";
+    print STDERR "#----------------\n"
+} # follow_chains
+
+sub follow_1_chain {
+    my ($irow, $jcol) = @_;
+    my $elem = $kear[$irow][$jcol];
+    my @result = ("($elem)");
+    $kfol[$irow][$jcol] = 1;
+    $irow ++;
+    my $busyr = 1;
+    while ($busyr == 1 and $irow <= $maxrow) { # determine possible chain element in next row
+		if ($debug >= 2) {
+			print STDERR "follow_1_chain [$irow,$jcol]\n";
+		}
+        my $kcol = 1;
+        my $busyc = 1;
+        while ($busyc == 1 and $kcol < $irow * 2) { # search for $elem + 3
+            if ($elem + 3 == $kear[$irow][$kcol]) { # found
+                $busyc = 0;
+                $elem = $kear[$irow][$kcol];
+                push(@result
+                	, ($kcol - $jcol >= 0 ? "+" : "") . ($kcol - $jcol)
+                	, ($kcol == $irow ? "[$elem]" : "($elem)")
+                	);
+                $jcol = $kcol;
+                # push(@result, $elem);
+                $kfol[$irow][$kcol] = 1;
+            } # found
+            $kcol ++;
+        } # while $kcol
+        if ($busyc == 1) { # not found - end of chain
+            $busyr = 0;
+        }
+        $irow ++;
+    } # while
+    if ($elem + 3 == $kear[$irow][$irow]) {
+    	push(@result, " +3 on diag");
+    }
+    return @result;
+} # follow_1_chain
+#--------
+sub attributes { # set special attributes
+    if ($known > 0) { # known values (delta = 3)
+        # last 3 are known
+        my $start = 2;
+        for (my $i3 = 1; $i3 <= 3; $i3 ++) { # last 3
+            #     row     col dr dc
+            &line($start, $i3, 1, 2, "k0"); # was k0
+        } # last 3
+        # known lanes: 3 x {2, 5, 11, 23, 47 ...} starting at delta i = 2^n
+        $start = 3;
+        my $delta = 1;
+        while ($start <= $maxrow) {
+            for (my $i3 = 1; $i3 <= 3; $i3 ++) { # last 3
+                #     row         col            dr  dc
+                &line($start    ,              1, 1,  2, "k1"); # right, down
+                &line($start + 1, $start * 2 - 2, 1, -2, "k2"); # left, down
+                &line($start + 2, $start * 2 - 7, 1, -6, "k3"); # left, down
+                &line($start + 3, $start * 2 -19, 1,-14, "k4"); # left, down
+                $start += $delta;
+            } # last 3
+            $start -= $delta;
+            $delta *= 2;
+            $start += $delta;
+        } # while $start <= $maxrow
+    } # known values
+    if ($maind  > 0) {
+        # main diagonal,   darkred
+        &line(  1,  1, 1, 1, "d0");
+    }
+    if ($places > 0) { # |-> means: position in next row; last interesting element is $kear[i][2*i-1]
+        # 1st derivatives, crimson
+        &line(  3,  1, 2, 1, "d1"); # d1,1  |->od0,1  left  4,7,8,9,24,14 ...
+        &line(  4,  7, 2, 3, "d1"); # d1,3  |->ed0,1  right 10,15,20,18,31 ...
+        # 2nd derivatives, orangered
+        &line(  9,  1, 4, 1, "d2"); # d2,1  |->od1,3  18,28,33,36,62...
+        &line(  4,  3, 4, 3, "d2"); # d2,3  |->ed1,1  7,9,14,35,6
+        &line(  2,  3, 4, 5, "d2"); # d2,5  |->od1,1  8,24,22,46
+        &line( 11, 21, 4, 7, "d2"); # d2,7  |->ed1,3  31,42,53,2,76
+        # 3rd derivatives, orange
+        &line( 22,  1, 8, 1, "d3"); # d3,1  |->ed2,7  2,34,58,82
+        &line(  5,  1, 8, 3, "d3"); # d3,3  |->od2,5  8,22,23
+        &line(  7,  4, 8, 5, "d3"); # d3,5  |->od2,3  9,35,55,48
+        &line(  4,  4, 8, 7, "d3"); # d3,7  |->ed2,1  4,28,36,54
+        &line(  8,  9, 8, 9, "d3"); # d3,9  |->ed2,1  18,33,62,70
+        &line( 11, 16, 8,11, "d3"); # d3,11 |->od2,3  14,6
+        &line(  9, 16, 8,13, "d3"); # d3,13 |->od2,5  24,46,59
+        &line( 26, 51, 8,15, "d3"); # d3,15 |->ed2,7  76,99
+        # 4th derivatives, yellow
+        &line( 49,  1,16, 1, "d4"); # d4,1  |-> d3,15 67,21
+        &line( 24,  3,16, 3, "d4"); # d4,3  |-> d3,13 59,13
+        &line( 10,  2,16, 5, "d4"); # d4,5  |-> d3,11 14,65
+        &line( 15,  6,16, 7, "d4"); # d4,7  |-> d3,9  33,70
+        &line(  3,  1,16, 9, "d4"); # d4,9  |-> d3,7  4,36,44
+        &line(  6,  4,16,11, "d4"); # d4,11 |-> d3,5  9,55
+        &line( 12, 10,16,13, "d4"); # d4,13 |-> d3,3  22,11,115
+        &line( 29, 28,16,15, "d4"); # d4,15 |-> d3,1  34.82
+        &line( 21, 22,16,17, "d4"); # d4,17 |-> d3,1  2,58
+        &line(  4,  5,16,19, "d4"); # d4,19 |-> d3,3  8,23,97
+        &line( 14, 19,16,21, "d4"); # d4,21 |-> d3,5  35,48
+        &line( 11, 17,16,23, "d4"); # d4,23 |-> d3,7  28,54
+        &line(  7, 12,16,25, "d4"); # d4,25 |-> d3,9  18,62
+        &line( 18, 32,16,27, "d4"); # d4,27 |-> d3,11 6,95
+        &line( 16, 31,16,29, "d4"); # d4,29 |-> d3,13 46,79
+        &line( 57,113,16,31, "d4"); # d4,31 |-> d3,15 169.216
+    } # places
+}  # attributes
+#--------
+sub line { # draw the styles for a line
+    my ($i1, $j1, $idelta, $jdelta, $style) = @_;
+    my $i = $i1;
+    my $j = $j1;
+    while ($i <= $maxrow and $j >= 1) {
+        $clar[$i][$j] .= " $style";
+        if ($clar[$i][$j]  =~ m{k|meet}) {
+            # $clar[$i][$j] .= " meet";
+            my $jn = ($i > $j) ? ($i - $j) << 1 : (($j - $i) << 1) - 1;
+            my $in = $i + 1;
+            # $clar[$in][$jn] .= " k1";
+        }
+        $i += $idelta;
+        $j += $jdelta;
+    } # while
+} # line
 #----------------
 sub print_head {
     my $maxcol = $maxrow * 2 - 1;
@@ -184,13 +277,13 @@ sub print_head {
     print <<"GFis";
     <tr><td class=\"frame\"><strong>K</strong></td>
 GFis
-    print STDERR sprintf("# %3s |", "") if $debug > 0;
+    print STDERR sprintf("# %3s |", "") if $debug >= 2;
     while ($jcol < $maxcol) {
         print "<td class=\"frame\">$jcol</td>";
-        print STDERR sprintf("%4d", $jcol) if $debug > 0;
+        print STDERR sprintf("%4d", $jcol) if $debug >= 2;
         $jcol ++;
     } # while $jcol
-    print STDERR "\n" if $debug > 0;
+    print STDERR "\n" if $debug >= 2;
     print <<"GFis";
     <td class="frame"><strong>j</strong></td></tr>
 GFis
@@ -208,12 +301,12 @@ sub print_row {
     } # center
     $jcol = 1;
     while ($jcol < $irow * 2) {
-        $c[$irow][$jcol] =~ s{\A\s+}{}; #  remove leading spaces
-        if (($c[$irow][$jcol] =~ s{(\d)}{\1}g) >= 2) { # more than 1 attribute
-           $c[$irow][$jcol] .= " meet";
+        $clar[$irow][$jcol] =~ s{\A\s+}{}; #  remove leading spaces
+        if (($clar[$irow][$jcol] =~ s{(\d)}{$1}g) >= 2) { # more than 1 attribute
+           $clar[$irow][$jcol] .= " meet";
         } # more than 1
-        print "<td class=\"$c[$irow][$jcol]\" title=\"$irow,$jcol\">"
-            . $karr[$irow][$jcol]
+        print "<td class=\"$clar[$irow][$jcol]\" title=\"$irow,$jcol\">"
+            . $kear[$irow][$jcol]
             . "</td>";
         $jcol ++;
     } # while $jcol
@@ -251,7 +344,7 @@ tr,td,th,p
 .d3     { background-color: orange;    color: black; }
 .d4     { background-color: yellow;    color: black; }
 .meet /* several lines/colors meet in this element */
-        { background-color: limegreen; color: black; }
+        { background-color: limegreen; color: white; }
 </style>
 </head>
 <body>

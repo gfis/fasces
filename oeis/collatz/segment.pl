@@ -3,7 +3,7 @@
 # https://github.com/gfis/fasces/blob/master/oeis/collatz/segment.pl
 # Print a directory of segments in the Collatz graph
 # @(#) $Id$
-# 2018-12-07: -m root
+# 2018-12-07: -r root
 # 2018-12-03: index in 0, 1, 2 ...
 # 2018-11-27: test2
 # 2018-11-21: SR, TR
@@ -542,14 +542,14 @@ sub get_cell_html { # get the HTML of one table cell
         $result .= " class=\"super$degree";
         if (0) {
         } elsif ($root == 1) {
-        	$elem = $isource;
+            $elem = $isource;
         } elsif ($root == 2) {
-        	$elem = $isource;
-        	if (($elem + $min2) % $incr6 == 0) {
-        		$elem = ($elem + $min2) / $incr6;
-        	} else {
-        		$elem = "";
-        	}
+            $elem = $isource;
+            if (($elem + $min2) % $incr6 == 0) {
+                $elem = ($elem + $min2) / $incr6;
+            } else {
+                $elem = "";
+            }
         }
     } else {
         $result .= " class=\"d$rest";

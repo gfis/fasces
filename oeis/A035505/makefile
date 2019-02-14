@@ -6,11 +6,15 @@
 #---------------------------------
 N=160
 C=0
+D=0
 K=1
+M=1
+P=1
+W=
 
 all: kea
 kea:
-	perl kea_html.pl $(N) -c $(C) -k $(K) > kea.html
+	perl $(W) kea_html.pl $(N) -c $(C) -d $(D) -k $(K) -m $(M) -p $(P) > kea.html
 #---------------------------------------------------------------
 # simple triangle
 exp1:
