@@ -1,0 +1,58 @@
+===Descent===
+* (C??) The segments can be arranged to form a binary tree.
+We define three operations:
+# p(i) = i * 2      ("product")
+# q(i) = i / 3      ("quotient")
+# r(i) = 4 * i - 1  ("root")
+The edges of the tree are labelled accordingly.
+
+Empirical computations show that a contiguous set of initial rows of T can ultimately be attached to segment 1 as shown in the following table:
+{| class="wikitable" style="text-align:left"
+!Computed rows!! Attachable to row 1   || Limit
+|-
+|        7    || 7                     || &gt; 2
+|-                                       
+|       61    || 13                    || &gt; 8
+|-                                       
+|      547    || 128                   || &gt; 32
+|-                                       
+|     4921    || 319                   || &gt; 128
+|-                                       
+|    44287    || 910                   || &gt; 512
+|-                                       
+|   398581    || 2128                  || &gt; 2048
+|-                                       
+|  3587227    || 10448                 || &gt; 8192 
+|-                                       
+| 32285041    || 30488 (< 32768 !)     || '''&lt;''' 32768 !
+|}
+There seems to be no limit for the growth of the tree, but there is no obvious formula for such a limit.
+
+Therefore we show by an infinite descent argument that there is only one tree which ultimately comprises all numbers. 
+
+Suppose that we construct a tree from the rows of T starting with nodes 2 and 3 in row 1, and attaching always the rows for the lowest nodes in the tree where no row was already attached.
+
+Suppose further that there were some nodes (above 30488) which are never reached by this process, and which build a separate tree. Let ''n'' be the smallest of the nodes in the separate tree. We will show that there is a node ''m'' which  is connected to ''n'' and which is smaller than ''n''. This will be a contradiction.
+
+The following table shows the case-by-case analysis:
+{| class="wikitable" style="text-align:left"
+! Form of n             !! Smaller node m
+|-
+| T[i, j] = 3 * k       || T[i, j + 1] = k      
+|-                                       
+|  3 * k      || 13                    || &gt; 8
+|-                                       
+|      547    || 128                   || &gt; 32
+|-                                       
+|     4921    || 319                   || &gt; 128
+|-                                       
+|    44287    || 910                   || &gt; 512
+|-                                       
+|   398581    || 2128                  || &gt; 2048
+|-                                       
+|  3587227    || 10448                 || &gt; 8192 
+|-                                       
+| 32285041    || 30488 (< 32768 !)     || '''&lt;''' 32768 !
+|}
+
+

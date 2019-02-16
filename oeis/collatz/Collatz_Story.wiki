@@ -1,0 +1,668 @@
+==Abstract==
+Small, finite trees with two branches are constructed with the operations defined by Collatz for his 3x+1 problem. These trees are connected to form bigger graphs in an iterative process. It is shown that this process finally builds a single graph which is a tree except for one cycle at the root. This graph is then embedded into the Collatz graph, and it is thereby shown that the latter is also a tree except for the cycle 4-2-1.
+==Introduction==
+'''Collatz sequences''' (also called  ''trajectories'') are sequences of integer numbers &gt; 0. For some start value &gt; 0 the elements of a particular sequence are constructed with two simple rules:
+# Even numbers are halved.
+# Odd numbers are multiplied by 3 and then incremented by 1.
+Since decades it is unknown whether the final cyle 4 - 2 - 1 is always reached for all start values. This problem is the '''Collatz conjecture''', for which the [https://en.wikipedia.org/wiki/Collatz_conjecture English Wikipedia] states:
+: It is also known as the 3n + 1 conjecture, the Ulam conjecture (after Stanis&#x0142;aw Ulam), Kakutani's problem (after Shizuo Kakutani), the Thwaites conjecture (after Sir Bryan Thwaites), Hasse's algorithm (after Helmut Hasse), or the Syracuse problem; the sequence of numbers involved is referred to as the hailstone sequence or hailstone numbers (because the values are usually subject to multiple descents and ascents like hailstones in a cloud), or as wondrous numbers.
+
+Simple visualizations of Collatz sequences show no obvious structure. The sequences for the first dozen of start values are rather short, but the sequence for 27 suddenly has 112 elements.
+<p align="right">''Da sieht man den Wald vor lauter B&auml;men nicht.''<br />German proverb: ''You cannot see the wood for the trees.''
+</p>
+===References===
+* Jeffry C. Lagarias, Ed.: ''The Ultimate Challenge: The 3x+1 Problem'', Amer. Math. Soc., 2010, ISBN 978-8218-4940-8. [http://www.ams.org/bookpages/mbk-78 MBK78]
+* OEIS A07165: [http://oeis.org/A070165/a070165.txt  File of first 10K Collatz sequences], ascending start values, with lengths
+* Manfred Tr&uuml;mper: ''The Collatz Problem in the Light of an Infinite Free Semigroup''. Chinese Journal of Mathematics, Vol. 2014, [http://dx.doi.org/10.1155/2014/756917 Article ID 756917], 21 p.
+
+==Collatz Graph==
+When all Collatz sequences are read backwards, they form the '''Collatz graph''' starting with 1, 2, 4, 8 ... . At each node ''m &gt; 4'' in the graph, the path from the root (4) can be continued
+* always to ''m * 2'', and
+* to ''(m - 1) / 3'' if ''m &#x2261; 1 mod 3''.
+
+The Collatz conjecture claims that the graphs contains all numbers, and that - except for the leading cycle 1 - 2 - 4 - 1 - 2 - 4 ... - it has the form of a tree (without cycles). We will not consider the leading cycle, and we start the graph with node 4, the '''root'''.
+Furthermore, another trivial type of path starts when m &#x2261; 0 mod 3. We call such a path a ''sprout'', and it contains duplications only. Sprouts must be added to the graph for any node divisible by 3, therefore we will not consider them for the moment.
+
+===Graph Operations===
+Following [http://dx.doi.org/10.1155/2014/756917 Tr&uuml;mper], we use abbreviations for the elementary operations which map a node (element, number) ''m'' in the Collatz graph to the a neighbouring node as shown in the following table (T1):
+{| class="wikitable" style="text-align:center"
+!Name     !! Mnemonic    !! Distance to root  !! Mapping                    !! Condition
+|-
+| d       || "down"      || -1                || m &#x21a6; m / 2           || m &#x2261; 0 mod 2
+|-
+| u       || "up"        || -1                || m &#x21a6; 3 * m + 1       || (none)
+|-
+| s := ud || "spike"     || -2                || m &#x21a6; (3 * m + 1) / 2)|| m &#x2261; 1 mod 2
+|-
+| &delta; || "divide"    || +1                || m &#x21a6; (m - 1) / 3     || m &#x2261; 1 mod 3
+|-
+| &micro; || "multiply"  || +1                || m &#x21a6; m * 2           || (none)
+|-
+| &sigma; := &delta;&micro;|| "squeeze" || +2 ||m &#x21a6; ((m - 1) / 3) * 2|| m &#x2261; 1 mod 3
+|}
+The operations will be noted as ''infix'' operators, with the source node as left operand and the target node as right operand, for example ''10 &delta;&micro; 6''. In the following, we will mainly be interested in the reverse mappings (denoted with greek letters) which move away from the root 4 of the graph.
+<!--
+=== Trivial paths===
+There are two types of paths whose descriptions are very simple:
+ (n = 2<sup>k</sup>) ddd ... d 8 d 4 d 2 d 1  - powers of 2
+ (n &#x2261; 0 mod 3) uuu ... u (n * 2<sup>k</sup>) ... - multiples of 3
+===Kernels===
+By the ''kernel'' of a number n = 6 * m - 2 we denote the "2-3-free" factor of m, that is the factor which remains when all powers of 2 and 3 have been removed from m.
+* The kernel is not affected by &sigma; and s operations.
+-->
+
+===Motivation: Patterns in sequences with the same length===
+A closer look at the Collatz sequences shows a lot of pairs of adjacent start values which have the same sequence length, for example (from [https://oeis.org/A070165 OEIS A070165]):
+ 142/104: 142 d  71 u 214 d 107 u 322 d 161 u 484 d  242 d 121 u 364 ] d 182 ... 4 d 2 d 1
+ 143/104: 143 u 430 d 215 u 646 d 323 u 970 d 485 u 1456 d 728 d 364 ] d 182 ... 4 d 2 d 1
+The alternating pattern of operations can be continued to the left with  additional pairs of steps:
+  n? u [ 62 d  31 u  94 d  47 u 142 d ...
+ 126 d [ 63 u 190 d  95 u 286 d 143 u ...
+The pattern stops here since there is no integer ''n'' such that ''n * 3 + 1 = 62''.
+Beginning at some node (364 &#x2261; 4 mod 6 in the example), these sequences follow the same path down to the root 4. The two differing parts of the sequences show a regular pattern. Proceeding from right to left, and thereby using the inverse operations, we see the following operations:
+ 364 &delta; 121 &micro;  242 &micro; 484 &delta; 161 &micro; 322 &delta; 107 &micro; 214 &delta;     71 &micro; 142 &delta;  47 &micro;  94 &delta;  31 &micro; 62
+ 364 &micro; 728 &micro; 1456 &delta; 485 &micro; 970 &delta; 323 &micro; 646 &delta; 215 &micro; 430 &delta; 143 &micro; 286 &delta;  95 &micro; 190 &delta; 63
+
+==Segments==
+These patterns lead us to the construction of special subsets of paths in the Collatz graph which we call ''segments''. Starting at some node ''m &#x2261; 4 mod 6'', the ''fork'', two subpaths lead away from the root in a prescribed, finite sequence of operations.
+:The nodes ''m &#x2261; 4 mod 6'' play a special role because they are the only ones where both a &delta; and a &micro; operation is possible.
+
+===Segment Construction Rules===
+Informally, the segments are constructed beginning at the fork with a few differing operations, followed by a sequence of &sigma; operations in both subpaths.
+For the presentation of various properties of the segments, we use a linearized notation of the two subpaths. The segment is represented by an array with columns which are filled alternatively according to the following table (T1):
+{| class="wikitable" style="text-align:left"
+!Column j !! Operation                                  !! Result                    !! Condition
+|-
+| 0 || (segment index)                                  || i                         ||
+|-
+| 1 || n (the fork)                                     || 6i - 2                    ||
+|-
+| 2 || n &delta;                                        || 2i - 1                    ||
+|-
+| 3 || n &micro;                                        || 12i - 4                   ||
+|-
+| 4 || n &delta;&micro;                                 || 4i - 2                    ||
+|-
+| 5 || n &micro;&micro;                                 || 24i - 8 = 6(4i - 1) - 2   ||
+|-
+| 6 || n &delta;&micro;&micro;                          || 8i - 4                    ||
+|-
+| 7 || n &micro;&micro;&delta;                          || 8i - 3                    ||
+|-
+| 8 || n &delta;&micro;&micro;&delta;                   || (8i - 5) / 3              || i &#x2261; 1 mod 3
+|-
+| 9 || n &micro;&micro;&sigma;<sup>1</sup>              || 16i - 6                   ||
+|-
+|10 || n &delta;&micro;&micro;&sigma;<sup>1</sup>       || (16i - 10) / 3            || i &#x2261; 1 mod 3
+|-
+|11 || n &micro;&micro;&sigma;<sup>1</sup>&delta;       || (16i - 7) / 3             || 16i &#x2261; 9 mod 3
+|-
+|12 || n &delta;&micro;&micro;&sigma;<sup>1</sup>&delta;|| (16i - 13) / 9            || 16i &#x2261; 3 mod 9
+|-
+|13 || n &micro;&micro;&sigma;<sup>2</sup>              || ...                 || ...
+|-
+|14 || n &delta;&micro;&micro;&sigma;<sup>2</sup>       || ...                 || ...
+|-
+|15 || n &micro;&micro;&sigma;<sup>2</sup>&delta;       || ...                 || ...
+|-
+|16 || n &delta;&micro;&micro;&sigma;<sup>2</sup>&delta;|| ...                 || ...
+|-
+|...|| ... || ... || ... || ...
+|-
+|}
+In the table, the four rows for columns 13 to 16 are to be repeated indefinitely with increasing powers of the &sigma; operation.
+The segment construction process stops when the next node in one of the two subpaths becomes divisible by 3, i.e. when a &delta; operation is no more possible. We will show that this is always the case.
+
+===&sigma; replaces 3 by 2===
+The &sigma; operation, when applied to fork nodes of the form ''6i - 2'' with ''i = 3k'', has the interesting property that it maintains the general form ''6n - 2'':
+ 6(3k) - 2 &sigma; (2(3k) - 1) * 2 = 12k - 2 = 6(2k) - 2
+That means that &sigma; replaces one factor 3 by a factor 2 (it "squeezes" a 3 into a 2). In the opposite direction, the ''s ("spike")'' operation replaces one factor 2 in ''i'' by a factor 3.
+In the same way we could have used the form ''6n + 4'' with ''i = 3k - 1'':
+ 6(3k - 1) + 4 &sigma; (2 * (3k - 1) + 1) * 2 = 12k - 4 + 2 = 6(2k - 1) + 4
+Whether the resulting formulas are more simple may be a matter of taste. We use the previous form ''6n - 2'' in the rest of this article.
+
+With this property it is easy to state:
+* (S??) For any possible fork node, the corresponding segment is of finite length.
+:: The length of the segment is proportional to the power of 3 contained in the factor ''i'' of the fork node, which is finite.
+
+===Segment Directory Construction===
+We list the segments as rows of an infinite array ''<nowiki>C[i, j]</nowiki>'' which we call the ''segment directory''. ''<nowiki>C[i, 0]</nowiki>'' contains the segment index (row number) ''i'', ''<nowiki>C[i, 1]</nowiki>'' contains the fork node ''6i - 2'', and the following columns are filled as defined by table (T1) above.
+
+The example segment in row 61 of the directory looks like:
+<table style="border-collapse: collapse;>
+<tr>
+<tr><td align="center">&nbsp;61&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; " >&nbsp;364&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;" >&nbsp;1456&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;>&nbsp;484&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;>&nbsp;970&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;>&nbsp;322&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;>&nbsp;646&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;>&nbsp;214&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;>&nbsp;430&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;>&nbsp;142&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;>&nbsp;286&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;>&nbsp;94&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;>&nbsp;190&nbsp;</td></tr>
+</table>
+
+The first column(s) ''<nowiki>C[i, 1]</nowiki>'' will be denoted as the '''left side''' of the segments (or of the whole directory), while the columns ''<nowiki>C[i, j], j &gt; 1</nowiki>'' are called the '''right part'''.
+
+
+The following table '''(T2)''' tells how the columns ''j'' in one row ''i'' of ''C'' must be constructed if the condition is fulfilled:
+{| class="wikitable" style="text-align:left"
+!Column j               !! Operation                   !! Formula                  !! Condition            !! First elements
+|-
+| 1 || <nowiki>C[i, 1]</nowiki>                        ||  6 * i - 2               ||                      ||  4, 10, 16, 22, 28 ...
+|-
+| 2 || <nowiki>C[i, 1]</nowiki> &micro;&micro;         || 24 * (i - 1) / 1     + 16||                      || 16, 40, 64, 88, 112 ...
+|-
+| 3 || <nowiki>C[i, 1]</nowiki> &delta;&micro;&micro;  || 24 * (i - 1) / 3     +  4|| i &#x2261; 1 mod 3   ||  4, 28, 52, 76, 100 ...
+|-
+| 4 || <nowiki>C[i, 2]</nowiki> &sigma;                || 48 * (i - 1) / 3     + 10|| i &#x2261; 1 mod 3   || 10, 58, 106, 134 ...
+|-
+| 5 || <nowiki>C[i, 3]</nowiki> &sigma;                || 48 * (i - 7) / 9     + 34|| i &#x2261; 7 mod 9   || 34, 82, 130, 178 ...
+|-
+| 6 || <nowiki>C[i, 4]</nowiki> &sigma;                || 96 * (i - 7) / 9     + 70|| i &#x2261; 7 mod 9   || 70, 166, 262, 358 ...
+|-
+| 7 || <nowiki>C[i, 5]</nowiki> &sigma;                || 96 * (i - 7) / 27    + 22|| i &#x2261; 7 mod 27  || 22, 118, 214, 310 ...
+|-
+| 8 || <nowiki>C[i, 6]</nowiki> &sigma;                || 192 * (i - 7) / 27   + 46|| i &#x2261; 7  mod 27 || 46, 238, 430, 622 ...
+|-
+| 9 || <nowiki>C[i, 7]</nowiki> &sigma;                || 192 * (i - 61) / 81 + 142|| i &#x2261; 61 mod 81 || 142, 334 ...
+|-
+|...|| ... || ... || ... || ...
+|-
+| j || <nowiki>C[i,j-2]</nowiki> &sigma;              || 6 * 2<sup>k+1</sup> * (i - m) / 3<sup>l</sup> + 3 * 2<sup>k</sup> * h - 2 || i &#x2261; m mod 3<sup>l</sup> || ...
+|-
+|}
+The general formula for a column ''j >= 4'' uses the following parameters:
+* ''k = floor(j / 2)''
+* ''l = floor(j - 1) / 2)''
+* ''m = a(floor((j - 1) / 4)'',  where ''a(n)'' is the OEIS sequence ([http://oeis.org/A066443 A066443]: ''a(0) = 1; a(n) = 9 * a(n-1) - 2 for n &gt; 0'' . The values are the indexes 1, 7, 61, 547, 4921 ... of the variable length segments with left sides (4), 40, 364, 3280, 29524 ([http://oeis.org/A191681 OEIS A191681]). The constants appear first in columns 2-4 (in segment 1), 5-8 (in segment 7), 9-12 (in segment 61) and so on
+* ''h = a(j)'', where ''a(n)'' is the OEIS sequence [http://oeis.org/A084101 A084101] with period 4: ''a(0..3) = 1, 3, 3, 1; a(n) = a(n - 4) for n &gt; 3''.
+(This results in ''k = 2, l = 1, m = 1, h = 1 for j = 4''.)
+
+The first few lines of the segment directory are the following:
+
+<table style="border-collapse: collapse;>
+<tr>
+<td style="text-align:center"> </td>
+<td style="text-align:center">&nbsp;1&nbsp;</td>
+<td style="text-align:center">&nbsp;2&nbsp;</td>
+<td style="text-align:center">&nbsp;3&nbsp;</td>
+<td style="text-align:center">&nbsp;4&nbsp;</td>
+<td style="text-align:center">&nbsp;5&nbsp;</td>
+<td style="text-align:center">&nbsp;6&nbsp;</td>
+<td style="text-align:center">&nbsp;7&nbsp;</td>
+<td style="text-align:center">&nbsp;8&nbsp;</td>
+<td style="text-align:center">&nbsp;9&nbsp;</td>
+<td style="text-align:center">&nbsp;10&nbsp;</td>
+<td style="text-align:center">&nbsp;11&nbsp;</td>
+<td style="text-align:center">...</td>
+<td style="text-align:center">2*j</td>
+<td style="text-align:center">2*j+1</td>
+</tr>
+<tr>
+<td style="border:1px solid gray;text-align:right" >&nbsp;&nbsp;i&nbsp;&nbsp;</td>
+<td style="border:1px solid gray;text-align:right" >6*i&#8209;2</td>
+<td style="border:1px solid gray;text-align:right" >&micro;&micro;</td>
+<td style="border:1px solid gray;text-align:right" >&delta;&micro;&micro;</td>
+<td style="border:1px solid gray;text-align:right" >&micro;&micro;&sigma;</td>
+<td style="border:1px solid gray;text-align:right" >&delta;&micro;&micro;&sigma;</td>
+<td style="border:1px solid gray;text-align:right" >&micro;&micro;&sigma;&sigma;</td>
+<td style="border:1px solid gray;text-align:right" >&delta;&micro;&micro;&sigma;&sigma;</td>
+<td style="border:1px solid gray;text-align:right" >&micro;&micro;&sigma;<sup>3</sup></td>
+<td style="border:1px solid gray;text-align:right" >&delta;&micro;&micro;&sigma;<sup>3</sup></td>
+<td style="border:1px solid gray;text-align:right" >&micro;&micro;&sigma;<sup>4</sup></td>
+<td style="border:1px solid gray;text-align:right" >&delta;&micro;&micro;&sigma;<sup>4</sup></td>
+<td style="border:1px solid gray;text-align:right" >...</td>
+<td style="border:1px solid gray;text-align:right" >&micro;&micro;&sigma;<sup>j-1</sup></td>
+<td style="border:1px solid gray;text-align:right" >&delta;&micro;&micro;&sigma;<sup>j-1</sup></td>
+</tr>
+<tr><td align="center">&nbsp;1&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip;">&nbsp; 4&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;" >&nbsp; 16&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;">&nbsp;4&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;">&nbsp;10&nbsp;</td></tr>
+<tr><td align="center">&nbsp;2&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip;">&nbsp;10&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;" >&nbsp; 40&nbsp;</td></tr>
+<tr><td align="center">&nbsp;3&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip;">&nbsp;16&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;" >&nbsp; 64&nbsp;</td></tr>
+<tr><td align="center">&nbsp;4&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip;">&nbsp;22&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;" >&nbsp; 88&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;">&nbsp;28&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;">&nbsp;58&nbsp;</td></tr>
+<tr><td align="center">&nbsp;5&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip;">&nbsp;28&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;" >&nbsp;112&nbsp;</td></tr>
+<tr><td align="center">&nbsp;6&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip;">&nbsp;34&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;" >&nbsp;136&nbsp;</td></tr>
+<tr><td align="center">&nbsp;7&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip;">&nbsp;40&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;" >&nbsp;160&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;">&nbsp;52&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;">&nbsp;106&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;">&nbsp;34&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;">&nbsp;70&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;">&nbsp;22&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;">&nbsp;46&nbsp;</td></tr>
+</table>
+
+There is a more elaborated '''[http://www.teherba.org/fasces/oeis/collatz/comp.html segment directory]''' with several thousand rows.
+
+====Properties of the Segment Directory====
+We make a number of claims for the segment directory C:
+* (C1) All nodes in the segment directory have the form ''6m - 2''.
+:: This follows from the formula for columns ''<nowiki>C[i, 1..3]</nowiki>'', and for any higher column numbers from the 3-by-2 replacement property of the &sigma; operation.
+* (C2) All segments have a finite length.
+:: At some point the &sigma; operations will have replaced all factors 3 by 2.
+* (C3) All nodes in the right part of a segment have the form ''6 * (3<sup>n</sup> * 2<sup>m</sup> * f) - 2'' with the same "3-2-free" factor ''f''.
+:: This follows from the operations for columns <nowiki>C[i, 1..3]</nowiki>, and from the fact that the &sigma; operation maintains this property.
+* (C4) All nodes in the right part of a particular segment are
+** different among themselves, and
+** different from the left side of that segment (except for the first segment for the root 4).
+:: For ''<nowiki>C[i, 1..2]</nowiki>'' we see that the values modulo 24 are different. For the remaining columns, we see that the exponents of the factors 2 and 3 are different. They are shifted by the &sigma; operations, but they alternate, for example (in the segment with left part 40):
+ 160 = 6 * (3<sup>3</sup> * 2<sup>0</sup> * 1) - 2
+  52 = 6 * (3<sup>2</sup> * 2<sup>0</sup> * 1) - 2
+ 106 = 6 * (3<sup>2</sup> * 2<sup>1</sup> * 1) - 2
+  34 = 6 * (3<sup>1</sup> * 2<sup>1</sup> * 1) - 2
+  70 = 6 * (3<sup>1</sup> * 2<sup>2</sup> * 1) - 2
+  22 = 6 * (3<sup>0</sup> * 2<sup>2</sup> * 1) - 2
+  46 = 6 * (3<sup>0</sup> * 2<sup>3</sup> * 1) - 2
+* (C5) There is no cycle in a segment (except for the first segment for the root 4).
+
+====Segment Lengths====
+Oviously the segment directory is very structured. The lengths of the compressed segments follow the pattern
+ 4 2 2 4 2 2 L<sub>1</sub> 2 2 4 2 2 4 2 2 L<sub>2</sub> 2 2 4 2 2 ...
+with two fixed lengths 2 and 4 and some variable lengths ''L<sub>1</sub>, L<sub>2</sub> ... &gt; 4''. For the left parts 4, 40, 364, 3280, 29524 ([http://oeis.org/A191681 OEIS A191681]), the segment lengths have high values 4, 8, 12, 16, 20 which did not occur before. Those left parts are ''(9<sup>n+1</sup> - 1) / 2'', or ''4 * Sum(9<sup>i</sup>, i = 0..n)''.
+
+====Coverage of the Right Part====
+We now examine the modular conditions which result from the segment construction table (T2) in order to find out how the numbers of the form ''6n - 2'' are covered by the right part of the segment directory. The following table (T3) shows the result:
+{| class="wikitable" style="text-align:left"
+!Columns j !! Covered         !! Remaining
+|-
+| 2-3      ||   4, 16 mod 24  || 10, 22, 34, 46 mod 48
+|-
+| 3-4      ||  10, 34 mod 48  || 22, 46, 70, 94 mod 96
+|-
+| 5-6      ||  70, 22 mod 96  || 46, 94, 142, 190 mod 192
+|-
+| 7-8      ||  46, 142 mod 192|| 94, 190, 286, 382 mod 384
+|-
+| ...      ||  ...            || ...
+|}
+We can always exclude the first and the third element remaining so far by looking in the next two columns of segments with sufficient length.
+* (C6) There is no limit on the length of a segment.
+:: We only need to take a segment which, in its right part, has a factor of 3 with a sufficiently high power, and the &sigma; operations will stretch out the segment accordingly.
+Therefore we can continue the modulus table above indefinitely, which leads us to the claim:
+* '''(C7)''' All numbers of the form ''6m - 2'' occur exactly once in the right part of the segment directory, and once as a left side. There is a bijective mapping between the left sides and the elements of the right parts.
+:: The sequences defined by the columns in the right part all have different modulus conditions. Therefore they are all disjoint. The left sides are disjoint by construction.
+
+==Segment Tree==
+So far we possess the segment directory C which represents the root segment and an infinite set of small trees with disjoint nodes and two branches. We know that the segments represent trees, and that their right parts are all disjoint and different from the left side.
+
+We now want to ''attach'' (or ''connect'') the segments to other graphs until we get a single big graph which will later become the ''backbone'' of the Collatz graph. Ideally the attachment process should maintain the tree property of the graphs all the time.
+:The verb ''attach'' emphasizes the direction of the operation better than the verb ''connect''.
+
+=== Attachment Directory Construction===
+Parallel to the segment directory we maintain the ''attachment directory'' A which, for any source segment in C:
+# tells whether the tree corresponding to the segment was already attached to the graph represented by some other segment, and if so,
+# tells the target segment and column numbers in the segment directory C where the source segment was attached.
+Initially all segments are unattached.
+
+We operate on A as follows: Considering simultaneously a set of source segments ''i &gt; 1'' (i.e. omitting the root segment) in C - which fulfill some modularity condition (the ''source'' segment set), and which are so far unattached, we attach their segments parallel to the unique occurrences of their left sides in the right part of C (''target segment'' set and ''target column'').
+<!--
+:These operations on A involve infinite sets. They are similiar to the ''gedankenexperiment'' of [https://en.wikipedia.org/wiki/Hilbert%27s_paradox_of_the_Grand_Hotel Hilbert's hotel].
+-->
+===Attachment rules===
+The following table '''(T4)''' tells the computation rules for the target position, depending on the modularity condition of the source segment. We identify and denote these attachment rules by the target column number. We show the first segments (their left side) for ''k = 0, 1, 2, 3''.
+{| class="wikitable" style="text-align:left"
+|-
+!Rule /<br>column!!Source<br>segments||Condition /<br>remaining!!First source<br>segments!!Target<br>segments!!First target<br>segments!!Dir.
+|-
+|'''5'''||6(2<sup>0</sup>(4k + 3)) - 2||0 mod 8<br>2, 4, 6 mod 8||16, 40, 64, 88||6(3<sup>0</sup>k + 1   ) - 2||4, 10, 16, 22||&lt;
+|-
+|'''6'''||6(2<sup>0</sup>(4k + 1)) - 2||4 mod 8<br>2, 6, 10, 14 mod 16||4, 28, 52, 76||6(3<sup>1</sup>k    + 1) - 2||4, 22, 40, 58||&lt;
+|-
+|'''9'''||6(2<sup>1</sup>(4k + 1)) - 2||10 mod 16<br>2, 6, 14 mod 16||10, 58, 106, 154||6(3<sup>1</sup>k    + 1) - 2||4, 22, 40, 58||&lt;
+|-
+|'''10'''||6(2<sup>1</sup>(4k + 3)) - 2||2 mod 16<br>6, 14, 22, 30 mod 32||34, 82, 130, 178||6(3<sup>2</sup>k    + 7) - 2||40, 94, 148, 202||'''&gt;'''
+|-
+|'''13'''||6(2<sup>2</sup>(4k + 3)) - 2||6 mod 32<br>14, 22, 30 mod 32||70, 166, 262, 358||6(3<sup>2</sup>k    + 7) - 2||40, 94, 148, 202||&lt;
+|-
+|'''14'''||6(2<sup>2</sup>(4k + 1)) - 2||22 mod 32<br>14, 30, 46, 62 mod 64||22, 118, 214, 310||6(3<sup>3</sup>k    + 7) - 2||40, 202, 364, 526||'''&gt;'''
+|-
+|'''17'''||6(2<sup>3</sup>(4k + 1)) - 2||46 mod 64<br>14, 30, 62 mod 64||46, 238, 430, 622||6(3<sup>3</sup>k    + 7) - 2||40, 202, 364, 526||&lt;
+|-
+|'''18'''||6(2<sup>3</sup>(4k + 3)) - 2||14 mod 64<br>30, 62, 94, 126 mod 128||142, 334, 526, 718||6(3<sup>4</sup>k   + 61) - 2||364, 850, 1336, 1822||'''&gt;'''
+|-
+|'''21'''||6(2<sup>4</sup>(4k + 3)) - 2||30 mod 128<br>62, 94, 126 mod 128||286, 670, 1054, 1438||6(3<sup>4</sup>k   + 61) - 2||364, 850, 1336, 1822||'''&gt;'''
+|-
+|'''22'''||6(2<sup>4</sup>(4k + 1)) - 2||94 mod 128<br>62, 126, 190, 254 mod 256||94, 478, 862, 1246||6(3<sup>5</sup>k   + 61) - 2||364, 1822, 3280, 4738||'''&gt;'''
+|-
+|...||...                                           ||...||...                      ||...||'''&gt;'''                             ||...
+|-
+|}
+
+It should be obvious how the following rows of the table must be filled. The additive constants in the formula for the source segments follow the periodic pattern 3, 1, 1, 3 ([https://oeis.org/A084101 OEIS A084101]), while the constants 1, 7, 61, 547, 4921 ... for the target segments are taken from <!--0, 6, 60, 546, 4920 ... A054880-->[https://oeis.org/A066443 OEIS A066443]. The latter constants change in every fourth row of (T4).
+
+As an example, we apply rule 14 to source segment 22. (This example does not show the result of of the whole process, but only a single step.)
+<table style="border-collapse: collapse;>
+<tr>
+<td style="text-align:center"> </td>
+<td style="text-align:center">&nbsp;1&nbsp;</td>
+<td style="text-align:center">&nbsp;5&nbsp;</td>
+<td style="text-align:center">&nbsp;6&nbsp;</td>
+<td style="text-align:center">&nbsp;9&nbsp;</td>
+<td style="text-align:center">&nbsp;10&nbsp;</td>
+<td style="text-align:center">&nbsp;13&nbsp;</td>
+<td style="text-align:center">&nbsp;14&nbsp;</td>
+<td style="text-align:center">&nbsp;17&nbsp;</td>
+<td style="text-align:center">&nbsp;18&nbsp;</td>
+<td style="text-align:center">&nbsp;21&nbsp;</td>
+<td style="text-align:center">&nbsp;22&nbsp;</td>
+<td style="text-align:center">...</td>
+</tr>
+<tr><td align="center">&nbsp;1&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip;">&nbsp; 4&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;" >&nbsp; 16&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;">&nbsp;4&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;">&nbsp;10&nbsp;</td></tr>
+<tr><td align="center">&nbsp;2&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip;">&nbsp;10&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;" >&nbsp; 40&nbsp;</td></tr>
+<tr><td align="center">&nbsp;3&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip;">&nbsp;16&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;" >&nbsp; 64&nbsp;</td></tr>
+<tr><td align="center">&nbsp;4&nbsp;</td></tr>
+<tr><td align="center">&nbsp;5&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip;">&nbsp;28&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;" >&nbsp;112&nbsp;</td></tr>
+<tr><td align="center">&nbsp;6&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip;">&nbsp;34&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;" >&nbsp;136&nbsp;</td></tr>
+<tr><td align="center">&nbsp;7&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip;">&nbsp;40&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;" >&nbsp;160&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;">&nbsp;52&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;">&nbsp;106&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;">&nbsp;34&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;">&nbsp;70&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:lightsalmon; font-weight:bold;">&nbsp;22&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;">&nbsp;46&nbsp;</td></tr>
+<tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td>
+<td style="border:1px solid gray;text-align:right; background-color:lightsalmon;">&nbsp;22&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;" >&nbsp; 88&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;">&nbsp;28&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;">&nbsp;58&nbsp;</td></tr>
+</table>
+
+===Properties of the Attachment Rules===
+For the attachment directory A we note respectively claim:
+* (A1) The source segments met by the conditions in the rules are all disjoint.
+* (A2) Therefore, a source segment is chosen by the process exactly once.
+* (A3) Each source segment meets a condition in some rule with a sufficiently high number.
+* (A4) The construction is such that the target column always exists in the target segments.
+:: Table (T4) is derived from (T2) which has similiar modularity conditions.
+* (A5) The target column (or rule number) depends on the modularity condition for the source segment alone, but not on (the left side of) the segment.
+:: This can be shown by the graph operations (&delta; / &micro; / &sigma;) which are tied to the columns.
+===Shifting left or right===
+There are two categories of attachment rules (column ''Dir.'' in (T4)):
+* Rules 5, 6, 9, 13, 17 attach to lower segments - they ''shift left''.
+* Rules 10, 14, 18 and above attach to higher segments - they ''shift right''.
+:: This can be seen from the powers of 2 and 3 in the source and target row columns. Starting at segment 18, we have ''3<sup>k</sup> &gt; 2<sup>k+2</sup>'' for ''k &gt;= 4''.
+With the single exception of the root segment 1, the rules obviously never attach a segment to itself.
+===Decreasing and increasing set of subtrees===
+Likewise, we can also group the subtrees which are built from the segments by attachment operations into two sets:
+* the ''decreasing set T<sub>d</sub>'' with members that will attach to some segment with a lower number, initially the segments for which rules 5, 6, 9, 13, 17 apply.
+* the ''increasing set T<sub>i</sub>'' with members that will attach to some segment with a higher number, initially the segments for which rules 10, 14, 18 and above apply.
+We define that the root segment is also a member of ''T<sub>d</sub>''.
+The goal is the following claim:
+(A7) If ''T<sub>i</sub>'' is empty, all segments in ''T<sub>d</sub>'' finally attach to the tree above the root segment.
+: Suppose ''n'' is the smallest member of ''T<sub>d</sub>'' which is not yet attached. A left-shifting rule applies to ''n'', but there is no smaller, unattached member in ''T<sub>d</sub>''. ''T<sub>i</sub>'' is empty. Therefore ''n'' must be attached to the root or some segment in the tree above the root.
+===Reduction of the increasing set===
+We now try to ''move'' subsets of ''T<sub>i</sub>'' to ''T<sub>d</sub>'' by examining the parameter ''k'' in the formula for the targets ''t'' of some members ''s'' in ''T<sub>i</sub>'' (c.f. (T4)).
+We concentrate on rule 10 because the targets of rules 14, 18 and above are a subset of the targets of rule 10 (i.e. the "longer" segments 4, 22, 40, 58, 76, 94 ...).
+
+A simple observation is:
+* (A8) We can move all members with even ''k''.
+:: We attach ''s'' to ''t''. For even ''k = 2l'' we get an odd factor of 6: ''t = 6*(2l + 1) - 2 = 12l + 4'' which implies ''t &#x2261; 0, 4 mod 8'' with the left-shifting rules 5 or 6. Therefore ''t'' (and the attached ''s'') can be moved to ''T<sub>d</sub>''.
+We can now assume that ''T<sub>i</sub>'' contains only segments with odd ''k'' in the target formula.
+* (A9) If ''k = 2l + 1'' is odd, then ''t'' is a supersegment of degree >= 2.
+:: The constants 1, 7, 61 ... from OEIS A066443 have the formula ''a(n) = 1 + Sum_{i=1..n} 2*3^(2i-1), n >= 0'', which implies ''a(n) &#x2261; 1 mod 6''. We have:
+ t = 6(3<sup>m</sup>(2l + 1) + 1 + 6j) - 2
+   = 6(6*3<sup>m-1</sup>*l + 3<sup>m</sup> + 1 + 6j) - 2
+   = 6(6*(3<sup>m-1</sup>*l + j) + 3<sup>m</sup> + 1) - 2
+:: ''3<sup>m</sup> + 1 &#x2261; 4 mod 6'' can be proven by induction, therefore ''t'' has the form ''6(6i - 2) - 2'' of a supernode.
+So we are left with the task to examine the supersegments for which right-shifting rules apply.
+<!--
+=== Attachment of right-shifting supersegments===
+-->
+<!--
+The target segment may have been hit by the same rule, and may already have been attached elsewhere. This is no problem, since the attachment process maintains the attachment state in A for the source segment only.
+* (A6) It does not matter whether the single attachment steps are performed with increasing source segment, or thought to happen with decreasing segment number.
+-->
+
+
+===Rule sieving===
+===Order of Rule Application===
+* (A7) The resulting graphs do not depend on the order of application of the attachment rules.
+:: The rules may well ''hit'' the same target segments, but they always do so in different target columns. It does not matter whether the target segment is already attached.
+
+Despite of (A6) we will apply the rules in a well-defined order, because only in this order we can show that the ''tree'' property of the subgraphs is always maintained.
+
+===Attachment Process===
+We will now use the rules of (T4) to reduce the set of unattached segments in C in an iterative process. Our goal is to show that all segments are attached - mostly indirectly - to the root segment.
+
+<!--
+===Branch Levels===
+In general, when dealing with the 3x+1 problem, it seems difficult to introduce a ''measure'', that is a numerically ordered property of some object related to the Collatz graph. This would be desireable in order to conduct a proof by induction, infinite descent, leading a minimal element to a contradiction etc.
+
+Here we use the ''branch level'', that is the column index ''j'' of the unique position  ''<nowiki>C[i, j]</nowiki>'' in a segment where a second segment should be attached.
+-->
+<!--
+====Rule 1====
+This degenerate rule is inserted for completeness only. It puts the root segment in the "attached" state.
+====Rule 5====
+For this rule, all source rows are contained in the target segments.
+
+We look more closely at the first of these chains of coincidences: row 3 is attached to the root, row 11 to row 3, 43 to 11 and so on. In the end, the trees corresponding to all rows of the form ''(4<sup>k</sup> + 2) / 6, k &gt;= 0'' (OEIS [https://oeis.org/A007583 A007583], with left sides 4, 16, 64, 256 ...) are ''stacked'' on the root segment (row 1). All involved segments are different, and because of the uniqueness of the attachment positions, we have built one tree above the root segment.
+
+ 3  7 11 15 19 23 27 31 35 39 43 47 51 55 59 63 67 71 75 ... source rows
+ 1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 ... target rows
+ ^-----v
+       ^-----------------------v  1  3 11 43  ...
+    ^--------------v
+                   ^------- 2  7 27 107 ... (10 * 4<sup>k</sup> + 2) / 6 = OEIS [https://oeis.org/A136412 A136412}
+
+          ^---------------- 4 15 59  ...    (22 * 4<sup>k</sup> + 2) / 6 = OEIS [https://oeis.org/A199210 A199210]
+             ^------------- 5 19 75  ...    (28 * 4<sup>k</sup> + 2) / 6 = OEIS [https://oeis.org/A206373 A206373]
+                ^---------- 6 23 91  ...    (34 * 4<sup>k</sup> + 2) / 6
+
+                      ^---- 8 31 123 ...    (46 * 4<sup>k</sup> + 2) / 6
+
+Likewise, all trees for rows of the form ''(10 * 4<sup>k</sup> + 2) / 6'' are stacked on segment 2. The general formula for the rows stacked on row ''4 * i + 3'' is ''((6 * i - 2) * 4<sup>k</sup> + 2) / 6, k &gt;= 0''.
+
+As a preliminary result, we have all source rows 3, 7, 11, 15 ... attached somewhere, and we have built bigger trees above all remaining segments ''i &#x2261; 0, 1, 2 mod 4'' (2, 4, 5, 6, 8, 9, 10, 12 ..., OEIS A004773).
+
+====Rule 6====
+ 5  9 13 17 21 25 29 33 37 41 45 49 53 57 61 65 69 73 77 80 ... source rows
+ 4  7 10 13 16 19 22 25 28 31 34 37 40 43 46 49 52 55 58 61 ... target rows
+   ~~          ~~          ~~          ~~          ~~           already attached by rule 2
+Source rows of the form ''16 * k + 1'' coincide with target rows for this rule, and for ''k = 4, 16, 64, ... 4^m'', the length of the chains increases:
+ 17->13=>10
+ 33->25=>19
+ 49->37=>28
+ 65->49=>37=>28
+ 81->61=>46
+ ...
+The target of every fourth source row was already attached by rule 2. After the application of rules 2 and 3, we have attached all odd source rows.
+====Rule 9====
+This is similiar to rule 3. Chains occurs for source rows ''64 * k + 26'', and the lengths of the chains increases for ''k = 6, 38, ... 32^m + 6''.
+-->
+
+===Supersegments===
+The segments considered so far contain nodes of the form ''6 * i - 2''. We call a node where ''i'' has the same form ''i = 6 * x - 2'' a ''supernode'' (of degree 2, 3, 4 and so on):
+{| class="wikitable" style="text-align:left"
+|-
+!Degree!!Form                           !! Expression       !! Residues           !! Rules
+|-
+| 0    || i                             ||  i               || 6<sup>1</sup>      ||
+|-
+| 1    || 6 * i - 2                     ||    6 * i -    2  || &#x2261;  0 mod  2 || &gt;= 5
+|-
+| 2    || 6 * (6 * i - 2) - 2           ||   36 * i -   14  || &#x2261;  2 mod  4 || &gt;= 9
+|-
+| 3    || 6 * (6 * (6 * i - 2) - 2) - 2 ||  216 * i -   86  || &#x2261;  2 mod  8 || 9, 10
+|-
+| 4    || ...                           || 1296 * i -  518  || &#x2261; 10 mod 16 || 9
+|-
+| 5    || ...                           || 7776 * i - 3110  || &#x2261; 10 mod 16 || 9
+|-
+|
+| j    || ...                           || 6<sup>j</sup> * i - m<sub>j</sub>||    || 9
+|-
+|}
+The additive constants ''m<sub>j</sub>'' are taken here from [https://oeis.org/A005610 OEIS A005610] with ''a(k) = 6 * a(k - 1) + 2 = 2 * (6 * 6<sup>k</sup> - 1) / 5''.
+
+When a segment has a supernode as its left side, it is called a '''supersegment'''.
+An inspection of the segment directory C shows that supernodes occur at the following source positions (table '''(T5)'''):
+{| class="wikitable" style="text-align:left"
+|-
+!Degree!!Column             !!First source rows             !! Difference
+|-
+| 2    || 1                 ||4, 10, 16, 22 ...             || 6<sup>1</sup>
+|-
+|      || 9 &lt;            ||4, 13, 22, 31 ...             || 9
+|-
+|      ||10 &gt;            ||25, 52, 79, 106 ...           || 27
+|-
+|      ||13 &lt;            ||16, 43, 70, 97 ...            || 27
+|-
+|      || ...               || ...                          || ...
+|-
+| 3    || 1                 ||22, 58, 94, 130 ...           || 6<sup>2</sup>
+|-
+|      || 9 &lt;            ||22, 49, 76, 103 ...           || 27
+|-
+|      ||10 &gt;            ||25, 106, 187, 268 ...         || 81
+|-
+| 4    || 1                 ||130, 346, 562, 778 ...        || 6<sup>3</sup>
+|-
+|      || 9 &lt;            ||49, 130, 211, 292 ...         || 81
+|-
+| 5    || 1                 ||778, 2074, 3370 ...           || 6<sup>4</sup>
+|-
+|      || 9 &lt;            ||292, 778, 1264, 1750, 2236 ...|| 486 = 6 * 81
+|-
+|}
+
+That are a rather simple consequences of the segment construction rules. We state some claims which are not so obvious:
+* (S1) For degrees &gt; 2, no other columns than the ones shown in table (T5) are occupied by supernodes of that degree.
+* (S2) For degrees &gt;= 4, only rule 9 (which moves downwards) is applicable.
+:The property ''&#x2261; 10 mod 16'' is maintained by the map ''i &#x21a6; 6 * i - 2'' because ''6 * 10 - 2 = 58 &#x2261; 10 mod 16''.
+<!--
+-->
+* (S3) Supernodes only occur in segments ''s &#x2261; 4 mod 18''. (These are the segments which have at least 6 columns).
+
+* (S4) There is not more than one supernode in the right part of a segment, and if there is one, it occurs at the last or the last-but-one position in the right part (which represent the leafs of the corresponding trees).
+
+* (S5) Each segment which contains a supernode in its right part:
+** either has an odd row number,
+** or a supernode as its left side.
+
+* (S6) Each segment which does not contain a supernode in its right part (that are rows 1, 10, 19, 28, 37, 46, 55  ... ''i &#x2261; 1 mod 9''):
+** either has an odd row number,
+** or a supernode as its left side.
+
+We first attach all even rows mentioned in (S3). Then we attach the even rows mentioned in (S4).
+
+===Distribution of Supernodes ===
+* (S??) Suppernodes occur only in the "longer" segments with ''i &#x2261; 1 mod 3''.
+* (S??) If there is a supernode in the right part of a segment, it is either ''at the end'', i.e. in the last or the last-but-one column.
+* (S??) There are at most two supernodes in every segment.
+===Attachment of Segments with Supernodes===
+It is obvious that the supernodes inherit the properties of the nodes ''6 * i - 2'':
+* (S??)  Supernodes occur exactly once as a left side and in the right part of the segment directory C.
+
+===Degree 2 ===
+* (S??) There are repeating blocks of rows ''i = 18m + 1 +  3j, m = 0..., j = 0..5'' with the following pattern (table (T??)):
+{| class="wikitable" style="text-align:center"
+|-
+!  j !!i for<br>m = 0 !! Rule      || Degree<br>Column 1 !! Degree<br>Column 9 !! Degree last(-1)<br>Column &gt;= 10
+|-
+|  0 ||  1            || 5/6 left  ||                    ||                    ||
+|-
+|  1 ||  4            || left/right||   2+               || 2+                 ||
+|-
+|  2 ||  7            || 6/5 left  ||                    ||                    || 2
+|-
+|  3 || 10            || left/right||   2                ||                    ||
+|-
+|  4 || 13            || 5/6 left  ||                    || 2                  ||
+|-
+|  5 || 16            || left/right||   2                ||                    || 2
+|-
+|-
+|}
+
+This implies:
+* (S??) Segments with odd ''i'' are always shifted left.
+* (S??) Segments where column 9 has degree 4 are either shifted left, or their left side has a degree 2 or 3.
+
+===Degree 3 ===
+* (S??) Degree 2 occurs in columns 1, 9 and 10 only.
+* (S??) For columns 1 and 9, there are repeating blocks of rows ''i = 108m + 4 +  9j, m = 0..., j = 0..11'' with the following pattern (table (T??)):
+{| class="wikitable" style="text-align:center"
+|-
+!  j !!i for<br>m = 0 !! Rule      || Degree<br>Column 1 !! Degree<br>Column 9
+|-
+|  0 ||   4           || left/right||   2                || 2
+|-
+|  1 ||  13           || 6 left    ||                    || 2
+|-
+|  2 ||  22           || left/right||   3+               || 3+
+|-
+|  3 ||  31           || 5 left    ||                    || 2
+|-
+|  4 ||  40           || left/right||   2                || 2
+|-
+|  5 ||  49           || 6 left    ||                    || 3+
+|-
+|  6 ||  58           || left/right||   3                || 2
+|-
+|  7 ||  67           || 5 left    ||                    || 2
+|-
+|  8 ||  76           || left/right||   2                || 3+
+|-
+|  9 ||  85           || 6 left    ||                    || 2
+|-
+| 10 ||  94           || left/right||   3                || 2
+|-
+| 11 || 103           || 5 left    ||                    || 3+
+|-
+|}
+Furthermroe, there are segments where column 10 has degree 3 and column 1 has degree 1 or 2, namely in rows ''i = 81m + 25''.
+<!--
+This implies:
+* (S??) Segments where column 1 (the left side, ''j = 1'') has degree 4 are always shifted left.
+* (S??) Segments where column 9 has degree 4 are either shifted left, or their left side has a degree 2 or 3.
+-->
+
+===Degree 4 ===
+* (S??) Degree 4 occurs in columns 1 and 9 only.
+* (S??) There are repeating blocks of rows ''i = 648m + 49 +  81j, m = 0..., j = 0..7'' with the following pattern (table (T??)):
+{| class="wikitable" style="text-align:center"
+|-
+!  j !!i for<br>m = 0 !! Rule      || Degree<br>Column 1 !! Degree<br>Column 9
+|-
+|  0 ||  49           || 6 left    ||                    || 4+
+|-
+|  1 || 130           || 9 left    ||   4+               || 4+
+|-
+|  2 || 211           || 5 left    ||                    || 4+
+|-
+|  3 || 292           || right     ||   2                || 4+
+|-
+|  4 || 373           || 6 left    ||                    || 4+
+|-
+|  5 || 454           || right     ||   3                || 4+
+|-
+|  6 || 535           || 5 left    ||                    || 4+
+|-
+|  7 || 616           || left/right||   2                || 4+
+|-
+|}
+This implies:
+* (S??) Segments where column 1 (the left side, ''j = 1'') has degree 4 are always shifted left.
+* (S??) Segments where column 9 has degree 4 are either shifted left, or their left side has a degree 2 or 3.
+
+
+* (S??) All nodes with degree 4 in column 9 occur in left-shifting segments except for rows 454, 1102*, 1750, 2398, 3046, 3694, 4342, 4990* ... (delta 648). Of these, all except the ones with "*" (every 6th) shift left for the target. If the left side has degree 4, then the segment is shifted left.
+* (S??) All segments with a left side of degree 4 shift left and can be moved into the low forest.
+
+===No Cycles===
+* '''(A8)''' The attachment process does not create any new cycle (in addition to the one in the root segment).
+:: Let a segment/tree ''t<sub>1</sub>'' with left side ''n<sub>1</sub>'' and right part ''R<sub>1</sub>'' be attached to node ''n<sub>1</sub>'' in the right part ''R<sub>2</sub>'' of the unique segment/tree ''t<sub>2</sub>'' which has the left side by ''n<sub>2</sub>''. ''t<sub>1</sub>'' and ''t<sub>2</sub>'' are disjoint trees by (C4), therefore the result of such a single attachment step is a tree again (''u<sub>2</sub>'', still with left side ''n<sub>2</sub>'').
+
+==Proof for the Collatz Tree==
+* (P1) The remaining single tree is a subgraph of the Collatz graph.
+:: The edges of the compressed tree carry combined operations &micro;&micro;, &delta;&micro;&micro; and &sigma; = &delta;&micro;.
+So far, numbers of the form x &#x2261; 0, 1, 2, 3, 5 mod 6 are missing from the compressed tree.
+
+We insert intermediate nodes into the compressed tree by applying operations on the left sides of the segments as shown in the following table (T5):
+{| class="wikitable" style="text-align:left"
+|-
+!Operation             !! Condition       !! Covered     !! Target<br>Nodes !! Remaining Nodes
+|-
+|n = 6i - 2                 ||                     || 4 mod 6      ||6i - 2 || 0, 1, 2, 3, 5 mod 6
+|-
+|n &delta;                  ||                     || 1, 3, 5 mod 6||2i - 1 || 0, 2, 6, 8 mod 12
+|-
+|n &micro;                  ||                     || 8 mod 12     ||12i - 4|| 0, 2, 6 mod 12
+|-
+|n &delta;&micro;<sup>1/sup>||i &#x2261; 1, 2 mod 3|| 2, 6 mod 12  ||4i - 2 || 0, 12 mod 24
+|-
+|n &delta;&micro;<sup>2/sup>||i &#x2261; 2 mod 3   || 12 mod 24    ||8i - 4 || 0 mod 24
+|-
+|n &delta;&micro;<sup>3/sup>||i &#x2261; 2 mod 3   || 0 mod 24     ||16i - 8|| (none)
+|-
+|}
+The first three rows in (T5) care for the intermediate nodes at the beginning of the segment construction with columns 1, 2, 3. Rows 4 and 5 generate the sprouts (starting at multiples of 3) which are not contained in the segment directory.
+
+We call such a construction a ''detailed segment'' (in contrast to the ''compressed segments'' described above).
+:: A '''[http://www.teherba.org/fasces/oeis/collatz/double.html detailed segment directory]''' can  be created by the same [https://github.com/gfis/fasces/blob/master/oeis/collatz/segment.pl segment.pl] program. In that directory, the two subpaths of a segment are shown in two lines. Only the highlighted nodes are unique.
+
+* (P2) The connectivity of the compressed tree remains unaffected by the insertions.
+* (P3) With the insertions of (T5), the compressed tree covers the whole Collatz graph.
+* '''(P4)''' The Collatz graph is a tree (except for the cycle 4-2-1.
+<!--
+==Acknowledgements==
+A friendly editor from the OEIS community introduced my to the email list ''math-fun'', where several members read an previous version of this article. They raised valid objections which should now be remedied.
+-->

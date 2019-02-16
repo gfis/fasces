@@ -1,0 +1,48 @@
+===Supersegments===
+The segments considered so far contain nodes of the form ''6 * i - 2''. A node where ''i'' has the same form is called a '''supernode''' of degree 2, 3, 4 and so on:
+ n<sub>2</sub> = 6 * (6 * i - 2) - 2 = 36 * i - 14 
+ n<sub>3</sub> = 6 * (6 * (6 * i - 2) - 2) - 2 = 216 * i - 86
+ n<sub>4</sub> = 6 * (6 * (6 * (6 * i - 2) - 2) - 2) - 2 = 1296 * i - 518
+ n<sub>5</sub> = ... = 7776 * i - 3110
+ ...
+ n<sub>j</sub> = 6<sup>j</sup> * i - m<sub>j</sub>
+where the additive constants ''m<sub>j</sub>'' are taken from OEIS sequence [https://oeis.org/A005610 A005610] with ''a(k) = 6 * a(k - 1) + 2 = 2 * (6 * 6<sup>k</sup> - 1) / 5''.
+
+When a segment has a supernode as its left side, it is called a '''supersegment'''.
+An inspection of the segment directory C shows that supernodes occur at the following positions:
+* degree 2 (yellow)
+* column 1 (rows 4, 10, 16, 22 ... -  difference 6)
+* column 4 (rows 4, 13, 22, 31 ... - difference 9)
+* column 5 (rows 25, 52, 79, 106 ... - difference 27)
+* column 6 (rows 16, 43, 70, 97 ... - difference 27)
+* ...
+
+* degree 3 (orange)
+* column 1 (rows 22, 58, 94, 130 ... -  difference 36)
+* column 4 (rows 22, 49, 76, 103 ... - difference 27)
+* column 5 (rows 25, 106, 187, 268 ... difference 81)
+* no higher columns
+
+* degree 4 (crimson)
+* column 1 (rows 130, 346, 562, 778 ... difference 216)
+* column 4 (rows 49, 130, 211, 292 ... difference 81)
+* no higher columns
+
+* degree 5 (aqua)
+* column 1 (rows 778, 2074, 3370 ... difference 1296)
+* column 4 (rows 292, 778, 1264, 1750, 2236 ... difference 6 * 81)
+* no higher columns
+
+That are a rather simple consequences of the segment construction rules.
+
+Not so obious are the claims that:
+* (S1) There is at most one supernode in the right part of each segment.
+* (S2) The supernodes always occur at the last or the last-but-one position in the right part.
+
+Therefore, when a supersegment is attached to its target row, the corresponding tree is simply stacked on a leaf of the target tree.
+
+Only rows 1, 10, 19, 28, 37, 46, 55  ... 9 * i + 1 do not contain a supernode in their right part,
+but the even members of these rows have a supernode as their left side.
+
+When a segment has a supernode in its right part, the left side is either also a supernode or the row has an odd number: 7, 13, 25, 31, 43, 49, 61 ...
+ 

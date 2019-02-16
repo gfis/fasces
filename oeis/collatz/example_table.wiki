@@ -1,0 +1,43 @@
+<table style="border-collapse: collapse;>
+<tr>
+<td style="text-align:center"> </td>
+<td style="text-align:center">&nbsp;1&nbsp;</td>
+<td style="text-align:center">&nbsp;2&nbsp;</td>
+<td style="text-align:center">&nbsp;3&nbsp;</td>
+<td style="text-align:center">&nbsp;4&nbsp;</td>
+<td style="text-align:center">&nbsp;5&nbsp;</td>
+<td style="text-align:center">&nbsp;6&nbsp;</td>
+<td style="text-align:center">&nbsp;7&nbsp;</td>
+<td style="text-align:center">&nbsp;8&nbsp;</td>
+<td style="text-align:center">&nbsp;9&nbsp;</td>
+<td style="text-align:center">&nbsp;10&nbsp;</td>
+<td style="text-align:center">&nbsp;11&nbsp;</td>
+<td style="text-align:center">...</td>
+<td style="text-align:center">2*j</td>
+<td style="text-align:center">2*j+1</td>
+</tr>
+<tr>
+<td style="border:1px solid gray;text-align:right" >&nbsp;&nbsp;i&nbsp;&nbsp;</td>
+<td style="border:1px solid gray;text-align:right" >6*i&#8209;2</td>
+<td style="border:1px solid gray;text-align:right" >&micro;&micro;</td>
+<td style="border:1px solid gray;text-align:right" >&delta;&micro;&micro;</td>
+<td style="border:1px solid gray;text-align:right" >&micro;&micro;&sigma;</td>
+<td style="border:1px solid gray;text-align:right" >&delta;&micro;&micro;&sigma;</td>
+<td style="border:1px solid gray;text-align:right" >&micro;&micro;&sigma;&sigma;</td>
+<td style="border:1px solid gray;text-align:right" >&delta;&micro;&micro;&sigma;&sigma;</td>
+<td style="border:1px solid gray;text-align:right" >&micro;&micro;&sigma;<sup>3</sup></td>
+<td style="border:1px solid gray;text-align:right" >&delta;&micro;&micro;&sigma;<sup>3</sup></td>
+<td style="border:1px solid gray;text-align:right" >&micro;&micro;&sigma;<sup>4</sup></td>
+<td style="border:1px solid gray;text-align:right" >&delta;&micro;&micro;&sigma;<sup>4</sup></td>
+<td style="border:1px solid gray;text-align:right" >...</td>
+<td style="border:1px solid gray;text-align:right" >&micro;&micro;&sigma;<sup>j-1</sup></td>
+<td style="border:1px solid gray;text-align:right" >&delta;&micro;&micro;&sigma;<sup>j-1</sup></td>
+</tr>
+<tr><td align="center">&nbsp;1&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip;">&nbsp; 4&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;" >&nbsp; 16&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;">&nbsp;4&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;">&nbsp;10&nbsp;</td></tr>
+<tr><td align="center">&nbsp;2&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip;">&nbsp;10&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;" >&nbsp; 40&nbsp;</td></tr>
+<tr><td align="center">&nbsp;3&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip;">&nbsp;16&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;" >&nbsp; 64&nbsp;</td></tr>
+<tr><td align="center">&nbsp;4&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip;">&nbsp;22&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;" >&nbsp; 88&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;">&nbsp;28&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;">&nbsp;58&nbsp;</td></tr>
+<tr><td align="center">&nbsp;5&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip;">&nbsp;28&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;" >&nbsp;112&nbsp;</td></tr>
+<tr><td align="center">&nbsp;6&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip;">&nbsp;34&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;" >&nbsp;136&nbsp;</td></tr>
+<tr><td align="center">&nbsp;7&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip;">&nbsp;40&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;" >&nbsp;160&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;">&nbsp;52&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;">&nbsp;106&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;">&nbsp;34&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;">&nbsp;70&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;">&nbsp;22&nbsp;</td><td style="border:1px solid gray;text-align:right; background-color:papayawhip; font-weight:bold;">&nbsp;46&nbsp;</td></tr>
+</table>

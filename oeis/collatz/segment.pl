@@ -541,16 +541,30 @@ sub get_cell_html { # get the HTML of one table cell
         }
         $result .= " class=\"super$degree";
         if (0) {
-        } elsif ($root == 1) {
+        } elsif ($root >= 1) {
             $elem = $isource;
-        } elsif ($root == 2) {
-            $elem = $isource;
-            if (($elem + $min2) % $incr6 == 0) {
-                $elem = ($elem + $min2) / $incr6;
-            } else {
-                $elem = "";
-            }
-        }
+            if ($root >= 2) {
+                if (($elem + $min2) % $incr6 == 0) {
+                    $elem = ($elem + $min2) / $incr6;
+                    if ($root >= 3) {
+                        if (($elem + $min2) % $incr6 == 0) {
+                            $elem = ($elem + $min2) / $incr6;
+                            if ($root >= 4) {
+                                if (($elem + $min2) % $incr6 == 0) {
+                                    $elem = ($elem + $min2) / $incr6;
+                                } else {
+                                    $elem = "";
+                                }
+                            } # $root >= 4
+                        } else {
+                            $elem = "";
+                        }
+                    } # $root >= 3
+                } else {
+                    $elem = "";
+                }
+            } # $root >= 2
+        } # $root >= 1
     } else {
         $result .= " class=\"d$rest";
     }

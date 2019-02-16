@@ -1,0 +1,270 @@
+==Introduction==
+Collatz sequences are sequences of non-negative integer numbers with a simple construction rule: even elements a halved, and odd elements are multiplied by 3 and then incremented by 1. Since many years it is unknown whether the final cyle 4 - 2 - 1 is always for any start value. This problem is the '''Collatz conjecture'''., for which the [https://en.wikipedia.org/wiki/Collatz_conjecture english Wikipedia] states: It is also known as the 3n + 1 conjecture, the Ulam conjecture (after Stanisław Ulam), Kakutani's problem (after Shizuo Kakutani), the Thwaites conjecture (after Sir Bryan Thwaites), Hasse's algorithm (after Helmut Hasse), or the Syracuse problem; the sequence of numbers involved is referred to as the hailstone sequence or hailstone numbers (because the values are usually subject to multiple descents and ascents like hailstones in a cloud), or as wondrous numbers.
+
+Whenever we speak of ''numbers'' in this article, we mean natural, positive integer numbers (without 0).
+===References===
+* Jeffry C. Lagarias, Ed.: ''The Ultimate Challenge: The 3x+1 Problem'', Amer. Math. Soc., 2010, ISBN 978-8218-4940-8. [http://www.ams.org/bookpages/mbk-78 MBK78]
+* OEIS A07165: [http://oeis.org/A070165/a070165.txt  File of first 10K Collatz sequences], ascending start values, with lengths
+* Gottfried Helms: ''[http://go.helms-net.de/math/collatz/aboutloop/collatzgraphs.htm The Collatz-Problem]''. A view into some 3x+1-trees and a new fractal graphic representation. Univ. Kassel.
+* Klaus Brennecke: ''[https://de.wikibooks.org/wiki/Collatzfolgen_und_Schachbrett Collatzfolgen und Schachbrett]'', on Wikibooks
+===Collatz graph===
+When all Collatz sequences are read backwards, they form the '''Collatz graph''' starting with 1, 2, 4, 8 ... . At each node n > 4 in the graph, the path from the root (4) can be continued
+* always to n * 2, and 
+* sometimes also to (n - 1) / 3.  
+When n &#x2261; 0 mod 3, the path will continue with duplications only, since these maintain the divisibility by 3.
+
+The conjecture claims that the graphs contains all numbers, and that - except for the leading cycle 1 - 2 - 4 - 1 - 2 - 4 ... - it has the form of a tree without cylces.
+
+Straightforward visualizations of the Collatz graph show now obvious structure. The sequences for the first dozen of start values seem to be rather harmless, but the sequence for 27 suddenly has 112 elements. 
+
+This article proposes 
+* a rather regular structure for short portions of the Collatz graph, and 
+* a corresponding algorithm which 
+** combines these portions and 
+** uses them to walk the graph in a systematic, predictable way 
+* such that the reader could finally be convinced that the algorithm enumerates all numbers.
+===Steps===
+In order to walk back and forth in the Collatz graph, we will write 
+ a ''step'' b
+to denote a move from node (element) a to b. The following table lists such steps:
+{| class="wikitable" style="text-align:center"
+!Name !! Mnemonic !! Direction !! Operation        !! Condition           !! Remark
+|-
+| h   || halve    ||  -> root  ||  b = a / 2       || a &#x2261; 0 mod 2  || next in sequence
+|-
+| t   || triple   ||  -> root  ||  b = 3 * a + 1   || true                || next in sequence
+|-
+| m   || multiply ||  root ->  ||  b = a * 2       || true                || next up in tree
+|-
+| d   || divide   ||  root ->  ||  b = (a - 1) / 3 || a &#x2261; 1 mod 3  || next up in tree
+|}
+Steps may be combined to move 
+==Collatz streets==
+===Motivation: Patterns in sequences with same length===
+When Collatz sequences are investigated, there are a lot of pairs of adjacent start values with the same sequence length, for example (from [https://oeis.org/A070165 OEIS A070165]):
+ 142/104: [142 h  71 t 214 h 107 t 322 h 161 t 484 h  242 h 121 t 364 | 182, 91, ... 10, 5, 16, 8, 4, 2, 1]
+ 143/104: [143 t 430 h 215 t 646 h 323 t 970 h 485 t 1456 h 728 h 364 | 182, 91, ... 10, 5, 16, 8, 4, 2, 1]
+            +1  *6+4    +1  *6+4    +1  *6+4    +1   *6+4  *6+2      =    =  ...
+The third line shows how the second line can be computed from the first. 
+
+Informally, a '''street''' is a parallel arrangement of 2 paths stemming from 2 sequences which have a common tail. In the example above, the street starts with an element &#x2261; 4 mod 6 (the 364 before the bar), followed by t/h and h/h steps, and the street then extends to the left as long as a characteristical, alternating sequence of pairs of steps ht - th - ht - th ... can be continued. In the example, the street can be continued to the left with 4 additional steps, but the construction then stops since there is no number q such that q * 3 + 1 = 62:
+   q t | 62 h  31 t  94 h  47 t 142 h ...
+ 126 h | 63 t 190 h  95 t 286 h 143 t ...
+         +1  *6+4    +1  *6+4    +1  
+===Street directory R===
+For easier handling (e.g. in Excel) we list the streets for all starting values 4, 10, 16, 22 ... n*6+4 as rows of a table, in reversed direction (extending to the right). The columns of the rows are numbered r<sub>0</sub>, r<sub>1</sub>, r<sub>2</sub> ...
+<table>
+<tr align="right">
+<td class="arl">r<sub>0</sub></td>
+<td class="arl">r<sub>1</sub></td>
+<td class="arl">r<sub>2</sub></td>
+<td class="arl">r<sub>3</sub></td>
+<td class="arl">r<sub>4</sub></td>
+<td class="arl">r<sub>5</sub></td>
+<td class="arl">r<sub>6</sub></td>
+<td class="arl">r<sub>7</sub></td>
+<td class="arl">r<sub>8</sub></td>
+<td class="arl">r<sub>9</sub></td>
+<td class="arl">r<sub>10</sub></td>
+<td class="arl">r<sub>11</sub></td>
+<td class="arl">r<sub>12</sub></td>
+<td class="arl">r<sub>13</sub></td>
+<td class="arl">r<sub>14</sub></td>
+<td class="arl">r<sub>15</sub></td>
+<td class="arl">...</td>
+</tr>
+<tr align="right">
+<td class="arr">start</td>
+<td class="arr">len</td>
+<td class="arr"><strong>d</strong>r<sub>0</sub></td>
+<td class="arl"><strong>m</strong>r<sub>0</sub></td>
+<td class="arr"><strong>m</strong>r<sub>2</sub></td>
+<td class="arl"><strong>m</strong>r<sub>3</sub></td>
+<td class="arr"><strong>m</strong>r<sub>4</sub></td>
+<td class="arl"><strong>d</strong>r<sub>5</sub></td>
+<td class="arr"><strong>d</strong>r<sub>6</sub></td>
+<td class="arl"><strong>m</strong>r<sub>7</sub></td>
+<td class="arr"><strong>m</strong>r<sub>8</sub></td>
+<td class="arl"><strong>d</strong>r<sub>9</sub></td>
+<td class="arr"><strong>d</strong>r<sub>10</sub></td>
+<td class="arl"><strong>m</strong>r<sub>11</sub></td>
+<td class="arr"><strong>m</strong>r<sub>12</sub></td>
+<td class="arl"><strong>d</strong>r<sub>13</sub></td>
+<td class="arr">...</td>
+</tr>
+<tr align="right">
+<td class="arr">&#x394;6</td>
+<td class="arr"></td>
+<td class="arr">&#x394;2</td>
+<td class="arr">&#x394;12</td>
+<td class="arr">&#x394;4</td>
+<td class="arr">&#x394;24</td>
+<td class="arr">&#x394;8</td>
+<td class="arr">&#x394;8</td>
+<td class="arr">3&#x394;8</td>
+<td class="arr">3&#x394;48</td>
+<td class="arr">3&#x394;16</td>
+<td class="arr">3&#x394;16</td>
+<td class="arr">9&#x394;16</td>
+<td class="arr">9&#x394;96</td>
+<td class="arr">9&#x394;32</td>
+<td class="arr">9&#x394;32</td>
+<td class="arr">...</td>
+</tr>
+<tr align="right"><td><strong>4</strong></td><td class="arr">5</td><td class="d1">1</td><td class="d2">8</td><td class="d2">2</td><td><strong>16</strong></td><td><strong>4</strong></td><td class="d5">5</td><td class="d1">1</td><td><strong>10</strong></td><td class="d2">2</td><td class="d3">3</td></tr>
+<tr align="right"><td><strong>10</strong></td><td class="arr">3</td><td class="d3">3</td><td class="d2">20</td><td class="d0">6</td><td><strong>40</strong></td><td class="d0">12</td><td class="d1">13</td></tr>
+<tr align="right"><td><strong>16</strong></td><td class="arr">3</td><td class="d5">5</td><td class="d2">32</td><td><strong>10</strong></td><td><strong>64</strong></td><td class="d2">20</td><td class="d3">21</td></tr>
+<tr align="right"><td><strong>22</strong></td><td class="arr">4</td><td class="d1">7</td><td class="d2">44</td><td class="d2">14</td><td><strong>88</strong></td><td><strong>28</strong></td><td class="d5">29</td><td class="d3">9</td><td><strong>58</strong></td></tr>
+<tr align="right"><td><strong>28</strong></td><td class="arr">3</td><td class="d3">9</td><td class="d2">56</td><td class="d0">18</td><td><strong>112</strong></td><td class="d0">36</td><td class="d1">37</td></tr>
+<tr align="right"><td><strong>34</strong></td><td class="arr">3</td><td class="d5">11</td><td class="d2">68</td><td><strong>22</strong></td><td><strong>136</strong></td><td class="d2">44</td><td class="d3">45</td></tr>
+<tr align="right"><td><strong>40</strong></td><td class="arr">9</td><td class="d1">13</td><td class="d2">80</td><td class="d2">26</td><td><strong>160</strong></td><td><strong>52</strong></td><td class="d5">53</td><td class="d5">17</td><td><strong>106</strong></td><td><strong>34</strong></td><td class="d5">35</td><td class="d5">11</td><td><strong>70</strong></td><td><strong>22</strong></td><td class="d5">23</td><td class="d1">7</td><td><strong>46</strong></td><td class="d2">14</td><td class="d3">15</td></tr>
+<tr align="right"><td><strong>46</strong></td><td class="arr">3</td><td class="d3">15</td><td class="d2">92</td><td class="d0">30</td><td><strong>184</strong></td><td class="d0">60</td><td class="d1">61</td></tr>
+<tr align="right"><td><strong>52</strong></td><td class="arr">3</td><td class="d5">17</td><td class="d2">104</td><td><strong>34</strong></td><td><strong>208</strong></td><td class="d2">68</td><td class="d3">69</td></tr>
+<tr align="right"><td><strong>58</strong></td><td class="arr">5</td><td class="d1">19</td><td class="d2">116</td><td class="d2">38</td><td><strong>232</strong></td><td><strong>76</strong></td><td class="d5">77</td><td class="d1">25</td><td><strong>154</strong></td><td class="d2">50</td><td class="d3">51</td></tr>
+<tr align="right"><td><strong>64</strong></td><td class="arr">3</td><td class="d3">21</td><td class="d2">128</td><td class="d0">42</td><td><strong>256</strong></td><td class="d0">84</td><td class="d1">85</td></tr>
+<tr align="right"><td><strong>70</strong></td><td class="arr">3</td><td class="d5">23</td><td class="d2">140</td><td><strong>46</strong></td><td><strong>280</strong></td><td class="d2">92</td><td class="d3">93</td></tr>
+<tr align="right"><td><strong>76</strong></td><td class="arr">4</td><td class="d1">25</td><td class="d2">152</td><td class="d2">50</td><td><strong>304</strong></td><td><strong>100</strong></td><td class="d5">101</td><td class="d3">33</td><td><strong>202</strong></td></tr>
+</table>
+The streets contain 2 parallel, short, interrelated paths in the Collatz graph. Though the graph usually has a "chaotic" appearance, the streets exhibit quite some amount of regular structure.
+
+There is a more '''[http://www.teherba.org/fasces/oeis/collatz/roads.html elaborated example]''' for elements &lt;= 143248. 
+: When this file is displayed in a browser, the zoom factor may be reduced (with Ctrl "-", to 25 % for example) such that the structure of the lengths of streets can be seen.
+====Street lengths====
+* The lengths r<sub>1</sub> of the streets seem to be finite. The highlighted pairs of numbers &#x2261; 4 mod 6 are decreasing to the end of the street.
+* The lengths show a repeating pattern for the start values mod 54. The fixed lengths 3, 4, 5 can probably be explained from the street construction rule.
+{| class="wikitable" style="text-align:center"
+| 4 mod 54
+| 10 mod 54
+| 16 mod 54
+| 22 mod 54
+| 28 mod 54
+| 34 mod 54
+| 40 mod 54
+| 46 mod 54
+| 52 mod 54
+|-
+| 5
+| 3
+| 3
+| 4
+| 3
+| 3
+| n
+| 3
+| 3
+|}
+* At the starting values 4, 40, 364, 3280, 29524 ([http://oeis.org/A191681 OEIS A191681]) the street lengths n<sub>i</sub> have high values 5, 9, 13, 17, 21 which did not occur before. Those starting values are (9<sup>n+1</sup> - 1) / 2, or 4 * Sum(9<sup>i</sup>, i=0..n).
+* The pattern of increasing and decreasing lengths is replicated when subsets of the rows (mod 9, 27, 81 ...) are regarded.
+====Coverage====
+The elements of the streets are strongly interconnected, and the table "obviously" shows all positive integers which are not multiples of 24:
+{| class="wikitable"
+| r<sub>0</sub> &#x2261; 4 mod 6
+| style="text-align:right" | &#x2261; 4,10,16,22 mod 24
+|-
+| r<sub>3</sub> &#x2261; 8 mod 12
+| style="text-align:right" | &#x2261; 8,20 mod 24
+|-
+| r<sub>4</sub> &#x2261; 2 mod 4
+| style="text-align:right" | &#x2261; 2,6,10,14,18,22 mod 24
+|-
+| r<sub>5</sub> &#x2261; 16 mod 24
+| style="text-align:right" | &#x2261; 16 mod 24
+|-
+| r<sub>6</sub> &#x2261; 4 mod 8
+| style="text-align:right" | &#x2261; 4,12,20 mod 24
+|-
+| r<sub>2</sub> &#x2261; 1 mod 2 
+| all odd numbers
+|}
+All odd multiples of 3 are contained in column r<sub>2</sub>. All multiples of 24 can be reached by duplicating them 3 times (3 m-steps). 
+
+So if we can show that we reach all start values &#x2261; 4 mod 6, we have a proof that all positive integers are reached.
+
+Starting with 4, it seems possible that a continuous expansion of all numbers &#x2261; 4 mod 6 into streets would finally yield all streets up to some start value. Experiments show that there are limits for the numbers involved. Streets above the ''clamp'' value are not necessary in order to obtain all streets below and including the ''start'' value:
+{| class="wikitable"
+! start value
+! clamp value
+|- style="text-align:right"
+| 4  || 4
+|- style="text-align:right"
+| 40 || 76
+|- style="text-align:right"
+| 364 || 2308
+|- style="text-align:right"
+| 3280 || 143248
+|}
+==Subset table S==
+We may build derived table from the table of streets. We take columns r<sub>0</sub> and r<sub>5</sub> ff., and therein we keep the highlighted entries (those which are &#x2261; 4 mod 6) only, add 2 to them and divide them by 6. The resulting subset table S starts as follows:
+ s0  s1   s2   s3   s4   s5   s6   s7   s8   ...
+  n  len  
+  1   3    3    1    2
+  2   1    7
+  3   1   11
+  4   3   15    5   10
+  5   1   19
+  6   1   23
+  7   7   27    9   18    6   12    4    8
+  8   1   31
+  9   1   35
+ 10   3   39   13   26
+ 11   1   43
+ 12   1   47
+ 13   3   51   17   34
+ 14   1   55
+ 15   1   59
+ 16   5   63   21   42   14   28
+ ...
+This table can be described by simple rules which are hopefully provable from the construction rule for the streets: 
+* s<sub>2</sub> is always s<sub>0</sub> * 4 - 1. 
+* When s<sub>2</sub> &#x2261; 0 mod 3, the following columns s<sub>3</sub>, s<sub>4</sub> ... are obtained by an alternating sequence of steps 
+** s<sub>i+1</sub> = s<sub>i</sub> / 3 and 
+** s<sub>i+2</sub> = s<sub>i+1</sub> * 2, 
+** until all factors 3 in s<sub>2</sub> are replaced by factors 2. 
+
+===Does S contain all positive integers?===
+The answer is yes. As above, we can regard the increments in successive columns:
+{| class="wikitable"
+| s<sub>s</sub> &#x2261; 3 mod 4
+| style="text-align:right" | half of the odd numbers
+|-
+| s<sub>3</sub> &#x2261; 1 mod 4
+| style="text-align:right" | other half of odd numbers
+|-
+| s<sub>4</sub> &#x2261; 2 mod 8
+| style="text-align:right" | &#x2261; 2,10 mod 16
+|-
+| s<sub>5</sub> &#x2261; 6 mod 8
+| style="text-align:right" | &#x2261; 6,14 mod 16
+|-
+| s<sub>6</sub> &#x2261; 12 mod 16
+| style="text-align:right" | &#x2261; 12 mod 16
+|-
+| s<sub>7</sub> &#x2261; 4 mod 16
+| style="text-align:right" | &#x2261; 4 mod 16
+|-
+| s<sub>8</sub> &#x2261; 8 mod 32
+| style="text-align:right" | 8, 40, 72, ...
+|-
+| s<sub>9</sub> &#x2261; 24 mod 32
+| style="text-align:right" | 24, 56, 88, ...
+|-
+| s<sub>10</sub> &#x2261; 48 mod 64
+| style="text-align:right" | 48, 112, 176, 240 ...
+|-
+| s<sub>11</sub> &#x2261; 16 mod 64
+| style="text-align:right" | 16, 80, ...
+|}
+This shows that the columns s<sub>4</sub> ... s<sub>7</sub> contain all numbers &#x2261; 2,4,6,10,12,14 mod 16, but those &#x2261; 0,8 mod 16 are missing so far. The ones &#x2261; 8 mod 16  show up in s<sub>8</sub> resp. s<sub>9</sub>, half of the multiples of 16 are in s<sub>10</sub> resp. s<sub>11</sub> but &#x2261; 0,32 mod 64 are missing, etc. 
+
+Since s<sub>2</sub> contains arbitray high powers of 3, S has rows of arbitrary length, and for the missing multiples of powers of 2 the exponents can be driven above all limits.
+: Thus S contains all positive integers.
+===Can S be generated starting at 1?===
+We ask for an iterative process which starts with the row of S for index 1:
+  1:    3    1    2
+Then, all additional rows for the elements obtained so far are generated:
+  2:    7
+  3:   11
+These rows are also expanded:
+  7:   27    9   18    6   12    4    8
+ 11:   43
+Since we want to cover all indexes, we would first generate the rows for lower indexes. This process fills all rows up to s<sub>0</sub> = 13 rather quickly, but the first 27 completely filled rows involve start numbers s<sub>0</sub> up to 1539, and for the first 4831 rows, start values up to 4076811 are involved.

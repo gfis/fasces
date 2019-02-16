@@ -17,21 +17,25 @@ all: a32tree
 lists: style dirs templates
 #----
 dirs: comp double detail atab degr super roots
-roots: root1 root2_18 root2_3
 comp: 
 	perl segment.pl         -n $(N)    -d $(D)                 -a comp   > $@.html
-root1: 
-	perl segment.pl -r 1    -n $(N)    -d $(D)                 -a comp   > $@.html
-root2_18: 
-	perl segment.pl -r 2    -n $(N)    -d $(D) -s 4  -i 18     -a comp   > $@.html 
-root2_3:  
-	perl segment.pl -r 2    -n $(N)    -d $(D) -s 1  -i 3      -a comp   > $@.html 
 double: 
 	perl segment.pl         -n $(N)    -d $(D)                 -a double > $@.html
 detail: 
 	perl segment.pl         -n $(N)    -d $(D)                 -a detail > $@.html
 super: 
 	perl segment.pl         -n $(N)    -d $(D)                 -a super  > $@.html
+roots: root1 root2_18 root2 root3 root4
+root1: 
+	perl segment.pl -r 1    -n $(N)    -d $(D)                 -a comp   > $@.html
+root2_18: 
+	perl segment.pl -r 2    -n $(N)    -d $(D) -s 4  -i 18     -a comp   > $@.html 
+root2:  
+	perl segment.pl -r 2    -n $(N)    -d $(D) -s 1  -i 3      -a comp   > $@.html 
+root3:  
+	perl segment.pl -r 3    -n $(N)    -d $(D) -s 1  -i 3      -a comp   > $@.html 
+root4:  
+	perl segment.pl -r 4    -n $(N)    -d $(D) -s 1  -i 3      -a comp   > $@.html 
 
 t7_13_18:
 	perl segment.pl         -n $(N)    -d $(D) -s 7,13    -i 18   -a comp   > $@.html

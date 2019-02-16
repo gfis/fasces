@@ -1,0 +1,7 @@
+Continuing the example above:
+ [ 62 d  31 u  94 d  47 u 142 d  71 u 214 d 107 u 322 d 161 u 484 d  242 d 121 u 364 ]
+ [ 63 u 190 d  95 u 286 d 143 u 430 d 215 u 646 d 323 u 970 d 485 u 1456 d 728 d 364 ]
+Left-to-right reversed, only 6*m+4, rows switched and without operations:
+ 364  1456     970     644     430     286     190
+ 364       484     322     214     142      94
+

@@ -1,0 +1,75 @@
+===Forest===
+We define three operations:
+# p(i) = i * 2      ("product")
+# q(i) = i / 3      ("quotient")
+# r(i) = 4 * i - 1  ("root")
+
+Let us look at the first few rows in table T:
+ 1:  3  1  2
+ 2:  7
+ 3: 11
+ 4: 15  5 10
+ 5: 19
+ 6: 23
+ 7: 27  9 18  6 12  4  8
+We can arrange the elements and the operations which were used to construct the row as small trees with elements as nodes and operations as edges:
+ 
+     /r---3         
+ '''1'''--+
+     \rq--'''1'''--qp---2
+
+ 5----r--19
+
+ 6----r--23
+
+     /r--15--qp--10
+ 4--+
+     \rq--5
+ 
+ 5----r--19
+
+ 6----r--23
+ 
+     /r--27--qp--18--qp--12--qp--8
+ 7--+
+     \rq--9--qp---6--qp---4
+Starting from the row index ''i'', there always starts one branch with ''r'', and maybe a second with ''rq''. Then both branches can possibly be continued with ''qp'' operations.
+
+:Here and in the following, for simpler wording, we speak of row 1 as if it were also a tree, though in reality it is a graph with a cycle. Nevertheless we can attach other trees to this graph.
+
+Initially the '''forest''' of unattached trees is the set of all trees for the indexes ''i &gt; 1''. 
+
+In OEIS sequence A322469 we proved that the elements of table T that they are a permutation of the natural numbers &gt; 0. The sets of numbers in the columns of T are also disjoint, and the corresponding sequences are simple arithmetic progressions. We can identify every index ''i'' with exactly one node in exactly one of the small trees in the forest. 
+====Attachment process====
+We now try to combine trees into bigger trees. We ''attach'' a tree with index ''i'' to the unique node in one of the other trees. In the example, we could attach trees 4 and 6 to tree 7:
+
+     /r--27--qp--18--qp--12--qp--8
+ 7--+
+    |                         /r--15--qp--10 
+     \rq--9--qp---6--qp---4--+               
+                  \           \rq--5         
+                   ---r--23
+Once a source tree is attached to a target tree, the source tree is removed from the forest (of unattached trees).
+
+Because of the uniqueness of all elements in T, it should be clear that no cycle can be created by such an attachment operation. Therefore the attachment retains the tree property of the target tree. 
+ 
+The question is in which order the trees should be attached to their target nodes, and how we can prove that finally only two trees - ith index 2 and 3, attached to the graph with index 1 - remain. 
+
+:One would be tempted to start with tree 1, attach all trees whose indexes are nodes in tree 1, attach the trees for the new nodes in the bigger tree and so on. This leads to an unordered growth which is typical for the Collatz problem: It cannot be proved (IMHO) in this way that all numbers will be reached.
+
+In contrast, we describe a process which is ordered and predictable at any stage. 
+
+First we attach the trees in the forest whose index is a member of some specific column of T. We start with column 2, followed by column 3, then 4 and so on. The attachment of the trees in one column will reduce the remaining index residues modulo a power of 2, up to an arbitrary high power of 2:
+ Column 2: Attach the trees with indexes 5, 9, 13 .... (1 was not in the forest and is considered below).
+ The remaining trees have indexes &#x2261; 0, 2, 4, 6 mod 8.
+ Column 3: Attach the trees with indexes 2, 10, 18, 26 ...  
+ The remaining trees have indexes &#x2261; 0, 4, 6 mod 8.
+ ... (analoguous to the proof in A322469)
+
+In the end, all trees from columns &gt; 1 are attached to 
+* tree 2 or
+* the trees in column 1 (with index ''i = 3, 7, 11, 15 ... &#x2261; 3 mod 4''). The forest now contains only tree 2 the trees with an index contained in column 1 of T, because the trees with all other residues were attached by the process described above..
+
+There may be chains, for example:
+ Tree 43 attaches to tree 11 and that attaches to tree 3.
+But the trees in the forest now all attach to a tree with a lower index, and therefore it is clear that they must finally all be assembled in trees 2 or 3 which can be attached to the graph for row 1 of T. 
