@@ -13,24 +13,24 @@ my ($sec, $min, $hour, $mday, $mon, $year, $wday, $yday) = gmtime (time);
 my $utc_stamp = sprintf ("%04d-%02d-%02dT%02d:%02d:%02d\z"
         , $year + 1900, $mon + 1, $mday, $hour, $min, $sec);
 my %anum; # this is some manual work:
-$anum{ 1} = ""; # 2^2-1
-$anum{ 2} = ""; # 2^3-1
-$anum{ 3} = ""; # 2^5-1
-$anum{ 4} = ""; # 2^7-1, ancient greeks
-$anum{ 5} = ""; # 2^13-1, 1456 anonymous
-$anum{ 6} = ""; # 2^17-1, 1588 Pietro Cataldi
-$anum{ 7} = ""; # 2^19-1, 1588 Pietro Cataldi
-$anum{ 8} = ""; # 2^31-1, 1722 Leonhard Euler
-$anum{ 9} = ""; # 2^61-1
-$anum{10} = ""; # 2^89-1
-$anum{11} = "A169684"; # 2^107-1, A169684 Decimal expansion of 2^107 - 1.
-$anum{12} = "A169681"; # 2^127-1, A169681 Decimal expansion of 2^127-1
-$anum{13} = "A169685"; # 2^521 - 1
-$anum{14} = "A204063"; #
-$anum{15} = "A248931"; #
-$anum{16} = "A248932"; #
-$anum{17} = "A248933"; #
-$anum{18} = "A248934"; #
+$anum{ 1} = "A000668"; # 2^2-1
+$anum{ 2} = "A000668"; # 2^3-1
+$anum{ 3} = "A000668"; # 2^5-1
+$anum{ 4} = "A000668"; # 2^7-1, ancient greeks
+$anum{ 5} = "A000668"; # 2^13-1, 1456 anonymous
+$anum{ 6} = "A000668"; # 2^17-1, 1588 Pietro Cataldi
+$anum{ 7} = "A000668"; # 2^19-1, 1588 Pietro Cataldi
+$anum{ 8} = "A000668"; # 2^31-1, 1722 Leonhard Euler
+$anum{ 9} = "A000668"; # 2^61-1
+$anum{10} = "A000668"; # 2^89-1
+$anum{11} = "A000668, A169684"; # 2^107-1, A169684 Decimal expansion of 2^107 - 1.
+$anum{12} = "A000668, A169681"; # 2^127-1, A169681 Decimal expansion of 2^127-1
+$anum{13} = "A000668, A169685"; # 2^521 - 1
+$anum{14} = "A000668, A204063"; #
+$anum{15} = "A000668, A248931"; #
+$anum{16} = "A000668, A248932"; #
+$anum{17} = "A000668, A248933"; #
+$anum{18} = "A000668, A248934"; #
 $anum{19} = "A248935"; #
 $anum{20} = "A248936"; #
 $anum{21} = "A275977"; #
@@ -63,8 +63,9 @@ if (! -r "b000043.txt") { # read all ranked Mersenne prime exponents
 }
 print <<"GFis";
 {| class="wikitable" style="text-align:right"
-!Rank !! 2^p-1    !! OEIS<br />A-number !! # of <br /> digits !! leading <br />$head digits !! trailing <br />$head digits 
 GFis
+print &table_head();
+
 open(MP, "<", "b000043.txt") or die "cannot read b000043.txt";
 while (<MP>) {
     next if m{\A\s*\#};
@@ -91,7 +92,7 @@ sub evaluate {
     open(GP, ">", $progname) or die "cannot write $progname";
     print GP "write(\"$filename\", 2^$exponent-1); quit;\n";
     close(GP);
-    print `gp -q $progname`;
+    print `gp -q --default parisize=100000000 $progname`;
     open(FIL, "<", $filename) or die "cannot read $filename\n";
     read(FIL, $buffer, $read_len); # 100 MB, should be less than 10 MB
     substr($buffer, -8) =~ s{\s}{}g;
@@ -104,21 +105,31 @@ sub evaluate {
     close(FIL);
 } # evaluate
 #-----------
+sub table_head {
+	return "!" . join("!!"
+	, "Rank"
+	, "2^p-1 <br />A000043" 
+	, "OEIS<br />A-number"
+	, "# of digits <br />A028335"
+	, "First $head digits <br />A135613, A138862, A138864"
+	, "Last $head digits  <br />A080172, A080173, A138865"
+	) . "\n"; 
+} # table_head
+#-----------
 __DATA__
+A080172 Final digit of n-th Mersenne prime A000668(n).
+A080173 Final 2 digits of n-th Mersenne prime A000668(n).
+A135613 Initial digit of Mersenne primes A000668.
+A138841 Concatenation of initial and final digit of n-th Mersenne prime A000668(n).
+A138862 First two digits of n-th Mersenne prime A000668(n).
+A138863 Concatenation of first two digits and last two digits of n-th Mersenne prime A000668(n).
+A138864 First 3 digits of n-th Mersenne prime A000668(n).
+A138865 Last 3 digits of n-th Mersenne prime A000668(n).
+A138866 Concatenation of first 3 digits and last 3 digits of n-th Mersenne prime A000668(n).
 {| class="wikitable" style="text-align:center"
 !Name     !! Mnemonic    !! Distance to root  !! Mapping                    !! Condition
 |-
 | d       || "down"      || -1                || n &#x21a6; n / 2           || n &#x2261; 0 mod 2
-|-
-| u       || "up"        || -1                || n &#x21a6; 3 * n + 1       || (none)
-|-
-| s := ud || "spike"     || -2                || n &#x21a6; (3 * n + 1) / 2)|| n &#x2261; 1 mod 2
-|-
-| &delta; || "divide"    || +1                || n &#x21a6; (n - 1) / 3     || n &#x2261; 1 mod 3
-|-
-| &micro; || "multiply"  || +1                || n &#x21a6; n * 2           || (none)
-|-
-| &sigma; := &delta;&micro;|| "squeeze" || +2 ||n &#x21a6; ((n - 1) / 3) * 2|| n &#x2261; 1 mod 3
 |}
 A169685 Decimal expansion of 2^521 - 1.
 A204063 Decimal expansion of 2^607 - 1, the 14th Mersenne prime A000668(14).
@@ -142,15 +153,4 @@ A089578 Decimal expansion of the [40th] Mersenne prime 2^20996011 - 1.
 A117853 Decimal expansion of 2^30402457-1 [the 43th].
 A193864 Decimal expansion of 2^43112609 - 1, the largest known prime number as of 2011.
 
-
-A080172 Final digit of n-th Mersenne prime A000668(n).
-A080173 Final 2 digits of n-th Mersenne prime A000668(n).
-A112688 Counts of decimal digits n in the 43rd known Mersenne prime.
-A135613 Initial digit of Mersenne primes A000668.
-A138841 Concatenation of initial and final digit of n-th Mersenne prime A000668(n).
-A138862 First two digits of n-th Mersenne prime A000668(n).
-A138863 Concatenation of first two digits and last two digits of n-th Mersenne prime A000668(n).
-A138864 First 3 digits of n-th Mersenne prime A000668(n).
-A138865 Last 3 digits of n-th Mersenne prime A000668(n).
-A138866 Concatenation of first 3 digits and last 3 digits of n-th Mersenne prime A000668(n).
 
