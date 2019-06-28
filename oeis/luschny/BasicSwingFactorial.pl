@@ -2,6 +2,7 @@
 #
 # BasicSwingFactorial
 # @(#) $Id$
+# 2019-06-28: new attempt
 # 2019-04-15, Georg Fischer: rewritten from Julia module of Peter Luschny (cf. below, behind _DATA_)
 #
 # Usage:
@@ -13,8 +14,8 @@ use Math::BigInt;
 use Math::BigInt':constant'; # $a[$n] = Math::BigInt->new(1);
 # get options
 
-my $debug = 1;
-my @smallOddFactorial =             ( "0", "0x0000000000000000000000000000001"
+my $debug = 0;
+my @smallOddFactorial =             (      "0x0000000000000000000000000000001"
     , "0x0000000000000000000000000000001", "0x0000000000000000000000000000001"
     , "0x0000000000000000000000000000003", "0x0000000000000000000000000000003"
     , "0x000000000000000000000000000000f", "0x000000000000000000000000000002d"
@@ -41,54 +42,51 @@ my @smallOddFactorial =             ( "0", "0x0000000000000000000000000000001"
         if ($len < 24) {
             my $p = Math::BigInt->new($m);
             my $k = 2;
-            while ($k <= 2 * ($len - 1)) { # for k in 2:2:2(len-1) { ???
-                $p->bmul(Math::BigInt->new($m)->bsub(Math::BigInt->new($k)));
+            while ($k <= 2 * ($len - 1)) { 
+                $p->bmul(Math::BigInt->new($m) - $k); 
                 $k += 2;
             } # for $k
             return $p->copy();
         } else {
             my $hlen = $len >> 1;
-            return &oddProduct($m->bsub(2)->bmul($hlen), $len - $hlen)->bmul(&oddProduct(Math::BigInt->new($m), $hlen));
+            return &oddProduct($m - 2 * $hlen, $len - $hlen)->bmul(&oddProduct($m, $hlen));
         }
     } # oddProduct
 
     sub oddFactorial { my ($n) = @_;
         my ($sqrOddFact, $oddFact, $oldOddFact);
-        print "oddFactorial(n) with n=$n" if $debug >= 1;
-        if ($n < scalar(@smallOddFactorial) - 1) { # 41
-        	  print ", then part\n" if $debug >= 1;
-            $oddFact    = Math::BigInt->from_hex($smallOddFactorial[1 + $n]);
-            $sqrOddFact = Math::BigInt->from_hex($smallOddFactorial[1 + $n / 2]);
-        #   $oddFact    =                  ($smallOddFactorial[$n]);
-        #   $sqrOddFact =                  ($smallOddFactorial[$n / 2]);
+        print "oddFactorial(n) with n=$n" if $debug >= 2;
+        if ($n < scalar(@smallOddFactorial)) { # 41
+            print ", then part\n" if $debug >= 2;
+            $oddFact    = Math::BigInt->from_hex($smallOddFactorial[$n]);
+            $sqrOddFact = Math::BigInt->from_hex($smallOddFactorial[$n / 2]);
         } else {
-        	  print ", else part\n" if $debug >= 1;
+            print ", else part\n" if $debug >= 2;
             ($sqrOddFact, $oldOddFact) = &oddFactorial($n / 2);
             my $len = ($n - 1) / 4;
             if ($n % 4 != 2) {
                 $len ++;
             }
             my $high = $n - (($n + 1) & 1);
-        #   high = n - ((n + 1) & 1)
-        #   oddSwing = div(oddProduct(high, len), oldOddFact)
-        #   oddFact = sqrOddFact^2 * oddSwing
             my $oddSwing = &oddProduct($high, $len)->btdiv($oldOddFact);
-            $oddFact  = $sqrOddFact->bpow(2)->bmul($oddSwing);
+            $oddFact  = $sqrOddFact->copy()->bpow(2)->bmul($oddSwing);
         }
+        print "oddFact=$oddFact, sqrOddFact=$sqrOddFact\n" if $debug >= 2;
         return ($oddFact->copy(), $sqrOddFact->copy());
     } # oddFactorial
             
     sub SwingFactorial { my ($n) = @_;
-        my $result;
+        my ($result, $dummy);
         if ($n < 0) {
             print STDERR "n must be ≥ 0\n";
         } elsif ($n == 0) {
             $result = Math::BigInt->new(1);
         } else {
-        		my ($p0, $p1) = &oddFactorial($n);
-            $result = $p0->blsft($n - &popcount($n));
+            ($result, $dummy) = &oddFactorial($n);
+            $result->blsft($n - &popcount($n));
         }
-        return $result->copy();
+        print "perl  $n: $result\n" if $debug >= 1;
+        return $result;
     } # SwingFactorial
     
 # from <https://www.perlmonks.org/?node_id=1199987>
@@ -102,7 +100,6 @@ sub popcount {
 #   $old2->bmul($old);
 
 # main()
-    my $debug  = 0; # 0 (none), 1 (some), 2 (more)
     my $number = 29;
     while (scalar(@ARGV) > 0 and ($ARGV[0] =~ m{\A\-})) { # get options
         my $opt = shift(@ARGV);
@@ -126,12 +123,12 @@ sub popcount {
             print "difference at n = $n: $s <> $b\n";
         }
     } # for $n
-exit;
+# exit;
     # GC.gc() ??
     $n = $number;
     print "start " . &get_timestamp() . "\n";
     my $b = Math::BigInt->new($n)->bfac(); 
-    # &SwingFactorial($n);
+    &SwingFactorial($n);
     print "end   " . &get_timestamp() . "\n";
     exit();
 #----
