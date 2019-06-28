@@ -9,6 +9,7 @@
 B=5
 D=0
 M=3
+GEN=3125
 
 all:
 	# please use a specific makefile target: 
@@ -157,7 +158,8 @@ meander.4:
 	perl -w gen_meander.pl  -b 4 -l  4096 -p qqq -v | tee $@.tmp
 meander.5:
 	perl -w gen_paths.pl    -b 5 > paths.5.tmp
-	perl -w gen_meander.pl  -b 5 -l 3125 -v -r paths.5.tmp | tee $@.tmp
+	perl -w gen_meander.pl  -b 5 -l $(GEN) -v -r paths.5.tmp     | tee $@.tmp
+	perl -w gen_meander.pl  -b 5 -l $(GEN) -v -r paths.5.tmp -od | tee $@d.tmp
 	grep " 144444"  $@.tmp
 	grep " 144444"  $@.tmp | wc -l
 	tail -5 paths.5.tmp

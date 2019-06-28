@@ -1,6 +1,7 @@
 #!/usr/bin/perl
 
 # Generate a meander sequence
+# 2019-04-21: -o output base
 # 2018-05-18: -r reads many matrices from input file
 # 2018-05-15: option -pb
 # 2017-08-31, Georg Fischer
@@ -9,11 +10,18 @@
 #------------------------------------------------------
 use strict;
 use integer; # avoid division problems with reals
-
+my $xml = 1;
+if ($xml > 0) {
+    print <<"GFis";
+<?xml version="1.0" encoding="UTF-8" ?>
+GFis
+    print "<!-- $0 " . join(" ", @ARGV) . " -->\n";
+}
 my $even   = 0; # experimental conditions for even base
 my $debug  = 0;
 my $ansi   = 0; # whether to use ANSI colors on console output
 my $base   = 5; 
+my $output_base = 0; # not defined, for later default of $base
 my $unit   = 1; # dual to $base
 my $bfile  = 0; # whether to print the bn-file
 my $bpath;
@@ -49,10 +57,12 @@ while (scalar(@ARGV) > 0 and ($ARGV[0] =~ m{\A\-})) { # start with hyphen
         $ident  = shift(@ARGV);
     } elsif ($opt eq "\-l") {
         $limit  = shift(@ARGV);
-    } elsif ($opt =~ m{\-pb?}) {
-        if ($opt =~ m{\-pb}) { 
+    } elsif ($opt eq "\-od") { # output decimal
+        $output_base = 10;
+    } elsif ($opt =~ m{\-pb?}) { # path
+        if ($opt =~ m{\-pb}) { # path with $base digits
             @path   = map { $_ = &from_base($_); $_ } split(/\,/, shift(@ARGV));
-        } else {
+        } else { # path with decimal digits
             @path   =                        split(/\,/, shift(@ARGV));
         }
     } elsif ($opt eq "\-r") {
@@ -61,10 +71,12 @@ while (scalar(@ARGV) > 0 and ($ARGV[0] =~ m{\A\-})) { # start with hyphen
         $vector  = 1;
     }
 } # while opt
+if ($output_base == 0) { # if not set with -o
+    $output_base = $base;
+}
 $even = $base % 2 == 0 ? 1 : 0;
 my $basem1 = $base - 1;
 my $basep1 = $base - 1;
-my $xml = 1;
 my $corner = $base * $base;
 my $corner_val = "1" . ($base - 1) .($base - 1);
 #--------------
@@ -73,9 +85,9 @@ my $ind = 1;
 my $fail = 0;
 my $spath; # current expanded path
 print <<"GFis" if $xml > 0;
-<?xml version="1.0" encoding="UTF-8" ?>
 <meanders base="$base">
 GFis
+
 if (length($rfile) > 0) { # read generated matrices 
     open(RIN, "<", $rfile) or die "cannot read \"$rfile\"\n";
     while (<RIN>) {
@@ -103,6 +115,12 @@ print <<"GFis" if $xml > 0;
 GFis
 exit(0); # main
 #-----------------------------------------------------------------------
+sub b_append {
+    my ($ind, $term) = @_;
+    my $result = "$ind " . ($output_base == 10 ? &from_base($term) : $term) . "\n";
+    return $result;
+} # b_append
+#----
 sub meander {
     # print "<!-================================-_>\n";
     $bpath  = join("", map { my $bnum = &to_base($_); (length($bnum) < 2 ? "0$bnum" : $bnum) . $sep} @path);
@@ -129,11 +147,12 @@ sub meander {
             } else { # not yet_failed
                 $spath   .= " $bnext";
                 if ($bfile > 0) {
-                    $content .= "$ind $bnext\n";
+                    $content .= &b_append($ind, $bnext);
                 } else {
                     if (length($bcurr) != length($bnext)) {
                         $ind_1 = $ind - 1;
-                        $content .= "$ind_1 $bcurr\n$ind $bnext\n"; 
+                        $content .= &b_append($ind_1, $bcurr);
+                        $content .= &b_append($ind,   $bnext);
                     }
                 }
             } # not yet failed
@@ -181,7 +200,7 @@ sub diag_dist { # return whether all distances between diagonal elements are div
         }
         $ind ++;
     } # while
-    print "# diag div4=$div4, pattern=$pattern " if $debug >= 0;
+    print "# diag div4=$div4, pattern=$pattern " if $debug >= 1;
     return $div4;
 } # diag_dist
 #--------
@@ -366,7 +385,7 @@ sub out_vector {
     print "[0,";
     while ($fail == 0 and $ind <= $limit) {
         my $bnext = &get_successor($bprev, $bcurr);
-        print sprintf("%d,", $bnext);
+        print sprintf("%d, ", $output_base == 10 ? &from_base($bnext) : $bnext);
         if ($ind % 16 == 0) {
             print "\n";
         }

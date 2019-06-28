@@ -42,13 +42,13 @@ my @smallOddFactorial =             ( "0", "0x0000000000000000000000000000001"
             my $p = Math::BigInt->new($m);
             my $k = 2;
             while ($k <= 2 * ($len - 1)) { # for k in 2:2:2(len-1) { ???
-                $p->bmul(Math::BigInt->new($m - $k));
+                $p->bmul(Math::BigInt->new($m)->bsub(Math::BigInt->new($k)));
                 $k += 2;
             } # for $k
-            return $p;
+            return $p->copy();
         } else {
             my $hlen = $len >> 1;
-            return &oddProduct($m - 2 * $hlen, $len - $hlen)->bmul(&oddProduct($m, $hlen));
+            return &oddProduct($m->bsub(2)->bmul($hlen), $len - $hlen)->bmul(&oddProduct(Math::BigInt->new($m), $hlen));
         }
     } # oddProduct
 
@@ -75,7 +75,7 @@ my @smallOddFactorial =             ( "0", "0x0000000000000000000000000000001"
             my $oddSwing = &oddProduct($high, $len)->btdiv($oldOddFact);
             $oddFact  = $sqrOddFact->bpow(2)->bmul($oddSwing);
         }
-        return ($oddFact, $sqrOddFact);
+        return ($oddFact->copy(), $sqrOddFact->copy());
     } # oddFactorial
             
     sub SwingFactorial { my ($n) = @_;
@@ -85,9 +85,10 @@ my @smallOddFactorial =             ( "0", "0x0000000000000000000000000000001"
         } elsif ($n == 0) {
             $result = Math::BigInt->new(1);
         } else {
-            $result = (&oddFactorial($n))[0]->blsft($n - &popcount($n));
+        		my ($p0, $p1) = &oddFactorial($n);
+            $result = $p0->blsft($n - &popcount($n));
         }
-        return $result;
+        return $result->copy();
     } # SwingFactorial
     
 # from <https://www.perlmonks.org/?node_id=1199987>
