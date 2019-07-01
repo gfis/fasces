@@ -10,7 +10,7 @@ use Math::BigInt;
 use Math::BigInt':constant';
 
 # my $n = Math::BigInt->new(1);
-my %cube;
+my %hash;
 my ($i, $j, $k, $n);
 $n = 0;
 for ($k = 0; $k <= 100; $k ++) {
@@ -20,15 +20,15 @@ for ($k = 0; $k <= 100; $k ++) {
             $sum += &aux($i, $j, $k);
         } # for $j
     } # for $i
-    print "$n $sum\n";
+    print "$n $sum # " . scalar(%hash) . "\n";
     $n ++;
 } # for $k
 #--------
 sub aux {
     my ($i, $j, $k) = @_;
     my $result;
-    if (defined(  $cube{"$i,$j,$k"})) {
-        $result = $cube{"$i,$j,$k"};
+    if (defined(  $hash{"$i,$j,$k"})) {
+        $result = $hash{"$i,$j,$k"};
     } else {
         $result = Math::BigInt->new(0);
         if (0) {
@@ -44,7 +44,7 @@ sub aux {
             + &aux( 1 + $i,  1 + $j, -1 + $k)
             ;
         }
-        $cube{"$i,$j,$k"} = $result;
+        $hash{"$i,$j,$k"} = $result;
     }
     # print "aux($i, $j, $k) = $result\n";
     return $result;
@@ -146,5 +146,8 @@ C:\Users\User\work\gits\OEIS-mat\contrib>perl a151258.pl
 60 9498617217872970575991970726484
 61 33923223065807755139011774247228
 62 125393446234400554641845850644158
+63 448560768501263175686301383054416 # 101977
+64 1659421136783167898109432561034984 # 106593
+65 5945279567269068113143326388999302 # 111346
 
 C:\Users\User\work\gits\OEIS-mat\contrib>

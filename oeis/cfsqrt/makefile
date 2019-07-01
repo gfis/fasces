@@ -16,6 +16,6 @@ b308778:
 # First element of the period of the continued fraction expansion of sqrt(k), where the period has length 3
 # 66	8;8,16
 a308780:
-	head -n 500  $(CFSQ) \
+	head -n 600  $(CFSQ) \
 	| perl -ne 'if (m{\A\d+\s+\d+\;(\d+)\,\d+\s+\Z}) { print "$$1, ";}' \
 	| tee $@.data
