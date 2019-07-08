@@ -5,50 +5,97 @@
 
 use strict;
 use integer;
+use warnings;
 use List::Util qw[min max];
+use Time::HiRes qw(time);
 use Math::BigInt;
 use Math::BigInt':constant';
+my $start = time();
+my $maxn = shift(@ARGV);
 
-# my $n = Math::BigInt->new(1);
 my %hash;
+my @cube;
 my ($i, $j, $k, $m);
+my $limit = 4;
+# my $UNDEF = -16;
+# for ($m = 0; $m <= $limit; $m ++) {
+#     for ($i = 0; $i <= $limit; $i ++) {
+#         for ($j = 0; $j <= $limit; $j ++) {
+#             for ($k = 0; $k <= $limit; $k ++) {
+#                 $cube[$i][$j][$k][$m] = $UNDEF;
+#             } # for $k
+#         } # for $j
+#     } # for $i
+# } # for $m
+
+$limit -= 2; # -1 .. m+1
 my $n = 0;
-for ($m = 0; $m <= 100; $m ++) {
-    my $sum = 0;
+my $sum;
+for ($m = 0; $m <= $maxn; $m ++) {
+    $sum = 0;
     for ($i = 0; $i <= $m; $i ++) {
         for ($j = 0; $j <= $m; $j ++) {
             for ($k = 0; $k <= $m; $k ++) {
-                $sum += &aux($i, $j, $k, $m);
+                $sum += &aux(join(",", ($i, $j, $k, $m)));
             } # for $k
         } # for $j
     } # for $i
-    print "$n $sum # " . scalar(%hash) . "\n";
+    print "$n $sum\n";
     $n ++;
-} # for $k
+} # for $m
+my $elapsed = time - $start;
+print "elapsed: $elapsed, #hash=" . scalar(%hash) . "\n";
 #--------
 sub aux {
-    my ($i, $j, $k, $m) = @_;
+    # my $key = sprintf("%02x%02x%02x%02x", $i,$j,$k,$m);
+    my ($key) = @_;
     my $result;
-    if (defined(  $hash{"$i,$j,$k,$m"})) {
-        $result = $hash{"$i,$j,$k,$m"};
-    } else {
-        $result = Math::BigInt->new(0);
+#     if ($m <= $limit) {
+#         $result = $cube[$i + 1][$j + 1][$k + 1][$m + 1];
+#         if ($result != $UNDEF) {
+#             return $result;
+#         } else {
+#         }
+#     } elsif (defined(  $hash{$key})) {
+    if (defined(  $hash{$key})) {
+        return $hash{$key};
+    } 
+
+    {
+	    my ($i, $j, $k, $m) = split(/\,/, $key);
         if (0) {
-        } elsif (min($i, $j, $k, $m) < 0 or max($i, $j, $k) > $m) {
-            $result = Math::BigInt->new(0);
+    } elsif ( ($key =~ m{\-}o) or
+                  $i > $m or $j > $m or $k > $m
+            #   or   
+            #     $i < 0  or $j < 0  or $k < 0
+                ) {
+            $result = 0;
+            # print "cond $i,$j,$k,$m\n";
         } elsif ($m == 0) {
-            $result = Math::BigInt->new(($i == $j and $j == $k and $k == $m) ? 1 : 0); # the Kronecker delta
+            if (substr($key, 0, 5) eq "0,0,0") {
+                $result = 1; # the Kronecker delta
+            } else {
+                $result = 0;
+            }
         } else {
+            my $mn1 = $m - 1;         
+            my $ip1 = $i + 1;         
             $result
-            = &aux(-1 + $i,      $j,      $k, -1 + $m)
-            + &aux( 1 + $i, -1 + $j,      $k, -1 + $m)
-            + &aux( 1 + $i,  1 + $j, -1 + $k, -1 + $m)
-            + &aux( 1 + $i,  1 + $j,  1 + $k, -1 + $m)
+            = &aux(join(",", ($i - 1, $j    , $k    , $mn1)))
+            + &aux(join(",", ($ip1  , $j - 1, $k    , $mn1)))
+            + &aux(join(",", ($ip1  , $j + 1, $k - 1, $mn1)))
+            + &aux(join(",", ($ip1  , $j + 1, $k + 1, $mn1)))
             ;
         }
-        $hash{"$i,$j,$k,$m"} = $result;
+#         if ($m <= $limit) {
+#             $cube[$i + 1][$j + 1][$k + 1][$m + 1] = $result;
+#         } else 
+        {
+            $hash{$key} = $result;
+        }
     }
     # print "aux($i, $j, $k, $m) = $result\n";
+    # $sum += $result;
     return $result;
 } # aux
 __DATA__
@@ -175,3 +222,14 @@ C:\Users\User\work\gits\fasces\oeis\walk>perl a147999.pl
 88 484540591407834019227945540328093817052785 # 18178777
 89 1380926204700094260299092867163693723473974 # 18980408
 90 5066273304758588554184499687976482662474632 # 19808236
+91 14299449944952298734252710898405129910405895 # 20662825
+92 53984469800544915833455332083358903445423937 # 21544745
+93 154067833058918551723336615027464843253936588 # 22454572
+94 565267542536747615048428024901553460505957708 # 23392888
+95 1597400251082303841403881257871272643389846315 # 24360281
+96 6039618024347518181396342574347112699275087377 # 25357345
+97 17265748745139361735734427860173492487999966830 # 26384680
+98 63498517939579191507391596251225503893706723736 # 27442892
+99 179799628835185434761681090206720663546914374427 # 28532593
+100 680009517485310773055207610718222490056431540229 # 29654401
+
