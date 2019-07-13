@@ -5,14 +5,31 @@
 # 2018-10-15, Georg Fischer 
 #---------------------------------
 D=0
-MAXIND=1000
+NT=1000
 WIDTH=16
-SUBSET=0146
+SC=0146
 
 all: 
 #----
-eval:
-	perl squaredig.pl -s $(SUBSET) -n $(MAXIND) -w $(WIDTH) -d $(D)
+sqd: sqd2 sqd3 sqd4
+sqd1:
+	perl squaredig.pl -s $(SC) -n $(NT) -w $(WIDTH) -d $(D)
+dummy:
+	| grep -v "46" \
+	| sed -e "s/46/33/g" \
+	
+sqd2:
+	perl square_digits.pl -s $(SC) -w $(WIDTH) -d 1  -q 46\
+	| grep "push" | gawk '{ print $$3 }' \
+	| cat -n \
+		>         $@.tmp
+	head -n 4 $@.tmp
+	wc   -l   $@.tmp
+sqd3:
+	perl ../bfcolor/bfcolorize.pl -m 4 -r sqd2.tmp \
+	> $@.html
+sqd4:
+	cmd /C "start sqd3.html"
 #----
 getseq: getseq1 getseq2
 getseq1:

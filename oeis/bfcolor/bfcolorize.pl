@@ -1,16 +1,29 @@
 #!perl
 
-# output a b-file as colorized HTML
+# Output a b-file as colorized HTML
 # @(#) $Id$
+# 2019-07-13: -m multi
 # 2018-10-28, Georg Fischer
+#
+#:# Usage:
+#:#     perl bfcolorize.pl  [-d 0] [-m 1] [-b bseqno|-r title infile] > output.html
+#:#         -b b-number to be read from https://oeis.org/b-number.txt
+#:#         -r title if input from STDIN
+#:#         -d debug info, 0 = none (default), 1 = some, 2 = more
+#:#         -m multiple: 1 = single (default), 2 = double, 4 = 4 chars. per digit
 #---------------------------------
 use strict;
 use integer;
+use warnings;
 
+if (scalar(@ARGV) == 0) {
+    print `grep -E "^#:#" $0 | cut -b3-`;
+    exit;
+}
 my $debug  = 0;
-my $minlen = 6;
 my $bseqno = "b136808";
 my $filename = "";
+my $multi  = 1;
 my $sleep  = 2; # seconds
 my @pairs = ();
 my $title;
@@ -24,8 +37,8 @@ while (scalar(@ARGV) > 0 and ($ARGV[0] =~ m{\A\-})) {
     } elsif ($opt =~ m{\-d}) {
         $debug    =  shift(@ARGV);
     } elsif ($opt =~ m{\-r}) {
-    	$filename =  $ARGV[0];
-    	$title    = $filename;
+        $filename =  $ARGV[0];
+        $title    = $filename;
         @pairs    = ();
         while (<>) { # read from STDIN
             my $line = $_;
@@ -35,8 +48,8 @@ while (scalar(@ARGV) > 0 and ($ARGV[0] =~ m{\A\-})) {
                 push(@pairs, $line);
             }
         } # while <>
-    } elsif ($opt =~ m{m}) {
-        $minlen   = shift(@ARGV);
+    } elsif ($opt =~ m{\-m}) {
+        $multi    = shift(@ARGV);
     } else {
         die "invalid option \"$opt\"\n";
     }
@@ -44,11 +57,18 @@ while (scalar(@ARGV) > 0 and ($ARGV[0] =~ m{\A\-})) {
 
 print &get_html_head($title);
 foreach my $pair(@pairs) {
-    my ($n, $an) = split(/\s/, $pair, 2);
+    my ($n, $an) = split(/\s+/, $pair, 2);
     if ($debug >= 1) {
         print "$pair - $n: $an\n";
     }
-    $an =~ s{((\d)\2*)}{\<span class\=\"c\2\"\>\1\<\/span\>}g;
+    if (0) {
+    } elsif ($multi == 4) { # 4 chars without digit
+    	$an =~ s{((\d)\2*)}{\<span class\=\"d$2\"\>$1$1$1$1<\/span\>}g;
+    } elsif ($multi == 2) { # 2 chars without digit
+    	$an =~ s{((\d)\2*)}{\<span class\=\"d$2\"\>$1$1\<\/span\>}g;
+    } else  { #     == 1    # 1 char with digit (default)
+    	$an =~ s{((\d)\2*)}{\<span class\=\"c$2\"\>$1\<\/span\>}g;
+    }
     print sprintf("%5d ", $n) . $an . "\n";
 } # foreach
 print <<"GFis";
@@ -122,28 +142,27 @@ body,table,p,td,th
 table   { border-collapse: collapse; }
 td      { padding-right: 4px; }
 tr,td,th{ text-align: left; vertical-align:top; }
-/*
-.c0     { color: black;  background-color: yellow    ;    }
-.c1     { color: black;  background-color: lime;    }
-.c2     { color: black;  background-color: red ;     }
-.c3     { color: yellow; background-color: blue   }
-.c4     { color: white;  background-color: fuchsia }
-.c5     { color: white;  background-color: green   ;     }
-.c6     { color: yellow; background-color: purple ;          }
-.c7     { color: black;  background-color: aqua        }
-.c8     { color: red;    background-color: silver; }
-.c9     { color: white;  background-color: black        ;     }
-*/               
-.c0     { color: black;  background-color: yellow    ;    }
-.c1     { color: black;  background-color: lime;    }
-.c2     { color: black;  background-color: red ;     }
-.c3     { color: yellow; background-color: blue   }
-.c4     { color: white;  background-color: fuchsia }
-.c5     { color: white;  background-color: green   ;     }
-.c6     { color: yellow; background-color: purple ;          }
-.c7     { color: black;  background-color: aqua        }
-.c8     { color: red;    background-color: silver; }
-.c9     { color: white;  background-color: black        ;     }
+.c0     { color: black  ;  background-color: yellow ; }
+.c1     { color: black  ;  background-color: lime   ; }
+.c2     { color: black  ;  background-color: red    ; }
+.c3     { color: yellow ;  background-color: blue   ; }
+.c4     { color: white  ;  background-color: fuchsia; }
+.c5     { color: white  ;  background-color: green  ; }
+.c6     { color: yellow ;  background-color: purple ; }
+.c7     { color: black  ;  background-color: aqua   ; }
+.c8     { color: red    ;  background-color: silver ; }
+.c9     { color: white  ;  background-color: black  ; }
+                           
+.d0     { color: yellow ;  background-color: yellow ; }
+.d1     { color: lime   ;  background-color: lime   ; }
+.d2     { color: red    ;  background-color: red    ; }
+.d3     { color: blue   ;  background-color: blue   ; }
+.d4     { color: fuchsia;  background-color: fuchsia; }
+.d5     { color: green  ;  background-color: green  ; }
+.d6     { color: purple ;  background-color: purple ; }
+.d7     { color: aqua   ;  background-color: aqua   ; }
+.d8     { color: silver ;  background-color: silver ; }
+.d9     { color: black  ;  background-color: black  ; }
 </style>
 </head>
 <body>
