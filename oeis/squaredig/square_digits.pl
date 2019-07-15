@@ -56,9 +56,55 @@ while ($width <= $max_width && $index <= $max_ind) {
         my $ibl = $minbl;
         while ($ibl < $maybl) {
             $snum = "$dig$queue[$ibl]";
-            $num   = Math::BigInt->new($snum); # contains proper digits by construction
+            my $num0 = $snum;
+            $num0 =~ s{0+\Z}{};
+            my $lendiff = length($snum) - length($num0);
+            $num   = Math::BigInt->new($num0); # contains proper digits by construction
             $npow2 = $num->copy()->bmul($num); # ->bstr();
+            # $npow2 =~ s{(00)+
+            if ($npow2 !~ m{[$rest]}o) { # leading part of square has proper digits
+                &enqueue("full");
+                if ($dig != 0 || $width == 1) { # no leading zero
+                    my $time_diff = time() - $start;
+                    print "$index $snum # $minbl:$maybl, $time_diff s\n";
+                    $index ++;
+                } # no leading zero
+                # square ok
+            } else {
+                if (substr($npow2, - $width + $lendiff) !~ m{[$rest]}o) { # tail of square has proper digits
+                    &enqueue("tail");
+                } else {
+                    &output("drop");
+                }
+            }       
+            $ibl ++;
+        } # while $ibl
+    } # foreach $dig
+    $minbl = $maybl;
+    $maybl = scalar(@queue);
+    $width ++; # enter next level
+    if ($debug >= 1) {
+        print "----------------\n";
+        print "push 9 9999999999999999999999999999999999\n";
+    }
+} # while $width
 
+sub enqueue {
+    my ($text) = @_;
+    push(@queue, $snum);
+    &output($text);
+} # enqueue
+
+sub output {
+    if ($debug >= 1) {
+        my ($text) = @_;
+        print sprintf("%s %10d %s: %${width}s.%${width}s %d\n", $text, scalar(@queue), $snum
+            , substr($npow2, 0, length($npow2) - $width)
+            , substr($npow2, - $width) , $width
+            );
+    }
+} # output
+__DATA__
             if ($dig == 0 && $width > 1) { # leading zero
                 if (substr($npow2, - $width)  !~ m{[$rest]}o) { # leading part of square has proper digits, too
                     push(@queue, $snum);
@@ -79,33 +125,19 @@ while ($width <= $max_width && $index <= $max_ind) {
                     # &enqueue() ;
                 }
             }
-            $ibl ++;
-        } # while $ibl
-    } # foreach $dig
-    $minbl = $maybl;
-    $maybl = scalar(@queue);
-    $width ++; # enter next level
-    if ($debug >= 1) {
-        print "----------------\n";
-        print "push 9 9999999999999999999999999999999999\n";
-    }
-} # while $width
+            $ibl ++;                my $nzero = 0;
+                my $pos2 = length($npow2);
+                while (0 and $pos2 >= 4 && substr($snum, $pos2 - 4, 4) eq "0000") {
+                    $nzero += 2;
+                    $pos2 -= 4;
+                } # cut trailing 00 pairs
+                my $pos1 = $pos2 - $width;
+                if ($pos1 < 0) {
+                    $pos1 = 0;
+                }
 
-sub enqueue {
-    push(@queue, $snum);
-    if ($debug >= 1) {
-        &output("push");
-    }
-} # enqueue
 
-sub output {
-    my ($text) = @_;
-    print sprintf("%s %10d %s %${width}s.%${width}s\n", $text, scalar(@queue), $snum
-        , substr($npow2, 0, length($npow2) - $width)
-        , substr($npow2, - $width)
-        );
-} # output
-__DATA__
+
 gits\fasces\oeis\squaredig>perl square_digits.pl -s 0146 -w 15
 1 1 # 0:1, 0 s
 2 4 # 0:1, 0 s

@@ -30,6 +30,20 @@ sqd3:
 	> $@.html
 sqd4:
 	cmd /C "start sqd3.html"
+s0146:
+	perl square_digits.pl -w 15 -s 0146 -d 1 | grep "46:" | grep -v drop \
+	| sed -e "s/^[^0-9]*//" | gawk '{ print $$2, $$3 }' \
+	| cat -n \
+	> $@.txt
+	perl ../bfcolor/bfcolorize.pl -m 4 -r $@.txt > $@.html
+	cmd /C "start $@.html"
+s61046:
+	perl square_digits.pl -w 15 -s 0146 -d 1 | grep -E "044*61046:" | grep -v drop \
+	| sed -e "s/^[^0-9]*//" | gawk '{ print $$2, $$3 }' \
+	| cat -n \
+	> $@.txt
+	perl ../bfcolor/bfcolorize.pl -m 4 -r $@.txt > $@.html
+	cmd /C "start $@.html"
 #----
 getseq: getseq1 getseq2
 getseq1:
