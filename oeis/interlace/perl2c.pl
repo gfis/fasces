@@ -25,19 +25,16 @@
 
 use strict;
 
-    while (<>) {
-        if (s[\#][\/\*] > 0) {
-            s[(\r?\n)][ */$1];
-        }
-        s[\s*use\s+strict\s*\;][int main(argc, argv) int argc; char *argv\[\]; \{];
-        s[\A(\s*)my(\s)][${1}int$2]g;
-        s[\&(\w+)][$1]g;
-        s[\Asub\s+(\w+)][int $1()];
-        s[\selsif\s][ else if ];
-        s[\$][]g;
-        s{\@(\w+)}{$1\[4095\]};
-        s[print\s+sprintf][printf]g;
-        print;
-    } # while <>
-    print "} /* main */\n";
-__DATA__
+while (<>) {
+    s[\#][\/\/];
+    s[\s*use\s+strict\s*\;][int main(argc, argv) int argc; char *argv\[\]; \{];
+    s[(\s*)my(\s)][${1}int$2]g;
+    s[\&(\w+)][$1]g;
+    s[\Asub\s+(\w+)][int $1()];
+    s[\selsif\s][ else if ];
+    s[\$][]g;
+    s{\@(\w+)}{$1\[4095\]};
+    s[print\s+sprintf][printf]g;
+    print;
+} # while <>
+print "} /* main */\n";
