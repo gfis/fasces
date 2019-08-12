@@ -2,10 +2,11 @@
 
 # Order in the thicket of the Collatz graph
 # @(#) $Id$
+# 2019-08-07: segment V2.0
 # 2018-12-21: a32tree.pl
 # 2018-08-17, Georg Fischer 
 #---------------------------------
-N=2000
+N=800
 K=64
 D=0
 S=22
@@ -13,7 +14,7 @@ I=18
 M=html
 SRC=comp.html
 
-all: a32tree
+all: lists
 lists: style dirs templates
 #----
 dirs: comp double detail atab degr super roots
@@ -69,7 +70,7 @@ test2:
 style:
 	perl segment.pl -a style | tee stylesheet.css
 atab:
-	perl attachtab.pl > $@.wiki 2> x.tmp
+	perl attachtab.pl -c 2> x.tmp | tee $@.wiki 
 #----
 templates: e1 exam2
 e1:
@@ -81,6 +82,7 @@ deploy:
 	scp stylesheet.css \
 		comp.html double.html detail.html \
 		super.html \
+		root1.html root2.html root3.html root4.html \
 		degree2.html degree3.html degree4.html \
 		gfis@punctum.com:/var/www/html/teherba.org/fasces/oeis/collatz/
 #--------

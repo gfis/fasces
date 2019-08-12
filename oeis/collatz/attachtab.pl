@@ -3,11 +3,12 @@
 # https://github.com/gfis/fasces/blob/master/oeis/collatz/attachtab.pl
 # Generate and check attachment table
 # @(#) $Id$
+# 2019-08-09: -c for compressed; V.S.W.F. = 38
 # 2018-11-27: comment "Generated at ..." before
 # 2018-11-19, Georg Fischer
 #------------------------------------------------------
 # Usage:
-#   perl attachtab.pl [-n maxn] [-d debug]
+#   perl attachtab.pl [-n maxn] [-c] [-d debug]
 #-----------------------------------------------
 use strict;
 use integer;
@@ -20,9 +21,12 @@ my $TIMESTAMP = sprintf ("%04d-%02d-%02d %02d:%02d:%02d"
 # get commandline options
 my $debug  = 0;
 my $maxn   = 4; # max. value for k
+my $compr  = 0; # 1 = compressed 
 while (scalar(@ARGV) > 0 and ($ARGV[0] =~ m{\A\-})) {
     my $opt = shift(@ARGV);
     if (0) {
+    } elsif ($opt =~ m{c}) {
+        $compr  = 1;
     } elsif ($opt =~ m{d}) {
         $debug  = shift(@ARGV);
     } elsif ($opt =~ m{n}) {
@@ -38,8 +42,18 @@ print <<"GFis"; # table header
 at $TIMESTAMP;--> 
 {| class="wikitable" style="text-align:left"
 |-
-!Rule /<br>column!!Source<br>segments||Condition /<br>remaining!!First source<br>segments!!Target<br>segments!!First target<br>segments!!Dir.
 GFis
+if ($compr == 0) {
+print <<"GFis"; 
+!Rule /<br>column!!Source<br>segments||Condition /<br>remaining!!First source<br>segments!!Target<br>segments!!First target<br>segments!!Dir.
+|-
+GFis
+} else {
+print <<"GFis"; 
+!Rule /<br>column!!Source<br>segments                          !!First source<br>segments!!Target<br>segments!!First target<br>segments!!Dir.
+|-
+GFis
+}
 my ($rule, $cond, $remain, $ssegments, $fssegments, $tsegments, $ftsegments, $dir, $st);
 while (<DATA>) {
     s/\s+\Z//; # chompr
@@ -57,10 +71,23 @@ while (<DATA>) {
         if ($fsn1 >= $ftn1) {
             $dir = "\&lt;";
         }
-        print <<"GFis";
-|-
+        if ($compr == 0) {
+            print <<"GFis";
 |'''$rule'''||$ssegments||$cond<br>$remain||$fssegments||$tsegments||$ftsegments||$dir
+|-
 GFis
+        } else {
+            $ssegments =~ s{\A6\*?\(}{};
+            $ssegments =~ s{\)\s*\-\s*2\s*\Z}{};
+            $tsegments =~ s{\A6\*?\(}{};
+            $tsegments =~ s{\)\s*\-\s*2\s*\Z}{};
+            $fssegments = join(", ", map { ($_ + 2) / 6 } split(/\,\s*/, $fssegments));
+            $ftsegments = join(", ", map { ($_ + 2) / 6 } split(/\,\s*/, $ftsegments));
+            print <<"GFis";
+|'''$rule'''||$ssegments                  ||$fssegments||$tsegments||$ftsegments||$dir
+|-
+GFis
+        }
     #----
     } elsif ($line =~ m{\A\#R(\d+)}) {
         $rule = $1;
@@ -82,7 +109,7 @@ GFis
         $st = $1;
         my $expr = $line;
         $expr =~ s{\*\*(\d+)}{<sup>\1<\/sup>}g;
-        $expr =~ s{\*}{}g;
+        # $expr =~ s{\*}{}g;
         $line =~ s{k}{\$k}g;
         my $first = "";
         for my $k (0..$maxn - 1) {
@@ -100,12 +127,19 @@ GFis
     } # statement line
     #----
 } # while DATA
+if ($compr == 0) {
 print <<"GFis"; # table trailer
-|-                                                                                     
-|...||...                                           ||...||...                      ||...||...                             ||... 
+|...||...||...||...||...||...||... 
 |-
 |}
 GFis
+} else {
+print <<"GFis"; # table trailer
+|...||...||...||...||...||...
+|-
+|}
+GFis
+}
 # |-                                                                                      
 # |Rj ||6(2<sup>4</sup>(4k + 1)) - 2||...||...mod 2<sup>k+1</sup><br>...||...||6(3<sup>l</sup>k + m) - 2||...|| &gt; 
 

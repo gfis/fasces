@@ -3,6 +3,7 @@
 # https://github.com/gfis/fasces/blob/master/oeis/collatz/segment.pl
 # Print a directory of segments in the Collatz graph
 # @(#) $Id$
+# 2019-08-07: version 2.1
 # 2018-12-07: -r root
 # 2018-12-03: index in 0, 1, 2 ...
 # 2018-11-27: test2
@@ -15,14 +16,14 @@
 #------------------------------------------------------
 # Usage:
 #   perl segment.pl [-n maxn] [-d debug] [-s 4] [-i 6] [-a comp] > comp.html
-#       -a  type of directory to be produced: 
+#       -a  type of directory to be produced:
 #           deta[il}, comp[ress], doub[le], style, test<i>, super
 #       -b  bit mask for &get_index
 #       -d  debug level: 0 (none), 1 (some), 2 (more)
 #       -i  segment index block size for printing
 #       -m  output mode: tsv, htm (no css), htm[l], latex
 #       -n  maximum segment index
-#       -r  degree of rooting: 0 (none), 1 (index), 2 (supernode) 
+#       -r  degree of rooting: 0 (none), 1 (index), 2 (supernode)
 #       -s  residues of segment indexes to be printed
 #
 # See http://www.teherba.org/index.php/OEIS/3x%2B1_Problem
@@ -31,16 +32,15 @@ use strict;
 use integer;
 #----------------
 # global constants
+my $VERSION = "V2.1";
 my ($sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst) = localtime (time);
-my $TIMESTAMP = sprintf ("%04d-%02d-%02d %02d:%02d:%02d"
-        , $year + 1900, $mon + 1, $mday, $hour, $min, $sec);
+my $TIMESTAMP = sprintf ("%04d-%02d-%02d %02d:%02d"
+        , $year + 1900, $mon + 1, $mday, $hour, $min);
 my $SEP       = "\t";
 my $MAX_RULE  = 64; # rule 7 has 4 mod 16, rule 11 has 16 mod 64
-my @RULENS    = (0, 1, 7, 61
-    , 547, 4921, 44287, 398581
-    , 3587227, 32285041, 290565367, 2615088301); # OEIS A066443
+my @RULENS    = (0, 1, 7, 61, 547, 4921, 44287, 398581, 3587227, 32285041, 290565367, 2615088301); # OEIS A066443
 my $a = "a"; # = "a" ("x") => with (no) links
-my $index_mask = 0b1111; # index = 0b1000, k = 0b0100, source rule, target rule/segment 
+my $index_mask = 0b1011; # index = 0b1000, k = 0b0100, source rule, target rule/segment
 #----------------
 # get commandline options
 my $action = "comp";
@@ -77,12 +77,15 @@ while (scalar(@ARGV) > 0 and ($ARGV[0] =~ m{\A\-})) {
         die "invalid option \"$opt\"\n";
     }
 } # while $opt
+my $mask = sprintf("%04b", $index_mask);
+$mask =~ s{0}{}g;
+my $colspan = length($mask);
 my $subset = $incr == 1 ? "" : " (subset i &#x2261; $start mod $incr)";
 my %text   =
     ( "detail"  , " Detailed   Segment Directory  S$subset"
     , "comp"    , " Compressed Segment Directory  C$subset"
     , "double"  , " Double Line Segment Directory S$subset"
-    , "super"   , " Chains of supersegments"                
+    , "super"   , " Chains of supersegments"
     , "test"    , " Directory Test"
     );
 #----------------
@@ -103,7 +106,7 @@ sub segm_index { # decrease the degree by 1
 # generate the segment directory
 my $maxn  = &left_side($imax);
 my @segms = (0); # [0] is not used
-my $isegm = scalar(@segms); 
+my $isegm = scalar(@segms);
 while ($isegm < $imax) {
     @segms[$isegm] = &generate_segment(&left_side($isegm));
     $isegm ++;
@@ -125,7 +128,7 @@ if (0) { # switch action
                 print          &get_1_segment($isegm) . "\n";
             } elsif ($mode =~ m{^htm}) {
                 print "<tr>" . &get_1_segment($isegm) . "</tr>\n";
-            } 
+            }
         } # foreach $mod
         $iblock += $incr;
     } # while $isegm
@@ -228,7 +231,7 @@ if (0) { # switch action
     } # while $isegm
     # case test1
 
-} elsif ($action =~ m{\Atest2})   { 
+} elsif ($action =~ m{\Atest2})   {
     # either contracting or attaching to a supersegment == 94 mod 108
     # this leaves us with degree 2 segments only
     print join($SEP, "test2", "index", "k", "sr", "tr", "itar", "tlhs") . "\n";
@@ -238,7 +241,7 @@ if (0) { # switch action
             $isegm = $imax; # break loop
         } else {
             my @segment  = split(/$SEP/, $segms[$isegm]);
-            my $index    = $segment[0];  
+            my $index    = $segment[0];
             # now copied from get_idnex
             my  ($nrule1, $itarget1, $k1) = &get_nrule_itarget_k($index);
             if (&is_contracting($nrule1) == 0) { # expanding
@@ -247,7 +250,7 @@ if (0) { # switch action
                 my ($nrule2, $itarget2, $k2) = &get_nrule_itarget_k($itarget1);
                 if (&is_contracting($nrule2) or
                     ($deg_target1 >= 2 and $target1 % 108 == 94)
-                    ) { 
+                    ) {
                     # ok
                 } else {
                     # neither decreasing nor supernode
@@ -268,7 +271,7 @@ if (0) { # switch action
 #================================
 sub generate_segment { # build and return a single segment starting with $selem
     my ($selem) = @_;
-    my @elem    = ($selem, $selem); # 2 parallel tracks: $elem[0] (upper, left), $elem[1] (lower, right)
+    my @elem    = ($selem, $selem); # 2 parallel branches: $elem[0] (upper, left), $elem[1] (lower, right)
     my $len     = 0;
     my @result  = (($selem + $min2) / $incr6, $selem); # (n, 6*n-2)
     my $state   = "step0";
@@ -276,12 +279,14 @@ sub generate_segment { # build and return a single segment starting with $selem
     while ($busy == 1) { # stepping
         if (0) {
         } elsif ($state eq "step0") {
-            $elem[0] = ($elem[0] - 1) / 3; # possible because of preparation above
-            $elem[1] = $elem[1] * 2;
+            $elem[0] = ($elem[0] - 1) / 3; # d possible because of preparation above
+            $elem[1] =  $elem[1] * 2;
+            push(@result, $elem[0], $elem[1]);
             $state = "step1";
         } elsif ($state eq "step1") {
-            $elem[0] = $elem[0] * 2; # mm, always possible
-            $elem[1] = $elem[1] * 2;
+            $elem[0] =  $elem[0] * 2; # mm, always possible
+            $elem[1] =  $elem[1] * 2;
+            push(@result, $elem[0], $elem[1]);
             $state = "md"; # enter the alternating sequence of steps: md, dm, md, dm ...
         } elsif ($state eq "md") {
             if (           ($elem[1] - 1) % 3 == 0) {
@@ -290,6 +295,8 @@ sub generate_segment { # build and return a single segment starting with $selem
                 $state = "dm";
                 if ($elem[0] % 3 == 0 or $elem[1] % 3 == 0) {
                     $busy  = 0;
+                } else {
+                    push(@result, $elem[0], $elem[1]);
                 }
             } else { # should never happen
                 print STDERR "# ** assertion 1 in generate_segment, elem=" . join(",", @elem) . "\n";
@@ -301,14 +308,15 @@ sub generate_segment { # build and return a single segment starting with $selem
                 $state = "md";
                 if ($elem[0] % 3 == 0 or $elem[1] % 3 == 0) {
                     $busy  = 0;
+                } else {
                 }
+                    push(@result, $elem[0], $elem[1]);
             } else { # should never happen
                 print STDERR "# ** assertion 1 in generate_segment, elem=" . join(",", @elem) . "\n";
             }
         } else {
             die "# ** invalid state \"$state\"\n";
         }
-        push(@result, $elem[0], $elem[1]);
         $len ++;
     } # while busy stepping
     if ($debug >= 3) {
@@ -321,21 +329,22 @@ sub get_1_segment {
     my ($isegm) = @_;
     my ($result0, $result1);
     if (0) { # switch action
-    } elsif ($action =~ m{\Acomp})   { 
+    } elsif ($action =~ m{\Acomp})   {
         $result0 = &get_1_compress($isegm);
-    } elsif ($action =~ m{\Adeta})   { 
+    } elsif ($action =~ m{\Adeta})   {
         $result0 = &get_1_detail  ($isegm);
-    } elsif ($action =~ m{\Adoub})   { 
-        ($result0, $result1) = &get_1_double  ($isegm);
+    } elsif ($action =~ m{\Adoub})   {
+        ($result0, $result1)
+                 = &get_1_double  ($isegm);
         if (0) {
         } elsif ($mode =~ m{^tsv}) {
             $result0 .= "\n" . $result1;
         } elsif ($mode =~ m{^htm}) {
             $result0 .= "</tr><tr>" . $result1;
-        } 
+        }
     } else { # e.g. "super"
         $result0 = &get_1_compress($isegm);
-    }       
+    }
     return $result0;
 } # get_1_segment
 #----------------
@@ -349,10 +358,10 @@ sub get_1_double {
         } elsif ($mode =~ m{tsv} ) {
             print join($SEP, @segment) . "\n";
         } elsif ($mode =~ m{\Ahtm}) {
-            # print the northern track
+            # print the upper branch
             $ir = 1;
             $result0 = ""
-                . &get_index($segment[0])
+                . &get_index0($segment[0])
                 . &get_cell_html(            $segment[1], "bor", $ir, "");
             $ir += 2;
             while ($ir < scalar(@segment)) {
@@ -374,13 +383,9 @@ sub get_1_double {
                 $ir += 2;
             } # while $ir
 
-            # print the southern track
+            # print the lower branch
             $result1 = ""
-                . "<td class=\"arl\">\&nbsp;</td>"
-                . "<td class=\"arl\">\&nbsp;</td>"
-                . "<td class=\"arr\">\&nbsp;</td>"
-                . "<td class=\"arr\">\&nbsp;</td>"
-                . "<td class=\"arr\">\&nbsp;</td>"
+                . &get_index1($segment[0])
                 ;
             $ir = 2;
             while ($ir < scalar(@segment)) {
@@ -420,7 +425,7 @@ sub get_1_compress {
             } # while $ir
         } elsif ($mode =~ m{\Ahtm}) {
             $result0 = ""
-                . &get_index($segment[0])
+                . &get_index0($segment[0])
                 . &get_cell_html($segment[1], "bor", 1, "");
             $ir = 5;
             $step = 1;
@@ -449,7 +454,7 @@ sub get_1_detail {
             $result0 = join($SEP, @segment);
         } elsif ($mode =~ m{\Ahtm}) {
             $result0 = ""
-                . &get_index($segment[0])
+                . &get_index0($segment[0])
                 . &get_cell_html($segment[1], "bor", 1, "");
             $ir = 2;
             $step = 1;
@@ -476,13 +481,13 @@ sub is_contracting { # left-shiftig, decreasing
     return ($nrule == 10 or $nrule == 14 or $nrule >= 18) ? 0 : 1;
 } # is_contracting
 #----------------
-sub get_index { # get the index prefix of a row (without the left side)
+sub get_index0 { # get the index prefix of a row (without the left side)
     # global: $index_mask
     my  ($index) = @_;
     my  ($nrule1, $itarget1, $k1) = &get_nrule_itarget_k($index);
     my  $result = "";
     if (($index_mask & 0b1000) > 0) {
-        $result .= "<td class=\"arc\">$index</td>" 
+        $result .= "<td class=\"arc\">$index</td>"
     }
     if (($index_mask & 0b0100) > 0) {
         $result .= "<td class=\"arc bor\">$k1</td>";
@@ -491,21 +496,77 @@ sub get_index { # get the index prefix of a row (without the left side)
         $result .= "<td class=\"arc rule$nrule1\" title=\"($nrule1)-$itarget1\">$nrule1</td>";
     }
     if (($index_mask & 0b0001) > 0) {
+        my $target1 = $incr6 * $itarget1 - $min2;
+        my $deg_target1 = &get_degree($target1);
+        my ($nrule2, $itarget2, $k2) = &get_nrule_itarget_k($itarget1);
         if (&is_contracting($nrule1) == 0) {
-            my $target1 = $incr6 * $itarget1 - $min2;
-            my $deg_target1 = &get_degree($target1);
-            my ($nrule2, $itarget2, $k2) = &get_nrule_itarget_k($itarget1);
-            if ($deg_target1 >= 2) {
+            if (0 and $deg_target1 >= 2) {
                 $result .= "<td class=\"arc super$deg_target1\" title=\"($nrule2)-$itarget2\">$target1</td>";
             } else {
                 $result .= "<td class=\"arc rule$nrule2\" title=\"($nrule2)-$itarget2\">$nrule2</td>";
             }
         } else {
-            $result .= "<td class=\"arc bor\">&nbsp;</td>";
+                $result .= "<td class=\"arc rule$nrule2\" title=\"($nrule2)-$itarget2\">$nrule2</td>";
+            #   $result .= "<td class=\"arc bor\">&nbsp;</td>";
         }
     } # mask 0b0001
     return $result;
-} # get_index
+} # get_index0
+#----------------
+sub get_index1 { # get the index prefix of the second branch in a row
+    # global: $index_mask
+    my  $result = "";
+    if (($index_mask & 0b1000) > 0) {
+        $result .= "<td class=\"arl\">\&nbsp;</td>";
+    }
+    if (($index_mask & 0b0100) > 0) {
+        $result .= "<td class=\"arl\">\&nbsp;</td>";
+    }
+    if (($index_mask & 0b0010) > 0) {
+        $result .= "<td class=\"arr\">\&nbsp;</td>";
+    }
+    if (($index_mask & 0b0001) > 0) {
+        $result .= "<td class=\"arr\">\&nbsp;</td>";
+    } # mask 0b0001
+        $result .= "<td class=\"arr\">\&nbsp;</td>";
+    return $result;
+} # get_index1
+#----------------
+sub get_index_head0 { # get the header of the index prefix of the first branch in a row
+    # global: $index_mask
+    my  $result = "";
+    if (($index_mask & 0b1000) > 0) {
+        $result .= "<td class=\"arc\"    >i</td>";
+    }
+    if (($index_mask & 0b0100) > 0) {
+        $result .= "<td class=\"arc\"    >k</td>";
+    }
+    if (($index_mask & 0b0010) > 0) {
+        $result .= "<td class=\"arc bor\">SR</td>";
+    }
+    if (($index_mask & 0b0001) > 0) {
+        $result .= "<td class=\"arc bor\">TR</td>";
+    } # mask 0b0001
+    return $result;
+} # get_index_head0
+#----------------
+sub get_index_head1 { # get the header of the index prefix of the second branch in a row
+    # global: $index_mask
+    my  $result = "";
+    if (($index_mask & 0b1000) > 0) {
+        $result .= "<td class=\"arc\">\&nbsp;</td>";
+    }
+    if (($index_mask & 0b0100) > 0) {
+        $result .= "<td class=\"arr\">\&nbsp;</td>";
+    }
+    if (($index_mask & 0b0010) > 0) {
+        $result .= "<td class=\"arr\">\&nbsp;</td>";
+    }
+    if (($index_mask & 0b0001) > 0) {
+        $result .= "<td class=\"arr\">\&nbsp;</td>";
+    } # mask 0b0001
+    return $result;
+} # get_index_head1
 #----------------
 sub get_last_super { # get the last segment element with degree >= 2, or 0 if no supernode in right part
     my  ($index) = @_;
@@ -653,11 +714,11 @@ sub print_style {
 .arr    { background-color: white          ; color: black; text-align: right        }
 .arc    { background-color: white          ; color: black; text-align: center;      }
 .arl    { background-color: white          ; color: black; text-align: left;        }
-.bor    { border-left  : 1px solid gray    ; border-top   : 1px solid gray ; 
-          border-right : 1px solid gray    ; border-bottom: 1px solid gray ; 
-    /* 
-          border-bottom-left-radius: 50px; 
-          padding: 5px; 
+.bor    { border-left  : 1px solid gray    ; border-top   : 1px solid gray ;
+          border-right : 1px solid gray    ; border-bottom: 1px solid gray ;
+    /*
+          border-bottom-left-radius: 50px;
+          padding: 5px;
     */
         }
 .btr    { border-left  : 1px solid gray    ; border-top   : 1px solid gray ; border-right : 1px solid gray    ; }
@@ -683,14 +744,14 @@ sub print_style {
 .super6 a { color: inherit; }
 .super7 a { color: inherit; }
 .super8 a { color: inherit; }
-.rule5  { background-color: Lime           ; color: black; }
-.rule6  { background-color: LawnGreen      ; color: black; }
-.rule9  { background-color: Chartreuse     ; color: black; }
-.rule10 { background-color: LightBlue      ; color: black; }
-.rule13 { background-color: SpringGreen    ; color: black; }
-.rule14 { background-color: SkyBlue        ; color: black; }
-.rule17 { background-color: LightGreen     ; color: black; }
-.rule18 { background-color: DeepSkyBlue    ; color: black; }
+.rule5  { background-color: Lime           ; color: white; }
+.rule6  { background-color: LawnGreen      ; color: white; }
+.rule9  { background-color: Chartreuse     ; color: white; }
+.rule10 { background-color: LightBlue      ; color: white; }
+.rule13 { background-color: SpringGreen    ; color: white; }
+.rule14 { background-color: SkyBlue        ; color: white; }
+.rule17 { background-color: LightGreen     ; color: white; }
+.rule18 { background-color: DeepSkyBlue    ; color: white; }
 .rule21 { background-color: Blue           ; color: white; }
 .rule22 { background-color: DarkBlue       ; color: white; }
 .rule25 { background-color: DarkBlue       ; color: white; }
@@ -714,14 +775,14 @@ GFis
 #----------------
 sub print_head {
     if (0) { # switch action
-    } elsif ($action =~ m{\Acomp})   { 
+    } elsif ($action =~ m{\Acomp})   {
         &print_compress_head();
-    } elsif ($action =~ m{\Adeta})   { 
+    } elsif ($action =~ m{\Adeta})   {
         &print_detail_head  ();
-    } elsif ($action =~ m{\Adoub})   { 
+    } elsif ($action =~ m{\Adoub})   {
         &print_double_head  ();
-    } else { 
-    }       
+    } else {
+    }
 } # print_head
 #------------------------
 sub print_html_header {
@@ -765,7 +826,7 @@ sub print_preface {
     } elsif ($mode =~ m{\Atsv}) {
         print <<"GFis";
 #
-# Generated with https://github.com/gfis/fasces/blob/master/oeis/collatz/segment.pl at $TIMESTAMP
+# Generated with https://github.com/gfis/fasces/blob/master/oeis/collatz/segment.pl $VERSION at $TIMESTAMP
 # Article: http://www.teherba.org/index.php/OEIS/3x%2B1_Problem by Georg Fischer
 #
 GFis
@@ -778,20 +839,25 @@ GFis
 <p>
 Generated with
 <a href="https://github.com/gfis/fasces/blob/master/oeis/collatz/segment.pl" target="_blank">segment.pl</a>
-at $TIMESTAMP;<br />
-<a href="http://www.teherba.org/index.php/OEIS/3x%2B1_Problem" target="_blank">Article
-about the 3x+1 problem</a>
- by <a href="mailto:Dr.Georg.Fischer\@gmail.com">Georg Fischer</a>
-<br />
-<a href="detail.html"  target="_blank">Detailed</a>,
-<a href="comp.html"    target="_blank">Compressed</a>,
-<a href="double.html"  target="_blank">Double line</a>,
-<a href="subset.html"  target="_blank">Subset</a>, Degree
-<a href="degree2.html" target="_blank">2</a>,
-<a href="degree3.html" target="_blank">3</a>,
-<a href="degree4.html" target="_blank">4</a> 
- Directory;
+$VERSION at $TIMESTAMP; 
 <a href="#more">more information</a>
+<br />
+<a href="http://www.teherba.org/index.php/OEIS/3x%2B1_Problem" 
+  target="_blank">Article about the 3x+1 problem</a> by <a href="mailto:Dr.Georg.Fischer\@gmail.com">Georg Fischer</a>
+<br />
+<a href="double.html" target="_blank">Double line</a>,
+<a href="detail.html" target="_blank">detailed</a>,
+<a href="comp.html"   target="_blank">compressed / level 0</a>
+                                            (<a href="https://oeis.org/A307407" target="_blank">A307407</a>),
+Level
+<a href="root1.html"  target="_blank">1</a> (<a href="https://oeis.org/A322469" target="_blank">A322469</a>),
+<a href="root2.html"  target="_blank">2</a> (<a href="https://oeis.org/A307048" target="_blank">A307048</a>),
+<a href="root3.html"  target="_blank">3</a> (<a href="https://oeis.org/A160016" target="_blank">A160016</a>),
+<a href="root4.html"  target="_blank">4</a> (<a href="https://oeis.org/A000027" target="_blank">A000027</a>)
+
+<!--
+<a href="subset.html" target="_blank">Subset</a>, 
+-->
 </p>
 <table style=\"border-collapse: collapse; text-align: right;  padding-right: 4px;\">
 GFis
@@ -806,7 +872,7 @@ sub print_double_head {
     } elsif ($mode =~ m{\Ahtm}) {
         print <<"GFis";
 <tr>
-<td class="arl" colspan="4">Column</td>
+<td class="arl" colspan="$colspan">Column</td>
 <td class="arc">1</td>
 <td class="arc">3</td>
 <td class="arc">5</td>
@@ -816,10 +882,10 @@ sub print_double_head {
 <td class="arc">13</td>
 <td class="arc">15</td>
 <td class="arc">17</td>
-<td class="arc">21</td>
+<td class="arc">19</td>
 </tr>
 <tr>
-<td class="arl bot" colspan="5">&nbsp;</td>
+<td class="arl bot" colspan="$colspan">&nbsp;</td><td>&nbsp;</td>
 <td class="arc">2</td>
 <td class="arc">4</td>
 <td class="arc">6</td>
@@ -829,12 +895,11 @@ sub print_double_head {
 <td class="arc">14</td>
 <td class="arc">16</td>
 <td class="arc">18</td>
-<td class="arc">20</td>
 </tr>
 <tr>
-<td class="arc">i</td><td class="arc">k</td>
-<td class="arc bor           ">SR</td>
-<td class="arc bor           ">TdR</td>
+GFis
+        print &get_index_head0();
+        print <<"GFis";
 <td class="arc bor           ">LS</td>
 <td class="arc btr           ">&micro;</td>
 <td class="arc btr seg rule5 ">&micro;&micro;</td>
@@ -847,10 +912,9 @@ sub print_double_head {
 <td class="arc btr           ">&micro;&micro;&sigma;<sup>3</sup>&delta;</td>
 </tr>
 <tr>
-<td class="arc               ">&nbsp;</td>
-<td class="arr               ">&nbsp;</td>
-<td class="arr               ">&nbsp;</td>
-<td class="arr               ">&nbsp;</td>
+GFis
+        print &get_index_head1();
+        print <<"GFis";
 <td class="arr               ">&nbsp;</td>
 <td class="arc bbr           ">&delta;</td>
 <td class="arc bbr           ">&delta;&micro;</td>
@@ -874,7 +938,7 @@ sub print_compress_head {
     } elsif ($mode =~ m{\Ahtm}) {
         print <<"GFis";
 <tr>
-<td class="arl bot" colspan="4">Column</td>
+<td class="arl bot" colspan="$colspan">Column</td>
 <td class="arc">1</td>
 <td class="arc">5</td>
 <td class="arc">6</td>
@@ -886,13 +950,11 @@ sub print_compress_head {
 <td class="arc">18</td>
 <td class="arc">21</td>
 <td class="arc">22</td>
-GFis
-        print <<"GFis";
 </tr>
 <tr>
-<td class="arc">i</td><td class="arc">k</td>
-<td class="arc bor           ">SR</td>
-<td class="arc bor           ">TdR</td>
+GFis
+        print &get_index_head0();
+        print <<"GFis";
 <td class="arc bor           ">LS</td>
 <td class="arc bor seg rule5 ">&micro;&micro;</td>
 <td class="arc bor seg rule6 ">&delta;&micro;&micro;</td>
@@ -917,7 +979,7 @@ sub print_detail_head {
     } elsif ($mode =~ m{\Ahtm}) {
         print <<"GFis";
 <tr>
-<td class="arl bot" colspan="4">Column</td>
+<td class="arl bot" colspan="$colspan">Column</td>
 <td class="arc    ">1</td>
 <td class="arc    ">2</td>
 <td class="arc    ">3</td>
@@ -940,9 +1002,9 @@ sub print_detail_head {
 <td class="arc    ">20</td>
 </tr>
 <tr>
-<td class="arc">i</td><td class="arc">k</td>
-<td class="arc bor           ">SR</td>
-<td class="arc bor           ">TdR</td>
+GFis
+        print &get_index_head0();
+        print <<"GFis";
 <td class="arc bor           ">LS</td>
 <td class="arc bor           ">&delta;</td>
 <td class="arc bor           ">&micro;</td>
@@ -1015,7 +1077,9 @@ Longest segments:
 <a href="#1456">364</a>,
 <a href="#13120">3280</a>,
 <a href="#118096">29524</a>,
-265720, 2391484 (OEIS <a href="http://oeis.org/A191681">A191681</a>)
+265720, 2391484 (OEIS <a href="http://oeis.org/A191681" target="_blank">A191681</a>)
+<br />Start values in compressed directory: OEIS <a href="http://oeis.org/A308709" target="_blank">A308709</a>, 
+in detailled directory:                     OEIS <a href="http://oeis.org/A309523" target="_blank">A309523</a>
 </p>
 <p>
 The links on the left side (column 1) jump to the segment
