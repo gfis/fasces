@@ -5,8 +5,8 @@
 #
 # usage:
 #   perl a32tree.pl [-n jtree] [-d debug] [-s start]
-#	  jtree = 1..9
-#	  debug = 0 (none), 1 (some), 2 (more) debugging output
+#     jtree = 1..9
+#     debug = 0 (none), 1 (some), 2 (more) debugging output
 #     start = 1 | 3 for 3x+1 | 3x-1
 #-------------------------------
 use strict;
@@ -52,6 +52,8 @@ if ($jtree > 0) { # one single only
 sub tree1 {
     # generate the rows for this partial tree
     my ($jtree) = @_;
+    my $icov; 
+    my $busy;
     @cover = ();
     @tab   = ();
     @tlen  = ();
@@ -61,23 +63,22 @@ sub tree1 {
         $irow ++;
     } # while $irow
 
-    print "# check coverage     of tree $jtree up to node $limit[$jtree] in $maxseg[$jtree] segments\n";
-    my
+    print         "# coverage     in tree $jtree in $maxseg[$jtree] segments\n";
     $icov = 1;
-    my
     $busy = 1;
-    while ($busy >= 1) { # look whether all counts are 1
+    while ($icov <= $maxseg[$jtree] and $busy >= 1) { # look whether all counts are 1
         if (! defined($cover[$icov])) {
             $cover[$icov] = 0;
         }
         if ($cover[$icov] != 1) {
             $busy = 0;
-            print "## node $icov in tree $jtree occurs $cover[$icov] times\n";
+            print "## node " . sprintf("%-6d", $icov) . " in tree $jtree occurs $cover[$icov] times\n";
+            print "## probably more ...\n";
         }
         $icov ++;
     } # while covered
 
-    print "# check connectivity of tree $jtree up to node $limit[$jtree] in $maxseg[$jtree] segments\n";
+    print         "# attachment   in tree $jtree up to node $limit[$jtree] in $maxseg[$jtree] segments\n";
     @cover = ();
     &enqueue($start); # enqueue row[1] = (3, 1, 2);
     while (scalar(@queue) > 0) { # expand tree
@@ -93,7 +94,7 @@ sub tree1 {
         }
         if ($cover[$icov] != 1) {
             $busy = 0;
-            print "## node $icov in tree $jtree occurs $cover[$icov] times\n";
+            print "## node " . sprintf("%-6d", $icov) . " in tree $jtree attached $cover[$icov] times\n";
         }
         $icov ++;
     } # while covered
@@ -123,7 +124,6 @@ sub row1 { # generate 1 row
 sub enqueue { # queue all nodes in a row
     my ($irow) = @_;
     my
-    $max = $limit [$jtree];
     $max = $maxseg[$jtree];
     if ($debug >= 2) {
         print sprintf("# enqueue row %d ", $irow);

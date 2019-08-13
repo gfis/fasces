@@ -1,6 +1,6 @@
 <!--Generated with
 <a href="https://github.com/gfis/fasces/blob/master/oeis/collatz/attachtab.pl" target="_blank">segment.pl</a>
-at 2019-08-10 18:27:16;--> 
+at 2019-08-13 18:47:48;--> 
 {| class="wikitable" style="text-align:left"
 |-
 !Rule /<br>column!!Source<br>segments                          !!First source<br>segments!!Target<br>segments!!First target<br>segments!!Dir.

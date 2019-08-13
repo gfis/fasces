@@ -3,7 +3,7 @@
 # https://github.com/gfis/fasces/blob/master/oeis/collatz/segment.pl
 # Print a directory of segments in the Collatz graph
 # @(#) $Id$
-# 2019-08-07: version 2.1
+# 2019-08-07: version 2.2
 # 2018-12-07: -r root
 # 2018-12-03: index in 0, 1, 2 ...
 # 2018-11-27: test2
@@ -23,7 +23,7 @@
 #       -i  segment index block size for printing
 #       -m  output mode: tsv, htm (no css), htm[l], latex
 #       -n  maximum segment index
-#       -r  degree of rooting: 0 (none), 1 (index), 2 (supernode)
+#       -r  degree of rooting, level: 0 (none), 1 (index), 2 (supernode) ...
 #       -s  residues of segment indexes to be printed
 #
 # See http://www.teherba.org/index.php/OEIS/3x%2B1_Problem
@@ -32,7 +32,7 @@ use strict;
 use integer;
 #----------------
 # global constants
-my $VERSION = "V2.1";
+my $VERSION = "V2.2";
 my ($sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst) = localtime (time);
 my $TIMESTAMP = sprintf ("%04d-%02d-%02d %02d:%02d"
         , $year + 1900, $mon + 1, $mday, $hour, $min);
@@ -95,9 +95,19 @@ sub left_side  { # increase the degree by 1
 } # left_side
 #----------------
 sub segm_index { # decrease the degree by 1
-    my ($lhs) = @_;
-    return ($lhs - $start4 + $incr6) / $incr6;
+    my ($node) = @_;
+    return ($node - $start4 + $incr6) / $incr6;
 } # segm_index
+#----------------
+sub segm_root { # get the root of some degree of a node
+    my ($node) = @_;
+    my $iroot = $root;
+    while ($iroot >= 1) {
+        $node = ($node - $start4 + $incr6) / $incr6;
+        $iroot --;
+    } # while iroot
+    return $node;
+} # segm_root
 #----------------
 # initialization
 &print_html_header();
@@ -432,7 +442,7 @@ sub get_1_compress {
             while ($ir < scalar(@segment)) {
                 my $id = "";
                 if ($segment[$ir] % $incr6 == $start4) {
-                    $id = $segment[$ir];
+                    $id = ($segment[$ir]);
                     $result0 .= &get_cell_html($segment[$ir], "bor seg", $ir, $id);
                 }
                 $ir += $step;
@@ -591,7 +601,8 @@ sub get_cell_html { # get the HTML of one table cell
     my ($nrule, $itarget, $k, $target) = ("", "", "", "");
     my $result = "<td";
     if ($id ne "") {
-        $result .= " id=\"$id\"";
+        my $rooted_id = &segm_root($id);
+        $result .= " id=\"$rooted_id\" debug=\"1\"";
     }
     my $degree = &get_degree($elem);
     if ($degree >= 1) {
