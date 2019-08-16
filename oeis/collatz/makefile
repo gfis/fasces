@@ -111,6 +111,11 @@ a32t4:
 a32tree:
 	perl a32tree.pl
 #==========================
+ladder:
+	perl long_ladder.pl -n $(N) > $@.1.tmp
+	sort -n $@.1.tmp> $@.2.tmp
+	cut -f 1 $@.2.tmp | uniq -c | grep -v " 1 " > $@.3.tmp
+#==========================
 # old targets
 
 rails: 

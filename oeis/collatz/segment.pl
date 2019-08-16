@@ -40,7 +40,7 @@ my $SEP       = "\t";
 my $MAX_RULE  = 64; # rule 7 has 4 mod 16, rule 11 has 16 mod 64
 my @RULENS    = (0, 1, 7, 61, 547, 4921, 44287, 398581, 3587227, 32285041, 290565367, 2615088301); # OEIS A066443
 my $a = "a"; # = "a" ("x") => with (no) links
-my $index_mask = 0b1011; # index = 0b1000, k = 0b0100, source rule, target rule/segment
+my $index_mask = 0b1111; # index = 0b1000, k = 0b0100, source rule, target rule/segment
 #----------------
 # get commandline options
 my $action = "comp";
