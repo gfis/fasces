@@ -2,34 +2,39 @@
 
 # Evaluate ladders of long segments
 # @(#) $Id$
+# 2019-09-19: -e
 # 2019-08-14, Georg Fischer
 #------------------------------------------------------
 # Usage:
-#   perl long_ladder.pl [-d debug] [-n maxnum] [-r maxrule] 
+#   perl long_ladder.pl [-d debug] [-n maxnum] [-r maxrule] [-e]
 #       -d  debug level: 0 (none), 1 (some), 2 (more)
+#       -e  only expanding rules (default: all)
 #--------------------------------------------------------
 use strict;
 use integer;
 #----------------
 # global constants
-my $VERSION = "V1.1";
+my $VERSION = "V2.0";
 my ($sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst) = localtime (time);
 my $TIMESTAMP = sprintf ("%04d-%02d-%02d %02d:%02d"
         , $year + 1900, $mon + 1, $mday, $hour, $min);
 #----------------
 # get commandline options
-my $debug   = 0;
-my $maxnum  = 16384;
-my $maxrule = 16;
+my $debug     = 0;
+my $maxnum    = 16384;
+my $maxrule   = 16;
+my $expanding = 1;
 while (scalar(@ARGV) > 0 and ($ARGV[0] =~ m{\A\-})) {
     my $opt = shift(@ARGV);
     if (0) {
     } elsif ($opt =~ m{d}) {
-        $debug    = shift(@ARGV);
+        $debug     = shift(@ARGV);
+    } elsif ($opt =~ m{e}) {
+        $expanding = shift(@ARGV);
     } elsif ($opt =~ m{n}) {
-        $maxnum   = shift(@ARGV);
+        $maxnum    = shift(@ARGV);
     } elsif ($opt =~ m{r}) {
-        $maxrule = shift(@ARGV);
+        $maxrule   = shift(@ARGV);
     } else {
         die "invalid option \"$opt\"\n";
     }
@@ -55,6 +60,7 @@ my @rules;
 my @srcmod;
 my @tarmod;
 my $rind = 7;
+print "Maps:\n";
 for ($ir = 0; $ir < $maxrule; $ir ++) { # set dependant fields
     if ($ir % 2 == 0) {
         $rind += 2;
@@ -63,18 +69,21 @@ for ($ir = 0; $ir < $maxrule; $ir ++) { # set dependant fields
     $rind ++;
     $srcmod[$ir] = $srcadd[$ir] % $srcmul[$ir];
     $tarmod[$ir] = $taradd[$ir] % $tarmul[$ir];
-    if ($debug >= 1) {
-        print sprintf("%4s: %6d*k + %6d -> %6d*k + %4d\n", $rules[$ir]
-            , $srcmul[$ir], $srcadd[$ir]
-            , $tarmul[$ir], $taradd[$ir]
-            , $srcadd[$ir], $taradd[$ir] 
-            );
-    }
-} # for set dependant
+    if ($debug >= 0) {
+            if ($expanding == 0 or ($ir != 0 and $ir != 2 and $ir != 4)) {
+                print sprintf("%4s: %6d*k + %6d -> %6d*k + %4d\n", $rules[$ir]
+                    , $srcmul[$ir], $srcadd[$ir]
+                    , $tarmul[$ir], $taradd[$ir]
+                #   , $srcmod[$ir], $tarmod[$ir] 
+                    );
+            }
+    } # debug
+} # for ir set dependant
+print "\n";
 # exit;
 #----
-my $n;
-for ($n = 1; $n <= $maxnum; $n ++) {
+print "Chains:\n";
+for (my $n = 1; $n <= $maxnum; $n ++) {
     my $nchain = $n;
     my @chain = ();
     my $src;
@@ -82,33 +91,37 @@ for ($n = 1; $n <= $maxnum; $n ++) {
     my $ksrc;
     my $ktar;
     my $busy = 1;
-    while ($busy == 1) {
-        $busy = 0;
-        $ir = 1; # skip rule 9 - start with rule 10 
+    while ($busy == 1) { # as long as chaining is possible
+        $busy = 0; # assume no successor
+        $ir = 0; # skip rule 9 - start with rule 10 
         while ($ir < $maxrule) { # search for applicable rule
-            # 10, rule 9: 3*k + 1 -> 8*k + 2
-            if ($nchain % $srcmul[$ir] == $srcmod[$ir] and
-                $nchain % $tarmul[$ir] == $tarmod[$ir]) 
-            { # rule is applicable
-                $ksrc = $nchain / $srcmul[$ir]; # 10 / 3 = 3
-                $ktar = $nchain / $tarmul[$ir]; # 10 / 8 = 1
-                $src  = $srcmul[$ir] * $ktar + $srcmod[$ir];
-                $tar  = $tarmul[$ir] * $ksrc + $tarmod[$ir];
-                if (scalar(@chain) == 0) {
-                    push(@chain, &nodetext($src), &ruletext($ir, $ktar), &nodetext($nchain));
+            if ($expanding == 0 or ($ir != 0 and $ir != 2 and $ir != 4)) {
+                # 10, rule 9: 3*k + 1 -> 8*k + 2
+                if ($nchain % $srcmul[$ir] == $srcmod[$ir]) 
+                { # rule is applicable
+                    $ksrc = $nchain / $srcmul[$ir]; # 10 / 3 = 3
+                    # $ktar = $nchain / $tarmul[$ir]; # 10 / 8 = 1
+                    # $src  = $srcmul[$ir] * $ktar + $srcmod[$ir];
+                    $tar  = $tarmul[$ir] * $ksrc + $tarmod[$ir];
+                    if (scalar(@chain) == 0) {
+                        push(@chain, &nodetext($nchain));
+                    }
+                    push(@chain, &ruletext($ir, $ksrc), &nodetext($tar));
+                    if ($debug >= 2) {
+                        print "$nchain: applicable $rules[$ir]: ksrc=$ksrc, ktar=$ktar, src=$src, tar=$tar\n";
+                    }
+                    $busy = 1; # there is a successor - continue
+                    $nchain = $tar;
+                    $ir = $maxrule; # break while rule
+                } # rule is applicable
+                if ($debug >= 2) {
+                    print "$nchain: rule[$ir]=$rules[$ir], ksrc=$ksrc, ktar=$ktar, src=$src, tar=$tar\n";
                 }
-                push(@chain, &ruletext($ir, $ksrc), &nodetext($tar));
-                $busy = 1; # continue
-                $nchain = $tar;
-                $ir = $maxrule; # break while rule
-            } # rule is applicable
-            if ($debug >= 2) {
-                print "$nchain: rule[$ir]=$rules[$ir], ksrc=$ksrc, ktar=$ktar, src=$src, tar=$tar\n";
-            }
+            } # if expanding ...
             $ir ++;
         } # while $ir
     } # while busy
-    if (scalar(@chain) > 0) {
+    if (scalar(@chain) > 3) {
         # push(@chain, $tar);
         print join("", @chain) . "\n";
     }
@@ -116,7 +129,8 @@ for ($n = 1; $n <= $maxnum; $n ++) {
 #----
 sub ruletext {
     my ($ir, $k) = @_;
-    return " -($rules[$ir],k$k)->\t";
+    # return "\t($rules[$ir],k$k)\t";
+    return "-($rules[$ir])>";
 }
 #----
 sub nodetext {
