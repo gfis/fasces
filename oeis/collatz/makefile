@@ -114,7 +114,11 @@ a32tree:
 ladder:
 	perl long_ladder.pl -n $(N) > $@.1.tmp
 	sort -n $@.1.tmp> $@.2.tmp
-	cut -f 1 $@.2.tmp | uniq -c | grep -v " 1 " > $@.3.tmp
+	cut -f 1 $@.2.tmp | uniq -c | grep -v " 1 " > $@.3.tmp perl longer.pl 
+longer:
+	perl long_ladder.pl -e -n $(N) | sort -n \
+	| perl longer.pl \
+	| tee $@.tmp
 #==========================
 # old targets
 

@@ -2,7 +2,8 @@
 
 # Evaluate ladders of long segments
 # @(#) $Id$
-# 2019-09-19: -e
+# 2019-09-10: suffix "*" (divisible) or "#" (indivisible) by 3
+# 2019-08-19: -e
 # 2019-08-14, Georg Fischer
 #------------------------------------------------------
 # Usage:
@@ -14,23 +15,23 @@ use strict;
 use integer;
 #----------------
 # global constants
-my $VERSION = "V2.0";
+my $VERSION = "V2.1";
 my ($sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst) = localtime (time);
 my $TIMESTAMP = sprintf ("%04d-%02d-%02d %02d:%02d"
         , $year + 1900, $mon + 1, $mday, $hour, $min);
 #----------------
 # get commandline options
 my $debug     = 0;
-my $maxnum    = 16384;
+my $maxnum    = 65536;
 my $maxrule   = 16;
-my $expanding = 1;
+my $expanding = 0;
 while (scalar(@ARGV) > 0 and ($ARGV[0] =~ m{\A\-})) {
     my $opt = shift(@ARGV);
     if (0) {
     } elsif ($opt =~ m{d}) {
         $debug     = shift(@ARGV);
     } elsif ($opt =~ m{e}) {
-        $expanding = shift(@ARGV);
+        $expanding = 1;
     } elsif ($opt =~ m{n}) {
         $maxnum    = shift(@ARGV);
     } elsif ($opt =~ m{r}) {
@@ -60,7 +61,10 @@ my @rules;
 my @srcmod;
 my @tarmod;
 my $rind = 7;
-print "Maps:\n";
+
+if ($debug >= 1) {
+    print "Maps:\n";
+}
 for ($ir = 0; $ir < $maxrule; $ir ++) { # set dependant fields
     if ($ir % 2 == 0) {
         $rind += 2;
@@ -69,12 +73,12 @@ for ($ir = 0; $ir < $maxrule; $ir ++) { # set dependant fields
     $rind ++;
     $srcmod[$ir] = $srcadd[$ir] % $srcmul[$ir];
     $tarmod[$ir] = $taradd[$ir] % $tarmul[$ir];
-    if ($debug >= 0) {
+    if ($debug >= 1) {
             if ($expanding == 0 or ($ir != 0 and $ir != 2 and $ir != 4)) {
                 print sprintf("%4s: %6d*k + %6d -> %6d*k + %4d\n", $rules[$ir]
                     , $srcmul[$ir], $srcadd[$ir]
                     , $tarmul[$ir], $taradd[$ir]
-                #   , $srcmod[$ir], $tarmod[$ir] 
+                #   , $srcmod[$ir], $tarmod[$ir]
                     );
             }
     } # debug
@@ -82,8 +86,11 @@ for ($ir = 0; $ir < $maxrule; $ir ++) { # set dependant fields
 print "\n";
 # exit;
 #----
-print "Chains:\n";
-for (my $n = 1; $n <= $maxnum; $n ++) {
+if ($debug >= 1) {
+    print "Chains:\n";
+}
+my $n = 1; 
+while ($n <= $maxnum) {
     my $nchain = $n;
     my @chain = ();
     my $src;
@@ -93,12 +100,11 @@ for (my $n = 1; $n <= $maxnum; $n ++) {
     my $busy = 1;
     while ($busy == 1) { # as long as chaining is possible
         $busy = 0; # assume no successor
-        $ir = 0; # skip rule 9 - start with rule 10 
+        $ir = 0; # skip rule 9 - start with rule 10
         while ($ir < $maxrule) { # search for applicable rule
             if ($expanding == 0 or ($ir != 0 and $ir != 2 and $ir != 4)) {
                 # 10, rule 9: 3*k + 1 -> 8*k + 2
-                if ($nchain % $srcmul[$ir] == $srcmod[$ir]) 
-                { # rule is applicable
+                if ($nchain % $srcmul[$ir] == $srcmod[$ir]) { # rule is applicable
                     $ksrc = $nchain / $srcmul[$ir]; # 10 / 3 = 3
                     # $ktar = $nchain / $tarmul[$ir]; # 10 / 8 = 1
                     # $src  = $srcmul[$ir] * $ktar + $srcmod[$ir];
@@ -122,32 +128,56 @@ for (my $n = 1; $n <= $maxnum; $n ++) {
         } # while $ir
     } # while busy
     if (scalar(@chain) > 3) {
-        # push(@chain, $tar);
-        print join("", @chain) . "\n";
+        print join("", reverse @chain) . "\n";
     }
-} # for $n
+    $n ++;
+} # whileo $n
 #----
 sub ruletext {
     my ($ir, $k) = @_;
     # return "\t($rules[$ir],k$k)\t";
-    return "-($rules[$ir])>";
+    return "\t-($rules[$ir])-\t";
 }
 #----
 sub nodetext {
     my ($node) = @_;
-    return "$node"; #. ($node*6 -2);
+    my $suffix = $node % 3 == 0 ? "*" : "";
+    return "$node$suffix"; #. ($node*6 -2);
 }
 #---------------------------------------
 __DATA__
-# R9  3   1   8   2
-R10 9   9   8   8
-R13 9   3   16  5
-R14 27  15  16  9
-R17 27  6   32  7
-R18 81  78  32  31
-R21 81  24  64  19
-R22 243 132 64  35
-R25 243 51  128 27
-R26 729 699 128 123
-R29 729 213 256 75
-R30 2187    1185    256 139
+Maps:
+ r10:      9*k +      9 ->      8*k +    8
+ r14:     27*k +     15 ->     16*k +    9
+ r18:     81*k +     78 ->     32*k +   31
+ r21:     81*k +     24 ->     64*k +   19
+ r22:    243*k +    132 ->     64*k +   35
+ r25:    243*k +     51 ->    128*k +   27
+ r26:    729*k +    699 ->    128*k +  123
+ r29:    729*k +    213 ->    256*k +   75
+ r30:   2187*k +   1185 ->    256*k +  139
+ r33:   2187*k +    456 ->    512*k +  107
+ r34:   6561*k +   6288 ->    512*k +  491
+ r37:   6561*k +   1914 ->   1024*k +  299
+ r38:  19683*k +  10662 ->   1024*k +  555
+
+Chains:
+15*-(r14)>9*-(r10)>8#
+27*-(r10)>24*-(r21)>19#
+51*-(r25)>27*-(r10)>24*-(r21)>19#
+81*-(r10)>72*-(r10)>64#
+108*-(r10)>96*-(r14)>57*
+159*-(r18)>63*-(r10)>56#
+162*-(r10)>144*-(r10)>128#
+177*-(r14)>105*-(r21)>83#
+243*-(r10)>216*-(r10)>192*
+258*-(r14)>153*-(r10)>136#
+270*-(r10)>240*-(r18)>95#
+324*-(r10)>288*-(r10)>256#
+351*-(r10)>312*-(r14)>185#
+375*-(r22)>99*-(r10)>88#
+402*-(r18)>159*-(r18)>63*-(r10)>56#
+405*-(r10)>360*-(r10)>320#
+429*-(r21)>339*-(r14)>201*
+486*-(r10)>432*-(r10)>384*
+501*-(r14)>297*-(r10)>264*
