@@ -90,13 +90,13 @@ if ($debug >= 1) {
     print "Chains:\n";
 }
 my $n = 1; 
+my $src;
+my $tar;
+my $ksrc;
+my $ktar;
 while ($n <= $maxnum) {
     my $nchain = $n;
     my @chain = ();
-    my $src;
-    my $tar;
-    my $ksrc;
-    my $ktar;
     my $busy = 1;
     while ($busy == 1) { # as long as chaining is possible
         $busy = 0; # assume no successor
@@ -104,39 +104,37 @@ while ($n <= $maxnum) {
         while ($ir < $maxrule) { # search for applicable rule
             if ($expanding == 0 or ($ir != 0 and $ir != 2 and $ir != 4)) {
                 # 10, rule 9: 3*k + 1 -> 8*k + 2
-                if ($nchain % $srcmul[$ir] == $srcmod[$ir]) { # rule is applicable
-                    $ksrc = $nchain / $srcmul[$ir]; # 10 / 3 = 3
-                    # $ktar = $nchain / $tarmul[$ir]; # 10 / 8 = 1
-                    # $src  = $srcmul[$ir] * $ktar + $srcmod[$ir];
-                    $tar  = $tarmul[$ir] * $ksrc + $tarmod[$ir];
+            #   if ($nchain % $srcmul[$ir] == $srcmod[$ir]) { # rule is applicable
+                if ($nchain % $tarmul[$ir] == $tarmod[$ir]) { # rule is applicable
+                    # $ksrc = $nchain / $srcmul[$ir]; # 10 / 3 = 3
+                    $ktar = $nchain / $tarmul[$ir]; # 10 / 8 = 1
+                    $src  = $srcmul[$ir] * $ktar + $srcmod[$ir];
+                    # $tar  = $tarmul[$ir] * $ksrc + $tarmod[$ir];
                     if (scalar(@chain) == 0) {
                         push(@chain, &nodetext($nchain));
                     }
-                    push(@chain, &ruletext($ir, $ksrc), &nodetext($tar));
-                    if ($debug >= 2) {
-                        print "$nchain: applicable $rules[$ir]: ksrc=$ksrc, ktar=$ktar, src=$src, tar=$tar\n";
-                    }
+                    # push(@chain, &ruletext($ir, $ksrc), &nodetext($tar));
+                    push(@chain, &ruletext($ir, $ktar), &nodetext($src));
                     $busy = 1; # there is a successor - continue
-                    $nchain = $tar;
+                    # $nchain = $tar;
+                    $nchain = $src;
                     $ir = $maxrule; # break while rule
                 } # rule is applicable
-                if ($debug >= 2) {
-                    print "$nchain: rule[$ir]=$rules[$ir], ksrc=$ksrc, ktar=$ktar, src=$src, tar=$tar\n";
-                }
             } # if expanding ...
             $ir ++;
         } # while $ir
     } # while busy
     if (scalar(@chain) > 3) {
-        print join("", reverse @chain) . "\n";
+        # print join("", reverse @chain) . "\n";
+        print join("\t", scalar(@chain), @chain) . "\n";
     }
     $n ++;
-} # whileo $n
+} # while $n
 #----
 sub ruletext {
     my ($ir, $k) = @_;
-    # return "\t($rules[$ir],k$k)\t";
-    return "\t-($rules[$ir])-\t";
+    return "($rules[$ir],k$k)";
+    # return "($rules[$ir])";
 }
 #----
 sub nodetext {
