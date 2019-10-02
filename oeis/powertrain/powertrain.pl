@@ -2,7 +2,7 @@
 
 # powertrain.pl -
 # @(#) $Id$
-# 2019-10-01: with hashes
+# 2019-10-02: with hashes
 # 2019-09-24, Georg Fischer
 # c.f. <https://www.spektrum.de/magazin/powertrain/1669402>
 # All variables ending with "b" are in $base representation.
@@ -23,7 +23,6 @@ my $digits = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZäöü"
 #                       1         2         3         4         5         6
 my $base    = 10;
 my $debug   = 0;
-my $nsingle = 0;
 my $nmin    = 0;
 my $nmax    = 30000;
 if (scalar(@ARGV) == 0) {
@@ -40,62 +39,84 @@ while (scalar(@ARGV) > 0) {
     } elsif ($opt =~ m{\-m}) {
         $nmax   = shift(@ARGV);
     } elsif ($opt =~ m{\-s}) {
-        $nsingle  = shift(@ARGV);
-        $nmin = $nsingle;
-        $nmax = $nsingle;
+        $nmax  = shift(@ARGV);
+        $nmin = $nmax;
     }
 } # while opt
 
 my %pmap = (); # powertrain map
+my %pend = ();
 my %pfix = (); # numbers participating in a fixpoint (cycle)
-# range 1..$nmax
+
 my $n = $nmin;
 while ($n <= $nmax) {
-    my $fix  = &train($n);
-    my $fixb = &to_base($fix); # $fix->to_base($base); # 
-    if ($debug >= 1 or length($fixb) > 1) {
-        print "$n(10) ->\tfixpoint $fix(10)=$fixb($base)\n";
+    my $oldn  = $n;
+    my $oldnb = &to_base($oldn);
+    if (length($oldnb) % 2 == 1) { # odd - exponent is missing
+        $oldnb .= "1"; # assume exponent 1
     }
+    if ($debug >= 2 or $n % 1000 == 0) {
+        print "powertrain($oldn(10)=$oldnb($base))\n";
+    }
+    my $newn  = 1;
+    my $newnb = 1;
+    while (! defined($pmap{$oldn})) { # until we find a chain member which is already known
+        $newn  = &compute($oldnb);
+        $newnb = &to_base($newn);
+        $pmap{$oldn} = $newn;
+        if ($debug >= 2) {
+            print "$oldnb($base) -> $newn(10)=$newnb($base)\n";
+        }
+        $oldn  = $newn;
+        $oldnb = $newnb;
+        if (length($oldnb) % 2 == 1) { # odd - exponent is missing
+            $oldnb .= "1"; # assume exponent 1
+        }
+    } # while $oldn
+    # now we have a chain from $n to $oldn
+    
+    # check whether we know the end point of $oldn
+    if (defined($pend{$oldn})) {
+        $pend{$n} = $pend{$oldn}; # propagate it to $n
+    } else { # determine it, but with loop check
+        my %pvis = (); 
+        my $busy = 1;
+        my $chain = &to_base($oldn) . "($base)";
+        while ($busy == 1 and defined($pmap{$oldn})) { 
+            # follow the chain until we get into a loop
+            $newn = $pmap{$oldn};
+            $pvis{$oldn} = $newn;
+            $oldn = $newn;
+            $chain .= "->" . &to_base($oldn) . "($base)";
+            if (defined($pvis{$oldn})) {
+                $busy = 0;
+            }
+        } # while $busy
+        $pend{$n} = $pend{$oldn}; # propagate it to $n
+        if (defined($pfix{$oldn})) { # fixpoint was already known
+        } else { # new fixpoint
+            my $fix  = $oldn;
+            my $fixb = &to_base($fix); # without ".= 1";
+            $pfix{$fix} = 1; # make it known for the future
+            print "$n(10) ->\tfixpoint $chain\n";
+        } # new fixpoint
+    } # determine it
     $n ++;
 } # while $n
 #--------
-sub train {
-    my ($n) = @_;
-    my $nb = Math::BigInt->new($n);
-    $nb = &to_base($nb); # $nb->to_base($base); # 
-    if ($debug >= 2 or $n % 1000 == 0) {
-        print "powertrain($n(10)=$nb($base))\n";
-    }
-    my $oldnb = 0;
-    my $prod = 1;
-    while (length($nb) != 1 and $nb ne $oldnb) {
-        $oldnb = $nb;
-        if (length($nb) % 2 == 1) { # odd - exponent is missing
-            $nb .= "1"; # assume exponent 1
-        }
-        my $inb = 0;
-        $prod = &compute($nb);
-        my $prodb = &to_base($prod); # $prod->to_base($base); # 
-        if ($debug >= 2) {
-            print "$nb($base) -> $prod(10)=$prodb($base)\n";
-        }
-        $nb = $prodb;
-    } # while $n
-    return $prod;
-} # train
-
 # compute the product
 sub compute { my ($nb) = @_;
     my $prod = Math::BigInt->new(1);
     my $inb = 0;
     while ($inb < length($nb) and ! $prod->is_zero()) {
-        my $a = &to_dec(substr($nb, $inb    , 1));
-        my $b = &to_dec(substr($nb, $inb + 1, 1));
-        $prod = $prod->bmul(&pow($a, $b));
+        # consider a decimal pair (digit, exponent)
+        my $digit = &to_dec(substr($nb, $inb    , 1));
+        my $expon = &to_dec(substr($nb, $inb + 1, 1));
+        $prod = $prod->bmul(&pow($digit, $expon));
         $inb += 2;
     } # while $inb
     return $prod;
-} # compute 
+} # compute
 
 # compute a**b - up to 15**14
 sub pow { my ($a, $b) = @_;
@@ -107,9 +128,9 @@ sub pow { my ($a, $b) = @_;
     } else {
         $result = Math::BigInt->new($a)->bpow($b);
     }
-    if ($debug >= 3) {
-        print "$a ** $b = $result\n";
-    }
+#   if ($debug >= 3) {
+#       print "$a ** $b = $result\n";
+#   }
     return $result;
 } # pow
 
@@ -137,29 +158,84 @@ Sein Kollege Neil Sloane stellte allerdings fest, dass
 
 odd number of digits => append 1
 0^0 = 1
+#---------------------------------------
+Results for different bases:
 
 2 - none <= 30000
 3 - none <= 40000
 4 - none <= 30000
 5 - none <= 30000
 
-2960(10) ->     fixpoint 16(10)=24(6)
+0(10) ->        fixpoint 0(6)->0(6)
+1(10) ->        fixpoint 1(6)->1(6)
+2(10) ->        fixpoint 2(6)->2(6)
+3(10) ->        fixpoint 3(6)->3(6)
+4(10) ->        fixpoint 4(6)->4(6)
+5(10) ->        fixpoint 5(6)->5(6)
+16(10) ->       fixpoint 24(6)->24(6)
+powertrain(1000(10)=4344(6))
 
 7 - none <= 30000
 
-5344(10) ->     fixpoint 24586240(10)=51232874(9)
-6464(10) ->     fixpoint 24586240(10)=51232874(9)
+powertrain(0(10)=01(8))
+0(10) ->        fixpoint 0(8)->0(8)
+1(10) ->        fixpoint 1(8)->1(8)
+2(10) ->        fixpoint 2(8)->2(8)
+3(10) ->        fixpoint 3(8)->3(8)
+4(10) ->        fixpoint 4(8)->4(8)
+5(10) ->        fixpoint 5(8)->5(8)
+6(10) ->        fixpoint 6(8)->6(8)
+7(10) ->        fixpoint 7(8)->7(8)
+27(10) ->       fixpoint 33(8)->33(8)
+230(10) ->      fixpoint 746(8)->34106(8)->746(8)
+3196(10) ->     fixpoint 34106(8)->746(8)->34106(8)
+powertrain(5000(10)=116101(8))
 
-642(10) ->      fixpoint 2592(10)=2592(10)
-2164(10) ->     fixpoint 2592(10)=2592(10)
-2534(10) ->     fixpoint 2592(10)=2592(10)
-2592(10) ->     fixpoint 2592(10)=2592(10)
+0(10) ->        fixpoint 0(9)->0(9)
+1(10) ->        fixpoint 1(9)->1(9)
+2(10) ->        fixpoint 2(9)->2(9)
+3(10) ->        fixpoint 3(9)->3(9)
+4(10) ->        fixpoint 4(9)->4(9)
+5(10) ->        fixpoint 5(9)->5(9)
+6(10) ->        fixpoint 6(9)->6(9)
+7(10) ->        fixpoint 7(9)->7(9)
+8(10) ->        fixpoint 8(9)->8(9)
+5344(10) ->     fixpoint 51232874(9)->51232874(9)
+
+0(10) ->        fixpoint 0(10)->0(10)
+1(10) ->        fixpoint 1(10)->1(10)
+2(10) ->        fixpoint 2(10)->2(10)
+3(10) ->        fixpoint 3(10)->3(10)
+4(10) ->        fixpoint 4(10)->4(10)
+5(10) ->        fixpoint 5(10)->5(10)
+6(10) ->        fixpoint 6(10)->6(10)
+7(10) ->        fixpoint 7(10)->7(10)
+8(10) ->        fixpoint 8(10)->8(10)
+9(10) ->        fixpoint 9(10)->9(10)
+642(10) ->      fixpoint 2592(10)->2592(10)
+powertrain(2000(10)=2000(10))
 
 11 - none <= 3000
 
-3661(10) ->     fixpoint 10(10)=A(12)
-5833(10) ->     fixpoint 486(10)=346(12)
-6505(10) ->     fixpoint 39366(10)=1A946(12)
+powertrain(0(10)=01(12))
+0(10) ->        fixpoint 0(12)->0(12)
+1(10) ->        fixpoint 1(12)->1(12)
+2(10) ->        fixpoint 2(12)->2(12)
+3(10) ->        fixpoint 3(12)->3(12)
+4(10) ->        fixpoint 4(12)->4(12)
+5(10) ->        fixpoint 5(12)->5(12)
+6(10) ->        fixpoint 6(12)->6(12)
+7(10) ->        fixpoint 7(12)->7(12)
+8(10) ->        fixpoint 8(12)->8(12)
+9(10) ->        fixpoint 9(12)->9(12)
+10(10) ->       fixpoint a(12)->a(12)
+11(10) ->       fixpoint b(12)->b(12)
+129(10) ->      fixpoint 372b9a830000000000(12)->372b9a830000000000(12)
+486(10) ->      fixpoint 346(12)->346(12)
+509(10) ->      fixpoint 1a946(12)->1a946(12)
+1082(10) ->     fixpoint 14b42(12)->14b42(12)
+9895(10) ->     fixpoint 11292450a0a8(12)->11292450a0a8(12)
+powertrain(25000(10)=125741(12))
 
 13 - none <= 30000
 14 - none <= 30000
