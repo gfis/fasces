@@ -81,13 +81,13 @@ while ($n <= $nmax) {
     } else { # determine it, but with loop check
         my %pvis = (); 
         my $busy = 1;
-        my $chain = &to_base($oldn) . "($base)";
+        my $chain = "$oldn(10)=" . &to_base($oldn) . "($base)";
         while ($busy == 1 and defined($pmap{$oldn})) { 
             # follow the chain until we get into a loop
             $newn = $pmap{$oldn};
             $pvis{$oldn} = $newn;
             $oldn = $newn;
-            $chain .= "->" . &to_base($oldn) . "($base)";
+            $chain .= "->$oldn(10)=" . &to_base($oldn) . "($base)";
             if (defined($pvis{$oldn})) {
                 $busy = 0;
             }
@@ -98,7 +98,7 @@ while ($n <= $nmax) {
             my $fix  = $oldn;
             my $fixb = &to_base($fix); # without ".= 1";
             $pfix{$fix} = 1; # make it known for the future
-            print "$n(10) ->\tfixpoint $chain\n";
+            print "$n(10) -> ... $chain\n";
         } # new fixpoint
     } # determine it
     $n ++;
@@ -136,13 +136,17 @@ sub pow { my ($a, $b) = @_;
 
 # convert from decimal to base, without leading zeroes
 sub to_base { my ($pnum) = @_;
-    my $num = Math::BigInt->new($pnum);
     my $result = "";
-    while ($num->is_positive()) {
-        my ($quo, $digit) = $num->bdiv($base);
-        $result = substr($digits, $digit, 1) . $result;
-        # $num = $num->bdiv($base);
-    } # while > 0
+    if ($base == 10) {
+        $result= $pnum;
+    } else {
+        my $num = Math::BigInt->new($pnum);
+        while ($num->is_positive()) {
+            my ($quo, $digit) = $num->bdiv($base);
+            $result = substr($digits, $digit, 1) . $result;
+            # $num = $num->bdiv($base);
+        } # while > 0
+    }
     return $result eq "" ? "0" : $result;
 } # to_base
 
