@@ -46,7 +46,7 @@ while (scalar(@ARGV) > 0) {
 
 my %pmap = (); # powertrain map
 my %pend = ();
-my %pfix = (); # numbers participating in a fixpoint (cycle)
+my %pfix = (); # numbers participating in a fixed point (cycle)
 
 my $n = $nmin;
 while ($n <= $nmax) {
@@ -93,13 +93,13 @@ while ($n <= $nmax) {
             }
         } # while $busy
         $pend{$n} = $pend{$oldn}; # propagate it to $n
-        if (defined($pfix{$oldn})) { # fixpoint was already known
-        } else { # new fixpoint
+        if (defined($pfix{$oldn})) { # fixed point was already known
+        } else { # new fixed point
             my $fix  = $oldn;
             my $fixb = &to_base($fix); # without ".= 1";
             $pfix{$fix} = 1; # make it known for the future
             print "$n(10) -> ... $chain\n";
-        } # new fixpoint
+        } # new fixed point
     } # determine it
     $n ++;
 } # while $n
@@ -170,105 +170,105 @@ Results for different bases:
 4 - none <= 30000
 5 - none <= 30000
 
-0(10) ->        fixpoint 0(6)->0(6)
-1(10) ->        fixpoint 1(6)->1(6)
-2(10) ->        fixpoint 2(6)->2(6)
-3(10) ->        fixpoint 3(6)->3(6)
-4(10) ->        fixpoint 4(6)->4(6)
-5(10) ->        fixpoint 5(6)->5(6)
-16(10) ->       fixpoint 24(6)->24(6)
+0(10) ->        fixed point 0(6)->0(6)
+1(10) ->        fixed point 1(6)->1(6)
+2(10) ->        fixed point 2(6)->2(6)
+3(10) ->        fixed point 3(6)->3(6)
+4(10) ->        fixed point 4(6)->4(6)
+5(10) ->        fixed point 5(6)->5(6)
+16(10) ->       fixed point 24(6)->24(6)
 powertrain(1000(10)=4344(6))
 
 7 - none <= 30000
 
 powertrain(0(10)=01(8))
-0(10) ->        fixpoint 0(8)->0(8)
-1(10) ->        fixpoint 1(8)->1(8)
-2(10) ->        fixpoint 2(8)->2(8)
-3(10) ->        fixpoint 3(8)->3(8)
-4(10) ->        fixpoint 4(8)->4(8)
-5(10) ->        fixpoint 5(8)->5(8)
-6(10) ->        fixpoint 6(8)->6(8)
-7(10) ->        fixpoint 7(8)->7(8)
-27(10) ->       fixpoint 33(8)->33(8)
-230(10) ->      fixpoint 746(8)->34106(8)->746(8)
-3196(10) ->     fixpoint 34106(8)->746(8)->34106(8)
+0(10) ->        fixed point 0(8)->0(8)
+1(10) ->        fixed point 1(8)->1(8)
+2(10) ->        fixed point 2(8)->2(8)
+3(10) ->        fixed point 3(8)->3(8)
+4(10) ->        fixed point 4(8)->4(8)
+5(10) ->        fixed point 5(8)->5(8)
+6(10) ->        fixed point 6(8)->6(8)
+7(10) ->        fixed point 7(8)->7(8)
+27(10) ->       fixed point 33(8)->33(8)
+230(10) ->      fixed point 746(8)->34106(8)->746(8)
+3196(10) ->     fixed point 34106(8)->746(8)->34106(8)
 powertrain(5000(10)=116101(8))
 
-0(10) ->        fixpoint 0(9)->0(9)
-1(10) ->        fixpoint 1(9)->1(9)
-2(10) ->        fixpoint 2(9)->2(9)
-3(10) ->        fixpoint 3(9)->3(9)
-4(10) ->        fixpoint 4(9)->4(9)
-5(10) ->        fixpoint 5(9)->5(9)
-6(10) ->        fixpoint 6(9)->6(9)
-7(10) ->        fixpoint 7(9)->7(9)
-8(10) ->        fixpoint 8(9)->8(9)
-5344(10) ->     fixpoint 51232874(9)->51232874(9)
+0(10) ->        fixed point 0(9)->0(9)
+1(10) ->        fixed point 1(9)->1(9)
+2(10) ->        fixed point 2(9)->2(9)
+3(10) ->        fixed point 3(9)->3(9)
+4(10) ->        fixed point 4(9)->4(9)
+5(10) ->        fixed point 5(9)->5(9)
+6(10) ->        fixed point 6(9)->6(9)
+7(10) ->        fixed point 7(9)->7(9)
+8(10) ->        fixed point 8(9)->8(9)
+5344(10) ->     fixed point 51232874(9)->51232874(9)
 
-0(10) ->        fixpoint 0(10)->0(10)
-1(10) ->        fixpoint 1(10)->1(10)
-2(10) ->        fixpoint 2(10)->2(10)
-3(10) ->        fixpoint 3(10)->3(10)
-4(10) ->        fixpoint 4(10)->4(10)
-5(10) ->        fixpoint 5(10)->5(10)
-6(10) ->        fixpoint 6(10)->6(10)
-7(10) ->        fixpoint 7(10)->7(10)
-8(10) ->        fixpoint 8(10)->8(10)
-9(10) ->        fixpoint 9(10)->9(10)
-642(10) ->      fixpoint 2592(10)->2592(10)
+0(10) ->        fixed point 0(10)->0(10)
+1(10) ->        fixed point 1(10)->1(10)
+2(10) ->        fixed point 2(10)->2(10)
+3(10) ->        fixed point 3(10)->3(10)
+4(10) ->        fixed point 4(10)->4(10)
+5(10) ->        fixed point 5(10)->5(10)
+6(10) ->        fixed point 6(10)->6(10)
+7(10) ->        fixed point 7(10)->7(10)
+8(10) ->        fixed point 8(10)->8(10)
+9(10) ->        fixed point 9(10)->9(10)
+642(10) ->      fixed point 2592(10)->2592(10)
 powertrain(2000(10)=2000(10))
 
 11 - none <= 3000
 
 powertrain(0(10)=01(12))
-0(10) ->        fixpoint 0(12)->0(12)
-1(10) ->        fixpoint 1(12)->1(12)
-2(10) ->        fixpoint 2(12)->2(12)
-3(10) ->        fixpoint 3(12)->3(12)
-4(10) ->        fixpoint 4(12)->4(12)
-5(10) ->        fixpoint 5(12)->5(12)
-6(10) ->        fixpoint 6(12)->6(12)
-7(10) ->        fixpoint 7(12)->7(12)
-8(10) ->        fixpoint 8(12)->8(12)
-9(10) ->        fixpoint 9(12)->9(12)
-10(10) ->       fixpoint a(12)->a(12)
-11(10) ->       fixpoint b(12)->b(12)
-129(10) ->      fixpoint 372b9a830000000000(12)->372b9a830000000000(12)
-486(10) ->      fixpoint 346(12)->346(12)
-509(10) ->      fixpoint 1a946(12)->1a946(12)
-1082(10) ->     fixpoint 14b42(12)->14b42(12)
-9895(10) ->     fixpoint 11292450a0a8(12)->11292450a0a8(12)
+0(10) ->        fixed point 0(12)->0(12)
+1(10) ->        fixed point 1(12)->1(12)
+2(10) ->        fixed point 2(12)->2(12)
+3(10) ->        fixed point 3(12)->3(12)
+4(10) ->        fixed point 4(12)->4(12)
+5(10) ->        fixed point 5(12)->5(12)
+6(10) ->        fixed point 6(12)->6(12)
+7(10) ->        fixed point 7(12)->7(12)
+8(10) ->        fixed point 8(12)->8(12)
+9(10) ->        fixed point 9(12)->9(12)
+10(10) ->       fixed point a(12)->a(12)
+11(10) ->       fixed point b(12)->b(12)
+129(10) ->      fixed point 372b9a830000000000(12)->372b9a830000000000(12)
+486(10) ->      fixed point 346(12)->346(12)
+509(10) ->      fixed point 1a946(12)->1a946(12)
+1082(10) ->     fixed point 14b42(12)->14b42(12)
+9895(10) ->     fixed point 11292450a0a8(12)->11292450a0a8(12)
 powertrain(25000(10)=125741(12))
 
 13 - none <= 30000
 14 - none <= 30000
 15 - none <= 30000
 
-25143(10) ->    fixpoint 78732(10)=1338c(16)
+25143(10) ->    fixed point 78732(10)=1338c(16)
 
-29652(10) ->    fixpoint 10000(10)=20a4(17)
+29652(10) ->    fixed point 10000(10)=20a4(17)
 
-24679(10) ->    fixpoint 768(10)=26c(18)
+24679(10) ->    fixed point 768(10)=26c(18)
 
-1604(10) ->     fixpoint 524288(10)=40862(19)
-1617(10) ->     fixpoint 524288(10)=40862(19)
-3004(10) ->     fixpoint 524288(10)=40862(19)
+1604(10) ->     fixed point 524288(10)=40862(19)
+1617(10) ->     fixed point 524288(10)=40862(19)
+3004(10) ->     fixed point 524288(10)=40862(19)
 
-124(10) ->      fixpoint 1296(10)=34g(20)
+124(10) ->      fixed point 1296(10)=34g(20)
 
-937(10) ->      fixpoint 1024(10)=26g(21)
+937(10) ->      fixed point 1024(10)=26g(21)
 
-27082(10) ->    fixpoint 2048(10)=452(22)
+27082(10) ->    fixed point 2048(10)=452(22)
 
 23 -none <= 30000
 
-4116(10) ->     fixpoint 4116(10)=73c(24)
-8133(10) ->     fixpoint 4116(10)=73c(24)
+4116(10) ->     fixed point 4116(10)=73c(24)
+8133(10) ->     fixed point 4116(10)=73c(24)
 
 25 -none <= 30000
 
-85(10) ->       fixpoint 2187(10)=363(26)
+85(10) ->       fixed point 2187(10)=363(26)
 
 27 -none <= 30000
 28 -none <= 10000
