@@ -9,6 +9,7 @@
 #--------------------------------------------------------
 # usage:
 #   perl kea_html.pl [maxrow] [-c] [-k]
+#       -b base  (default 10), maybe 9
 #       -c center
 #       -k known values
 #       -p known places
@@ -22,11 +23,15 @@ my $known  = 0;
 my $maind  = 0;
 my $places = 0;
 my $debug  = 0;
+my $base   = 10;
+my @digits = qw(0 1 2 3 4 5 6 7 8 9 a b c d e f g h i j k l m n o p q r s t u v w x y z);
 while (scalar(@ARGV) > 0) {
     my $opt = shift(@ARGV);
     if (0) {
     } elsif ($opt =~ m{\A\d+\Z}) {
         $maxrow = $opt;
+    } elsif ($opt =~ m{b}) {
+        $base   = shift(@ARGV);
     } elsif ($opt =~ m{c}) {
         $center = shift(@ARGV);
     } elsif ($opt =~ m{d}) {
@@ -74,7 +79,6 @@ while ($irow <= $maxrow) {
 &print_html_tail();
 # end main
 #***********************************************
-#----------------
 sub advance { # compute next row [$irow + 1]
     # $orow[$irow] is the element to be expelled
     my $busy = 1; # whether there is a left element
@@ -114,7 +118,7 @@ sub advance { # compute next row [$irow + 1]
         print STDERR "\n" . sprintf("#     |\n");
     }
 } # advance
-#--------
+#----------------
 sub follow_chains {
     my ($irow) = @_;
     if ($debug >= 1) {
@@ -148,7 +152,7 @@ sub follow_chains {
     print STDERR "# row $irow - in diag - " . join(",", sort { $a <=> $b } @in_diags) . "\n";
     print STDERR "#----------------\n"
 } # follow_chains
-
+#----------------
 sub follow_1_chain {
     my ($irow, $jcol) = @_;
     my $elem = $kear[$irow][$jcol];
@@ -157,9 +161,9 @@ sub follow_1_chain {
     $irow ++;
     my $busyr = 1;
     while ($busyr == 1 and $irow <= $maxrow) { # determine possible chain element in next row
-		if ($debug >= 2) {
-			print STDERR "follow_1_chain [$irow,$jcol]\n";
-		}
+        if ($debug >= 2) {
+            print STDERR "follow_1_chain [$irow,$jcol]\n";
+        }
         my $kcol = 1;
         my $busyc = 1;
         while ($busyc == 1 and $kcol < $irow * 2) { # search for $elem + 3
@@ -167,9 +171,9 @@ sub follow_1_chain {
                 $busyc = 0;
                 $elem = $kear[$irow][$kcol];
                 push(@result
-                	, ($kcol - $jcol >= 0 ? "+" : "") . ($kcol - $jcol)
-                	, ($kcol == $irow ? "[$elem]" : "($elem)")
-                	);
+                    , ($kcol - $jcol >= 0 ? "+" : "") . ($kcol - $jcol)
+                    , ($kcol == $irow ? "[$elem]" : "($elem)")
+                    );
                 $jcol = $kcol;
                 # push(@result, $elem);
                 $kfol[$irow][$kcol] = 1;
@@ -182,11 +186,11 @@ sub follow_1_chain {
         $irow ++;
     } # while
     if ($elem + 3 == $kear[$irow][$irow]) {
-    	push(@result, " +3 on diag");
+        push(@result, " +3 on diag");
     }
     return @result;
 } # follow_1_chain
-#--------
+#----------------
 sub attributes { # set special attributes
     if ($known > 0) { # known values (delta = 3)
         # last 3 are known
@@ -214,46 +218,49 @@ sub attributes { # set special attributes
     } # known values
     if ($maind  > 0) {
         # main diagonal,   darkred
-        &line(  1,  1, 1, 1, "d0");
+        &line(  1,  1,  1,  1, "d0"); # 0,0
     }
     if ($places > 0) { # |-> means: position in next row; last interesting element is $kear[i][2*i-1]
         # 1st derivatives, crimson
-        &line(  3,  1, 2, 1, "d1"); # d1,1  |->od0,1  left  4,7,8,9,24,14 ...
-        &line(  4,  7, 2, 3, "d1"); # d1,3  |->ed0,1  right 10,15,20,18,31 ...
-        # 2nd derivatives, orangered
-        &line(  9,  1, 4, 1, "d2"); # d2,1  |->od1,3  18,28,33,36,62...
-        &line(  4,  3, 4, 3, "d2"); # d2,3  |->ed1,1  7,9,14,35,6
-        &line(  2,  3, 4, 5, "d2"); # d2,5  |->od1,1  8,24,22,46
-        &line( 11, 21, 4, 7, "d2"); # d2,7  |->ed1,3  31,42,53,2,76
-        # 3rd derivatives, orange
-        &line( 22,  1, 8, 1, "d3"); # d3,1  |->ed2,7  2,34,58,82
-        &line(  5,  1, 8, 3, "d3"); # d3,3  |->od2,5  8,22,23
-        &line(  7,  4, 8, 5, "d3"); # d3,5  |->od2,3  9,35,55,48
-        &line(  4,  4, 8, 7, "d3"); # d3,7  |->ed2,1  4,28,36,54
-        &line(  8,  9, 8, 9, "d3"); # d3,9  |->ed2,1  18,33,62,70
-        &line( 11, 16, 8,11, "d3"); # d3,11 |->od2,3  14,6
-        &line(  9, 16, 8,13, "d3"); # d3,13 |->od2,5  24,46,59
-        &line( 26, 51, 8,15, "d3"); # d3,15 |->ed2,7  76,99
-        # 4th derivatives, yellow
-        &line( 49,  1,16, 1, "d4"); # d4,1  |-> d3,15 67,21
-        &line( 24,  3,16, 3, "d4"); # d4,3  |-> d3,13 59,13
-        &line( 10,  2,16, 5, "d4"); # d4,5  |-> d3,11 14,65
-        &line( 15,  6,16, 7, "d4"); # d4,7  |-> d3,9  33,70
-        &line(  3,  1,16, 9, "d4"); # d4,9  |-> d3,7  4,36,44
-        &line(  6,  4,16,11, "d4"); # d4,11 |-> d3,5  9,55
-        &line( 12, 10,16,13, "d4"); # d4,13 |-> d3,3  22,11,115
-        &line( 29, 28,16,15, "d4"); # d4,15 |-> d3,1  34.82
-        &line( 21, 22,16,17, "d4"); # d4,17 |-> d3,1  2,58
-        &line(  4,  5,16,19, "d4"); # d4,19 |-> d3,3  8,23,97
-        &line( 14, 19,16,21, "d4"); # d4,21 |-> d3,5  35,48
-        &line( 11, 17,16,23, "d4"); # d4,23 |-> d3,7  28,54
-        &line(  7, 12,16,25, "d4"); # d4,25 |-> d3,9  18,62
-        &line( 18, 32,16,27, "d4"); # d4,27 |-> d3,11 6,95
-        &line( 16, 31,16,29, "d4"); # d4,29 |-> d3,13 46,79
-        &line( 57,113,16,31, "d4"); # d4,31 |-> d3,15 169.216
+        &line(  3,  1,  2,  1, "d1"); # 1,0               d1,1  |->od0,1  left  4,7,8,9,24,14 ...
+        &line(  4,  7,  2,  3, "d1"); # 0,1               d1,3  |->ed0,1  right 10,15,20,18,31 ...
+        # 2nd derivatives, orangered                      
+        &line(  9,  1,  4,  1, "d2"); # 1,-1              d2,1  |->od1,3  18,28,33,36,62...
+        &line(  4,  3,  4,  3, "d2"); # 0,0               d2,3  |->ed1,1  7,9,14,35,6
+
+        &line(  2,  3,  4,  5, "d2"); # -2,-2             d2,5  |->od1,1  8,24,22,46
+        &line( 11, 21,  4,  7, "d2"); # -1,0              d2,7  |->ed1,3  31,42,53,2,76
+        # 3rd derivatives, orange                         
+        &line( 22,  1,  8,  1, "d3"); # -2,-2             d3,1  |->ed2,7  2,34,58,82
+        &line(  5,  1,  8,  3, "d3"); # -3,-2             d3,3  |->od2,5  8,22,23
+        &line(  7,  4,  8,  5, "d3"); # -1,1              d3,5  |->od2,3  9,35,55,48
+        &line(  4,  4,  8,  7, "d3"); # 4,4               d3,7  |->ed2,1  4,28,36,54
+
+        &line(  8,  9,  8,  9, "d3"); # 0,0               d3,9  |->ed2,1  18,33,62,70
+        &line( 11, 16,  8, 11, "d3"); # 3,5               d3,11 |->od2,3  14,6
+        &line(  9, 16,  8, 13, "d3"); # 1,3               d3,13 |->od2,5  24,46,59
+        &line( 26, 51,  8, 15, "d3"); # 2,6               d3,15 |->ed2,7  76,99
+        # 4th derivatives, yellow                         
+        &line( 49,  1, 16,  1, "d4"); # 1,-2              d4,1  |-> d3,15 67,21
+        &line( 24,  3, 16,  3, "d4"); # 8,0               d4,3  |-> d3,13 59,13
+        &line( 10,  2, 16,  5, "d4"); # -6,1              d4,5  |-> d3,11 14,65
+        &line( 15,  6, 16,  7, "d4"); # -1,5              d4,7  |-> d3,9  33,70
+        &line(  3,  1, 16,  9, "d4"); # 3,1               d4,9  |-> d3,7  4,36,44
+        &line(  6,  4, 16, 11, "d4"); # 6,4               d4,11 |-> d3,5  9,55
+        &line( 12, 10, 16, 13, "d4"); # -4,-3             d4,13 |-> d3,3  22,11,115
+        &line( 29, 28, 16, 15, "d4"); # -3,-2             d4,15 |-> d3,1  34.82
+
+        &line( 21, 22, 16, 17, "d4"); # 5,5               d4,17 |-> d3,1  2,58
+        &line(  4,  5, 16, 19, "d4"); # 4,5               d4,19 |-> d3,3  8,23,97
+        &line( 14, 19, 16, 21, "d4"); # -2,-2             d4,21 |-> d3,5  35,48
+        &line( 11, 17, 16, 23, "d4"); # -5,-6             d4,23 |-> d3,7  28,54
+        &line(  7, 12, 16, 25, "d4"); # 7,12              d4,25 |-> d3,9  18,62
+        &line( 18, 32, 16, 27, "d4"); # 2,5               d4,27 |-> d3,11 6,95
+        &line( 16, 31, 16, 29, "d4"); # 0,2               d4,29 |-> d3,13 46,79
+        &line( 57,113, 16, 31, "d4"); # -3,-1             d4,31 |-> d3,15 169,216
     } # places
 }  # attributes
-#--------
+#----------------
 sub line { # draw the styles for a line
     my ($i1, $j1, $idelta, $jdelta, $style) = @_;
     my $i = $i1;
@@ -288,7 +295,7 @@ GFis
     <td class="frame"><strong>j</strong></td></tr>
 GFis
 } # print_head
-#-----------------
+#----------------
 sub print_row {
     print "<tr>";
     print "<td class=\"frame\">$irow</td>\n";
@@ -306,15 +313,26 @@ sub print_row {
            $clar[$irow][$jcol] .= " meet";
         } # more than 1
         print "<td class=\"$clar[$irow][$jcol]\" title=\"$irow,$jcol\">"
-            . $kear[$irow][$jcol]
+            . &to_base($kear[$irow][$jcol])
             . "</td>";
         $jcol ++;
     } # while $jcol
     print <<"GFis";
-<td>...</td></tr>
+<td>..</td></tr>
 GFis
 } # sub print_row
-#-----------------
+#----------------
+sub to_base { # convert from decimal to base (2..36)
+    my ($num)  = @_;
+    my $result = "";
+    while ($num > 0) {
+        my $digit = $num % $base;
+        $result = $digits[$digit] . $result;
+        $num /= $base;
+    } # while > 0
+    return $result eq "" ? "0" : $result; 
+} # to_base
+#----------------
 sub print_html_head {
     print <<"GFis";
 <?xml version="1.0" encoding="UTF-8"?>
@@ -325,18 +343,18 @@ sub print_html_head {
 <head>
 <style>
 body,table,p,td,th
-        { font-family: Arial; }
+        { font-family: Lucida Console; }
 tr,td,th,p
         { text-align: right; }
 .frame  { font-size:smaller; background-color: lightgray;}
 .arr    { background-color: lightyellow;}
 /* known values and their derivatives (delta=3) */
-.k0     { background-color:    black;  color: white; font-weight: bold; font-style: italic; }
-.k1     { background-color: darkblue;  color: white; font-weight: bold; font-style: italic; }
-.k2     { background-color:     blue;  color: white; font-weight: bold; font-style: italic; }
-.k3     { background-color: lightblue; color: black; font-weight: bold; font-style: italic; }
-.k4     { background-color: lavender;  color: black; font-weight: bold; font-style: italic; }
-.k5     { background-color: lavender;  color: black; font-weight: bold; font-style: italic; }
+.k0     { background-color:    black;  color: white; font-weight: bold; /* font-style: italic; */ }
+.k1     { background-color: darkblue;  color: white; font-weight: bold; /* font-style: italic; */ }
+.k2     { background-color:     blue;  color: white; font-weight: bold; /* font-style: italic; */ }
+.k3     { background-color: lightblue; color: black; font-weight: bold; /* font-style: italic; */ }
+.k4     { background-color: lavender;  color: black; font-weight: bold; /* font-style: italic; */ }
+.k5     { background-color: lavender;  color: black; font-weight: bold; /* font-style: italic; */ }
 /* main diagonal and its derivatives */
 .d0     { background-color: darkred;   color: white; font-weight: bold; }
 .d1     { background-color: crimson;   color: white; }
@@ -344,7 +362,7 @@ tr,td,th,p
 .d3     { background-color: orange;    color: black; }
 .d4     { background-color: yellow;    color: black; }
 .meet /* several lines/colors meet in this element */
-        { background-color: limegreen; color: white; }
+        { background-color: limegreen; color: black; }
 </style>
 </head>
 <body>
@@ -415,3 +433,28 @@ d1[4j-1,2j-1] A4,1 oo = d2[4j-2,
 d1[4j  ,6j+1] A4,3 eo
 d1[4j+1,2j  ] A4,1 oe
 d1[4j+2,6j+4] A2,3 ee
+
+================
+Sa 2020-07-04
+
+for i >= 1:
+main diagonal    , firebrick
+D0,0(i) = k(i    ,i) 
+                 
+1st derived      , crimson
+D1,1(i) = k(2i+1 ,1i)    = D0,0(2i+2)  = 4,7,8,9,24,14,22,35,46 # right
+D1,0(i) = k(2i+2 ,3i+4)  = D0,0(2i+3)  = 10,15,20,18,31,28,42,33 # left
+                                       
+2nd derived      , orangered           
+D2,1(i) = k(4i+5 ,1i)    = D1,0(2i+2)  = 18,28,33,36 # left  of D1,0
+D2,0(i) = k(4i   ,3i)    = D1,1(2i)    = 7,9,14,35 # between D1,0 and D0,0
+D2,2(i) = k(4i-2 ,5i-2)  = D1,1(2i-1)  = 4,8,24,22 # between D0,0 and D1,1
+D2,3(i) = k(4i+7 ,7i+14) = D1,0(2i+3)  = 31,42,53,2,76,34,99,58  # right of D1,1 
+                                       
+3rd derived      , orange              
+D3,1(i) = k(8i+14,1i)    = D2,3(2i+2)  = 2,34,58,82
+D3,x(i) = k(8i-3 ,3i-2)  = D2,2(2i)    = 8,22,23,11
+D3,x(i) = k(8i-1 ,5i-1)  = D2,0(2i)    = 9,35,55,48
+D3,x(i) = k(8i+4 ,7i+4)  = D2,1(2i)    = 28,36,54
+D3, (i) = k(8i   ,9i)    = D2,1(2i-1)  = 18,33,62,70
+
