@@ -16,70 +16,169 @@
 #--------------------------------------------------------
 use strict;
 use integer;
+# use warnings;
 
-my $maxrow = 100;
-my $center = 0;
-my $known  = 0;
-my $maind  = 0;
-my $places = 0;
-my $debug  = 0;
-my $base   = 10;
-my @digits = qw(0 1 2 3 4 5 6 7 8 9 a b c d e f g h i j k l m n o p q r s t u v w x y z);
+my $maxrow  = 100;
+my $center  = 0;
+my $html    = 1;
+my $known   = 0;
+my $maind   = 0;
+my $places  = 0;
+my $subdiag = 0;
+my $debug   = 0;
+my $base    = 10; # for &to_base
+my @digits  = qw(0 1 2 3 4 5 6 7 8 9 a b c d e f g h i j k l m n o p q r s t u v w x y z); # for &to_base
 while (scalar(@ARGV) > 0) {
     my $opt = shift(@ARGV);
     if (0) {
     } elsif ($opt =~ m{\A\d+\Z}) {
-        $maxrow = $opt;
-    } elsif ($opt =~ m{b}) {
-        $base   = shift(@ARGV);
-    } elsif ($opt =~ m{c}) {
-        $center = shift(@ARGV);
-    } elsif ($opt =~ m{d}) {
-        $debug  = shift(@ARGV);
-    } elsif ($opt =~ m{k}) {
-        $known  = shift(@ARGV);
-    } elsif ($opt =~ m{m}) {
-        $maind  = shift(@ARGV);
-    } elsif ($opt =~ m{p}) {
-        $places = shift(@ARGV);
+        $maxrow  = $opt;
+    } elsif ($opt =~ m{\A-base}) {
+        $base    = shift(@ARGV);
+    } elsif ($opt =~ m{\A-cent}) {
+        $center  = shift(@ARGV);
+    } elsif ($opt =~ m{\A-d}) {
+        $debug   = shift(@ARGV);
+    } elsif ($opt =~ m{\A-html}) {
+        $html    = shift(@ARGV);
+    } elsif ($opt =~ m{\A-known}) {
+        $known   = shift(@ARGV);
+    } elsif ($opt =~ m{\A-main}) {
+        $maind   = shift(@ARGV);
+    } elsif ($opt =~ m{\A-place}) {
+        $places  = shift(@ARGV);
+    } elsif ($opt =~ m{\A-sub}) {
+        $subdiag = shift(@ARGV);
     } else {
         die "invalid option \"$opt\"\n";
     }
 } # while $opt
-my @kear; # left lower triangle of Kimberling's expulsion array
+#--------
+my @kear; # left lower triangle of Kimberling's expulsion array; valid elements in a row extend from 1 to 2*rowno - 1
 my @clar; # assembled class attribute for $kear[i,j]
 my @kfol; # whether the cell was visited when +3 chains are followed
-$kear[0][0]  = 0;
-$kear[1][0]  = 0;
-$kear[1][1]  = 1;
+$kear[0][0] = 0; # not used
+$kear[1][0] = 0; # not used
+$kear[1][1] = 1; # first diagonal element
 my @orow = (0, 1);  # old row of  triangle
-my 
+if ($debug >= 2) {
+    print STDERR sprintf("%4d", $orow[1]);
+    print STDERR "\n" . sprintf("#     |\n");
+}
+my
 $irow  = 1; # index for rows in @kear
 while ($irow <= $maxrow) { # fill with Kimberling's rule
-    &advance(); # computes [$irow + 1]
+    &fill_next_row(); # computes [$irow + 1]
     $irow ++;
 } # while advancing
 
-$irow  = 1; # index for rows in @kear
-while ($irow <= $maxrow) { # fill with Kimberling's rule
-    &follow_chains($irow);
-    $irow ++;
-} # while advancing
+if (0) { # follow chains - not used
+    $irow  = 1;
+    while ($irow <= $maxrow) {
+        &follow_chains($irow);
+        $irow ++;
+    } # while advancing
+} # if follow
 
-&attributes();
+my @queue  = (0);  # diagonal index still to be splitted, 0 = main diagonal
+my @srow   = (1);  # starting element row    number
+my @scol   = (1);  # starting element column number
+my @drow   = (1);  # delta  for rows    (2^k for k >= 0; k=0 for main diag.)
+my @dcol   = (1);  # delta  for columns (2*n - 1 for 1 <= n < 2^k)
+my @level  = (0);  # 0 = main diagonal
+my @parent = (-1); # main diagonal has no parent
+my @parity = (0);  # treat main diagonal as "even"
 
-# print the whole array
-&print_html_head();
-$irow = 1;
-while ($irow <= $maxrow) {
-    &print_row();
-    $irow ++;
-} # while $irow
+if ($subdiag == 1) { # compute subdiagonals
+    my $qhead  = 0; # next queue element to be splitted
+    while ($qhead < scalar(@queue)) { # queue not empty
+        my $iqueue = $queue[$qhead]; # split this one
+        &split_diagonal($iqueue, 0);
+        &split_diagonal($iqueue, 1);
+        $qhead ++;
+    } # while not empty
+} # if subdiagonals
 
-&print_html_tail();
+if ($html == 1) {
+    &set_attributes();
+    # print the whole array
+    &print_html_head();
+    $irow = 1;
+    while ($irow <= $maxrow) {
+        &print_row();
+        $irow ++;
+    } # while $irow
+    &print_html_tail();
+} # if html
 # end main
-#***********************************************
-sub advance { # compute next row [$irow + 1]
+#================================================================
+sub split_diagonal { # queue the next even or odd subdiagonal
+    my ($iqueue, $offset) = @_; # offset = 0 or 1
+    my ($irow0, $icol0) = ($srow[$iqueue], $scol[$iqueue]);
+    if ($debug >= 2) {
+        print STDERR "# start split_diagonal(iqueue=$iqueue, par=$offset) \@$irow0,$icol0\n";
+    } 
+    if ($offset == 0) { # even - start with first element
+    } else { # odd - start with second element
+        $irow0 += $drow[$iqueue];
+        $icol0 += $dcol[$iqueue];
+    } # odd
+    my  $term0 =  &get($irow0, $icol0);
+    my  $krow0 =  $irow0 - 1; # -> mapped element of target diagonal
+    my  $kcol0 =  &search_term($krow0, $term0);
+    while($kcol0 < 0 and $krow0 < $maxrow) { # not found 
+        $irow0 += 2 * $drow[$iqueue]; # advance in source diagonal
+        $icol0 += 2 * $dcol[$iqueue];
+        $term0 =  &get($irow0, $icol0); 
+        $krow0 =  $irow0 - 1;
+        $kcol0 =  &search_term($krow0, $term0);
+    } # while term0 not found
+    my  $irow1 =  $irow0 + 2 * $drow[$iqueue];
+    my  $icol1 =  $icol0 + 2 * $dcol[$iqueue];
+    my  $term1 =  &get($irow1, $icol1);
+    my  $krow1 =  $irow1 - 1; # -> mapped element of target diagonal
+    my  $kcol1 =  &search_term($krow1, $term1);
+    if ($kcol0 >= 0 and $kcol1 >= 0) { # two valid subdiagonal elements found
+        my $inext = scalar(@srow);
+        $srow  [$inext] = $krow0;
+        $scol  [$inext] = $kcol0;
+        $drow  [$inext] = $krow1 - $krow0;
+        $dcol  [$inext] = $kcol1 - $kcol0;
+        $parent[$inext] = $iqueue;
+        $level [$inext] = $level[$iqueue] + 1;
+        $parity[$inext] = $offset;
+        push(@queue, $inext);
+        if ($debug >= 0) {
+            print join("\t", "# diag $inext:", "\@$srow[$inext],$scol[$inext]", "\+$drow[$inext],$dcol[$inext]"
+                , "**$level[$inext]", , "\^$parent[$inext]", $parity[$inext] == 0 ? "even" : "odd") . "\n";
+        } 
+    } # valid subdiagonal found
+} # split_diagonal
+#----------------
+sub search_term { # return the column number where $term occurs in row $irow
+    my ($irow, $term)  = @_;
+    if ($debug >= 2) {
+        print STDERR "# start search_term($irow, $term)\n";
+    } 
+    my $icol = 1;
+    my $ff_col = 2 * $irow;
+    my $busy = 1; # not (yet) found
+    while ($busy >= 1 and $icol < $ff_col) {
+        if ($kear[$irow][$icol] == $term) {
+            $busy = 0; # found
+        } else {
+            $icol ++;
+        }
+    } # while busy
+    return $busy == 1 ? -1 : $icol; # -1 if not found
+} # search_term
+#----------------
+sub get { # return element [$irow, $icol] if it is in the active array, of -1 if not in range
+    my ($irow, $icol)  = @_;
+    return $icol >= 1 && $icol < 2 * $irow ? $kear[$irow][$icol] : -1;
+} # get
+#----------------
+sub fill_next_row { # compute next row [$irow + 1]
     # $orow[$irow] is the element to be expelled
     my $busy = 1; # whether there is a left element
     my $iofs = 1; # offset to the right and to the left
@@ -109,7 +208,9 @@ sub advance { # compute next row [$irow + 1]
     } # while busy
     for (my $jcol = 0; $jcol < scalar(@nrow) - 1; $jcol ++) {
         $orow[$jcol] = $nrow[$jcol];
-        print STDERR sprintf("%4d", $orow[$jcol]) if $debug >= 2;
+        if ($debug >= 2) {
+            print STDERR sprintf("%4d", $orow[$jcol]);
+        }
         $kear[$irow + 1][$jcol] = $orow[$jcol];
         $clar[$irow + 1][$jcol] = " ";
         $kfol[$irow + 1][$jcol] = 0; # not visited yet
@@ -117,81 +218,9 @@ sub advance { # compute next row [$irow + 1]
     if ($debug >= 2) {
         print STDERR "\n" . sprintf("#     |\n");
     }
-} # advance
+} # fill_next_row
 #----------------
-sub follow_chains {
-    my ($irow) = @_;
-    if ($debug >= 1) {
-        print STDERR "follow irow=$irow\n";
-    }
-    my @in_diags = (); # 
-    my $jcol = 1;
-    while ($jcol < $irow * 2) {
-        if ($kfol[$irow][$jcol] == 0) { # not yet followed
-            my $elem = $kear[$irow][$jcol];
-            if ($debug >= 2) {
-                print STDERR "follow? $elem = kear[$irow][$jcol]\n";
-            }
-            my $busy = 1;
-            my $kcol = 1; 
-            while ($busy == 1 and $kcol < $irow * 2) {
-                if ($elem + 3 <= $kear[$kcol][$kcol]) { # found in diagonal
-                    push(@in_diags, $elem);
-                    $busy = 0;
-                } # found in diagonal
-                $kcol ++;
-            } # while $kcol
-            if (0 and $busy == 0) {
-                $kfol[$irow][$jcol] = 1;
-            } else { # not in diag
-                print STDERR "# chain " . join("", &follow_1_chain($irow, $jcol)) . "\n";
-            } # not in diag
-        } # not yet followed
-        $jcol ++;
-    } # while $jcol
-    print STDERR "# row $irow - in diag - " . join(",", sort { $a <=> $b } @in_diags) . "\n";
-    print STDERR "#----------------\n"
-} # follow_chains
-#----------------
-sub follow_1_chain {
-    my ($irow, $jcol) = @_;
-    my $elem = $kear[$irow][$jcol];
-    my @result = ("($elem)");
-    $kfol[$irow][$jcol] = 1;
-    $irow ++;
-    my $busyr = 1;
-    while ($busyr == 1 and $irow <= $maxrow) { # determine possible chain element in next row
-        if ($debug >= 2) {
-            print STDERR "follow_1_chain [$irow,$jcol]\n";
-        }
-        my $kcol = 1;
-        my $busyc = 1;
-        while ($busyc == 1 and $kcol < $irow * 2) { # search for $elem + 3
-            if ($elem + 3 == $kear[$irow][$kcol]) { # found
-                $busyc = 0;
-                $elem = $kear[$irow][$kcol];
-                push(@result
-                    , ($kcol - $jcol >= 0 ? "+" : "") . ($kcol - $jcol)
-                    , ($kcol == $irow ? "[$elem]" : "($elem)")
-                    );
-                $jcol = $kcol;
-                # push(@result, $elem);
-                $kfol[$irow][$kcol] = 1;
-            } # found
-            $kcol ++;
-        } # while $kcol
-        if ($busyc == 1) { # not found - end of chain
-            $busyr = 0;
-        }
-        $irow ++;
-    } # while
-    if ($elem + 3 == $kear[$irow][$irow]) {
-        push(@result, " +3 on diag");
-    }
-    return @result;
-} # follow_1_chain
-#----------------
-sub attributes { # set special attributes
+sub set_attributes { # colorize elements which have special attributes
     if ($known > 0) { # known values (delta = 3)
         # last 3 are known
         my $start = 2;
@@ -224,23 +253,26 @@ sub attributes { # set special attributes
         # 1st derivatives, crimson
         &line(  3,  1,  2,  1, "d1"); # 1,0               d1,1  |->od0,1  left  4,7,8,9,24,14 ...
         &line(  4,  7,  2,  3, "d1"); # 0,1               d1,3  |->ed0,1  right 10,15,20,18,31 ...
-        # 2nd derivatives, orangered                      
+
+        # 2nd derivatives, orangered
         &line(  9,  1,  4,  1, "d2"); # 1,-1              d2,1  |->od1,3  18,28,33,36,62...
         &line(  4,  3,  4,  3, "d2"); # 0,0               d2,3  |->ed1,1  7,9,14,35,6
-
+        #--
         &line(  2,  3,  4,  5, "d2"); # -2,-2             d2,5  |->od1,1  8,24,22,46
         &line( 11, 21,  4,  7, "d2"); # -1,0              d2,7  |->ed1,3  31,42,53,2,76
-        # 3rd derivatives, orange                         
+
+        # 3rd derivatives, orange
         &line( 22,  1,  8,  1, "d3"); # -2,-2             d3,1  |->ed2,7  2,34,58,82
         &line(  5,  1,  8,  3, "d3"); # -3,-2             d3,3  |->od2,5  8,22,23
         &line(  7,  4,  8,  5, "d3"); # -1,1              d3,5  |->od2,3  9,35,55,48
         &line(  4,  4,  8,  7, "d3"); # 4,4               d3,7  |->ed2,1  4,28,36,54
-
+        #--
         &line(  8,  9,  8,  9, "d3"); # 0,0               d3,9  |->ed2,1  18,33,62,70
         &line( 11, 16,  8, 11, "d3"); # 3,5               d3,11 |->od2,3  14,6
         &line(  9, 16,  8, 13, "d3"); # 1,3               d3,13 |->od2,5  24,46,59
         &line( 26, 51,  8, 15, "d3"); # 2,6               d3,15 |->ed2,7  76,99
-        # 4th derivatives, yellow                         
+
+        # 4th derivatives, yellow
         &line( 49,  1, 16,  1, "d4"); # 1,-2              d4,1  |-> d3,15 67,21
         &line( 24,  3, 16,  3, "d4"); # 8,0               d4,3  |-> d3,13 59,13
         &line( 10,  2, 16,  5, "d4"); # -6,1              d4,5  |-> d3,11 14,65
@@ -249,7 +281,7 @@ sub attributes { # set special attributes
         &line(  6,  4, 16, 11, "d4"); # 6,4               d4,11 |-> d3,5  9,55
         &line( 12, 10, 16, 13, "d4"); # -4,-3             d4,13 |-> d3,3  22,11,115
         &line( 29, 28, 16, 15, "d4"); # -3,-2             d4,15 |-> d3,1  34.82
-
+        #--
         &line( 21, 22, 16, 17, "d4"); # 5,5               d4,17 |-> d3,1  2,58
         &line(  4,  5, 16, 19, "d4"); # 4,5               d4,19 |-> d3,3  8,23,97
         &line( 14, 19, 16, 21, "d4"); # -2,-2             d4,21 |-> d3,5  35,48
@@ -259,7 +291,7 @@ sub attributes { # set special attributes
         &line( 16, 31, 16, 29, "d4"); # 0,2               d4,29 |-> d3,13 46,79
         &line( 57,113, 16, 31, "d4"); # -3,-1             d4,31 |-> d3,15 169,216
     } # places
-}  # attributes
+}  # set_attributes
 #----------------
 sub line { # draw the styles for a line
     my ($i1, $j1, $idelta, $jdelta, $style) = @_;
@@ -278,13 +310,87 @@ sub line { # draw the styles for a line
     } # while
 } # line
 #----------------
+sub follow_chains {
+    my ($irow) = @_;
+    if ($debug >= 1) {
+        print STDERR "# follow_chains($irow)\n";
+    }
+    my @in_diags = (); #
+    my $jcol = 1;
+    while ($jcol < $irow * 2) {
+        if ($kfol[$irow][$jcol] == 0) { # not yet followed
+            my $elem = $kear[$irow][$jcol];
+            if ($debug >= 2) {
+                print STDERR "# follow? $elem = kear[$irow][$jcol]\n";
+            }
+            my $busy = 1;
+            my $kcol = 1;
+            while ($busy == 1 and $kcol < $irow * 2) {
+                if ($elem + 3 <= $kear[$kcol][$kcol]) { # found in diagonal
+                    push(@in_diags, $elem);
+                    $busy = 0;
+                } # found in diagonal
+                $kcol ++;
+            } # while $kcol
+            if (0 and $busy == 0) {
+                $kfol[$irow][$jcol] = 1;
+            } else { # not in diag
+                print STDERR "# chain " . join("", &follow_1_chain($irow, $jcol)) . "\n";
+            } # not in diag
+        } # not yet followed
+        $jcol ++;
+    } # while $jcol
+    print STDERR "# row $irow - in diag - " . join(",", sort { $a <=> $b } @in_diags) . "\n";
+    print STDERR "#----------------\n"
+} # follow_chains
+#----------------
+sub follow_1_chain {
+    my ($irow, $jcol) = @_;
+    my $elem = $kear[$irow][$jcol];
+    my @result = ("($elem)");
+    $kfol[$irow][$jcol] = 1;
+    $irow ++;
+    my $busyr = 1;
+    while ($busyr == 1 and $irow <= $maxrow) { # determine possible chain element in next row
+        if ($debug >= 2) {
+            print STDERR "# follow_1_chain($irow,$jcol)\n";
+        }
+        my $kcol = 1;
+        my $busyc = 1;
+        while ($busyc == 1 and $kcol < $irow * 2) { # search for $elem + 3
+            if ($elem + 3 == $kear[$irow][$kcol]) { # found
+                $busyc = 0;
+                $elem = $kear[$irow][$kcol];
+                push(@result
+                    , ($kcol - $jcol >= 0 ? "+" : "") . ($kcol - $jcol)
+                    , ($kcol == $irow ? "[$elem]" : "($elem)")
+                    );
+                $jcol = $kcol;
+                # push(@result, $elem);
+                $kfol[$irow][$kcol] = 1;
+            } # found
+            $kcol ++;
+        } # while $kcol
+        if ($busyc == 1) { # not found - end of chain
+            $busyr = 0;
+        }
+        $irow ++;
+    } # while
+    if ($elem + 3 == $kear[$irow][$irow]) {
+        push(@result, " +3 on diag");
+    }
+    return @result;
+} # follow_1_chain
+#----------------
 sub print_head {
     my $maxcol = $maxrow * 2 - 1;
     my $jcol = 1;
     print <<"GFis";
     <tr><td class=\"frame\"><strong>K</strong></td>
 GFis
-    print STDERR sprintf("# %3s |", "") if $debug >= 2;
+    if ($debug >= 2) {
+        print STDERR sprintf("# %3s |", "");
+    }
     while ($jcol < $maxcol) {
         print "<td class=\"frame\">$jcol</td>";
         print STDERR sprintf("%4d", $jcol) if $debug >= 2;
@@ -330,7 +436,7 @@ sub to_base { # convert from decimal to base (2..36)
         $result = $digits[$digit] . $result;
         $num /= $base;
     } # while > 0
-    return $result eq "" ? "0" : $result; 
+    return $result eq "" ? "0" : $result;
 } # to_base
 #----------------
 sub print_html_head {
@@ -414,10 +520,10 @@ K(i,j)=K(i-1,i-(j+2)/2); If j is Even and (j<2*i-3)
 K(i,j)=K(i-1,i+(j-1)/2); If j is Odd and (j<2*i-3) (End)
 4 2; 6 2 7 4; 8 7 9 2 10 6; ...
 
-k[i   ,2j  ]    = k[i-1,i-(2j+2)/2]     
-k[i   ,2j+1]    = k[i-1,i+(2j+1-1)/2]   
+k[i   ,2j  ]    = k[i-1,i-(2j+2)/2]
+k[i   ,2j+1]    = k[i-1,i+(2j+1-1)/2]
 
-k[i   ,2j  ]    = k[i-1 ,i-j-1 ] xe 
+k[i   ,2j  ]    = k[i-1 ,i-j-1 ] xe
 k[i   ,2j+1]    = k[i-1 ,i+j   ] xo
 #-----------------------------------
 k[2i  ,2j  ]    = k[2i-1,2i-j-1] ee
@@ -439,22 +545,25 @@ Sa 2020-07-04
 
 for i >= 1:
 main diagonal    , firebrick
-D0,0(i) = k(i    ,i) 
-                 
+D0,0(i) = k(i    ,i)
+
 1st derived      , crimson
 D1,1(i) = k(2i+1 ,1i)    = D0,0(2i+2)  = 4,7,8,9,24,14,22,35,46 # right
 D1,0(i) = k(2i+2 ,3i+4)  = D0,0(2i+3)  = 10,15,20,18,31,28,42,33 # left
-                                       
-2nd derived      , orangered           
+
+2nd derived      , orangered
 D2,1(i) = k(4i+5 ,1i)    = D1,0(2i+2)  = 18,28,33,36 # left  of D1,0
-D2,0(i) = k(4i   ,3i)    = D1,1(2i)    = 7,9,14,35 # between D1,0 and D0,0
+D2,0(i) = k(4i   ,3i)    = D1,1(2i)    = 7,9,14,35,6,55,65 # between D1,0 and D0,0
 D2,2(i) = k(4i-2 ,5i-2)  = D1,1(2i-1)  = 4,8,24,22 # between D0,0 and D1,1
-D2,3(i) = k(4i+7 ,7i+14) = D1,0(2i+3)  = 31,42,53,2,76,34,99,58  # right of D1,1 
-                                       
-3rd derived      , orange              
+D2,3(i) = k(4i+7 ,7i+14) = D1,0(2i+3)  = 31,42,53,2,76,34,99,58  # right of D1,1
+
+3rd derived      , orange
 D3,1(i) = k(8i+14,1i)    = D2,3(2i+2)  = 2,34,58,82
 D3,x(i) = k(8i-3 ,3i-2)  = D2,2(2i)    = 8,22,23,11
 D3,x(i) = k(8i-1 ,5i-1)  = D2,0(2i)    = 9,35,55,48
 D3,x(i) = k(8i+4 ,7i+4)  = D2,1(2i)    = 28,36,54
+D3, (i) = k(8i   ,9i)    = D2,1(2i-1)  = 18,33,62,70
+D3, (i) = k(8i+3 ,11i+5) = D2,0(2i+1)  = 14,6,65
+D3, (i) = k(8i   ,13i+)    = D2,1(2i-1)  = 18,33,62,70
 D3, (i) = k(8i   ,9i)    = D2,1(2i-1)  = 18,33,62,70
 

@@ -2,20 +2,24 @@
 
 # Generate Kimberling's expulsion array in an HTML triangle
 # @(#) $Id$
+# 2020-07-05: revival with diagonals
 # 2018-05-02, Georg Fischer 
 #---------------------------------
-N=160
-C=1
-D=0
-K=1
-M=1
-P=1
-W=
-B=9
+N=128
+BASE=10
+CENT=1
+DEBUG=0
+HTML=1
+KNOWN=1
+MAIN=1
+PLACE=1
+SUB=0
 
 all: kea
 kea:
-	perl $(W) kea_html.pl $(N) -b $(B) -c $(C) -d $(D) -k $(K) -m $(M) -p $(P) > kea.html 2> kea.tmp
+	perl $(W) kea_html.pl $(N) -d $(DEBUG) \
+	    -base $(BASE) -cent $(C) -known $(K) -main $(M) -place $(P) -html $(HTML) -sub $(SUB) \
+	    > kea.html 2> kea.tmp
 #---------------------------------------------------------------
 # simple triangle
 exp1:
