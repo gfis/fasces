@@ -7,19 +7,16 @@
 #---------------------------------
 N=128
 BASE=10
-CENT=1
+CENT=0
 DEBUG=0
 HTML=1
 KNOWN=1
-MAIN=1
-PLACE=1
-SUB=0
+S=1
 
 all: kea
 kea:
-	perl $(W) kea_html.pl $(N) -d $(DEBUG) \
-	    -base $(BASE) -cent $(C) -known $(K) -main $(M) -place $(P) -html $(HTML) -sub $(SUB) \
-	    > kea.html 2> kea.tmp
+	perl $(W) kea_html.pl $(N) -d $(DEBUG) -base $(BASE) -cent $(CENT) -known $(KNOWN) -html $(HTML) -s $(S) > kea.html 2> kea.tmp
+	grep -E "relation [0-9]" kea.html
 #---------------------------------------------------------------
 # simple triangle
 exp1:

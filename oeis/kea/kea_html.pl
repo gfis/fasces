@@ -12,9 +12,9 @@
 #       maxrow  number of row to compute (default 64)
 #       -base   (default 10), maybe 9
 #       -cent   whether to center the active triangle
-#       -html   whether to output HTML  
+#       -html   whether to output HTML
 #       -known  whether to colorize known NE-SW lines (cold)
-#       -s      whether to compute strands and colorize them (warm) 
+#       -s      whether to compute strands and colorize them (warm)
 #--------------------------------------------------------
 use strict;
 use integer;
@@ -22,7 +22,7 @@ use warnings;
 
 my $maxrow  = 64;
 my $base    = 10; # for &to_base
-my $center  = 0; 
+my $center  = 0;
 my $debug   = 0;
 my $html    = 1;
 my $known   = 0; # cold colors
@@ -44,7 +44,7 @@ while (scalar(@ARGV) > 0) {
     } elsif ($opt =~ m{\A-known}) {
         $known   = shift(@ARGV);
     } elsif ($opt =~ m{\A-s}) {
-        $strand = shift(@ARGV);
+        $strand  = shift(@ARGV);
     } else {
         die "invalid option \"$opt\"\n";
     }
@@ -86,6 +86,18 @@ my @parent = (-1); # main diagonal has no parent
 my @parity = (0);  # treat main diagonal as "even"
 my $old_level = 0;
 
+if ($html == 1) {
+    &set_attributes();
+    # print the whole array
+    &print_html_head();
+    $irow = 1;
+    while ($irow <= $maxrow) {
+        &print_row();
+        $irow ++;
+    } # while $irow
+    &print_html_tail();
+} # if html
+
 if ($strand == 1) { # compute substrands
     my $qhead = 0; # next queue element to be splitted
     while ($qhead < scalar(@queue)) { # queue not empty
@@ -100,17 +112,9 @@ if ($strand == 1) { # compute substrands
     } # while not empty
 } # if substrands
 
-if ($html == 1) {
-    &set_attributes();
-    # print the whole array
-    &print_html_head();
-    $irow = 1;
-    while ($irow <= $maxrow) {
-        &print_row();
-        $irow ++;
-    } # while $irow
-    &print_html_tail();
-} # if html
+if (1) {
+    &check_relation(0, "1,1");
+}
 # end main
 #================================================================
 sub split_strand { # queue the next even or odd substrand
@@ -118,7 +122,7 @@ sub split_strand { # queue the next even or odd substrand
     my ($irow0, $icol0) = ($srow[$istrand], $scol[$istrand]);
     if ($debug >= 2) {
         print STDERR "# start split_strand(istrand=$istrand, par=$offset) \@$irow0,$icol0\n";
-    } 
+    }
     if ($offset == 0) { # even - start with first element
     } else { # odd - start with second element
         $irow0 += $drow[$istrand];
@@ -127,10 +131,10 @@ sub split_strand { # queue the next even or odd substrand
     my  $term0 =  &get($irow0, $icol0);
     my  $krow0 =  $irow0 - 1; # -> mapped element of target strand
     my  $kcol0 =  &search_term($krow0, $term0, 0);
-    while($kcol0 < 0 and $krow0 < $maxrow) { # not found 
+    while($kcol0 < 0 and $krow0 < $maxrow) { # not found
         $irow0 += 2 * $drow[$istrand]; # advance in source strand
         $icol0 += 2 * $dcol[$istrand];
-        $term0 =  &get($irow0, $icol0); 
+        $term0 =  &get($irow0, $icol0);
         $krow0 =  $irow0 - 1;
         $kcol0 =  &search_term($krow0, $term0, 1);
     } # while term0 not found
@@ -150,20 +154,24 @@ sub split_strand { # queue the next even or odd substrand
             $scol  [$inext] = $kcol0;
             $drow  [$inext] = $krow1 - $krow0;
             $dcol  [$inext] = $kcol1 - $kcol0;
+            my $normin = 29061947; # very high
             my $mrow = $krow0; # minimal distance to origin, or mod
             my $mcol = $kcol0;
-            while (
-                    $mrow >= $drow[$inext]
-                  or 
-                  0 # $mcol >= $dcol[$inext]
-                  ) { 
+            my $orow = $mrow; # old value of $mrow
+            my $ocol = $mcol;
+            while (&norm($mrow, $mcol) < $normin) {
+                $normin = &norm($mrow, $mcol);
+                $orow =  $mrow;
+                $ocol =  $mcol;
                 $mrow -= $drow[$inext];
                 $mcol -= $dcol[$inext];
-            } # whil not mod
+            } # while not mod
             if ($debug >= 0) {
+                $orow = "+$orow" if $orow >= 0;
+                $ocol = "+$ocol" if $ocol >= 0;
                 print "<!--" . join("\t", sprintf("%5d:", $inext), "\@$srow[$inext],$scol[$inext]", "\+$drow[$inext],$dcol[$inext]"
-                    , "2^$level[$inext]", "$parent[$inext]," . ($parity[$inext] == 0 ? "ev" : "od"), "m$mrow,$mcol") . " -->\n";
-            } 
+                    , "2^$level[$inext]", "$parent[$inext]," . ($parity[$inext] == 0 ? "ev" : "od"), "m$orow,$ocol") . " -->\n";
+            }
         } # valid term1 / substrand found
     } # valid term0 found
 } # split_strand
@@ -172,7 +180,7 @@ sub search_term { # return the column number where $term occurs in row $irow
     my ($irow, $term, $id)  = @_;
     if ($debug >= 2) {
         print STDERR "# start search_term($irow, $term)\n";
-    } 
+    }
     my $icol = 1;
     my $ff_col = 2 * $irow;
     my $busy = $irow <= $maxrow ? 1 : 2; # not (yet) found
@@ -193,6 +201,12 @@ sub get { # return element [$irow, $icol] if it is in the active array, of -1 if
     my ($irow, $icol)  = @_;
     return ($irow <= $maxrow and $icol >= 1 and $icol < 2 * $irow) ? $kear[$irow][$icol] : -1;
 } # get
+#----------------
+sub norm { # return element $irow^2 + $icol^2
+    my ($irow, $icol)  = @_;
+    $icol = (2 * $icol - 1) / 2;
+    return $irow * $irow + $icol * $icol;
+} # norm
 #----------------
 sub fill_next_row { # compute next row [$irow + 1]
     # $orow[$irow] is the element to be expelled
@@ -236,24 +250,120 @@ sub fill_next_row { # compute next row [$irow + 1]
     }
 } # fill_next_row
 #----------------
+sub check_relation { # check various relations between array elements
+    my ($relation, $coord) = @_;
+    my $result = 1;
+    my ($i, $j) = split(/\,/, $coord);
+    if (&get($i, $j) < 1) { # out of range, ignore
+        return;
+    }
+    #--------
+    if (0) {
+    } elsif ($relation == 0) {
+        my $text1 = <<"GFis";
+The first columns occur in the next row in the last columns 
+(backwards in steps of 2, before the constant 3).
+GF Di 2020-07-07
+K[i,2i-4]     = K[i-1,1]
+K[i,2i-6]     = K[i-1,2]
+K[i,2i-8]     = K[i-1,3]
+...
+K[i,2(i-j-1)] = K[i-1,j] for 1 <= j <= 2(i-j-1);  K[18,12] = 12 = K[19,12]
+GFis
+        $i = 1; 
+        while ($result == 1 and $i<= $maxrow) {
+            $j = 1; 
+            while ($result == 1 and $j <= 2 * ($i - $j - 1)) {
+                if ($kear[$i-1][$j] != $kear[$i][2*($i-$j-1)]) {
+                    $result = 0;
+                }
+                $j ++;
+            } # while $j
+            $i ++;
+        } # while $i
+        if ($result == 0) {
+        	$i --;
+        	$j --;
+        }
+    #--------
+    } elsif ($relation == 2) {
+        my $text2 = <<"GFis";
+Bright blue lanes stop before left border, at K[i,1] for i = (2,?) 5,7,9, 13,17,21, 29,37,45 ...,
+and then K[i,i] = K[i,1] + 3.
+GF Di 2020-07-07
+GFis
+        if ($j != 2) {
+            $result = 2; # did not reach left border - ignore
+        } elsif ($kear[$i][$i] != $kear[$i][$j] + 3) {
+            $result = 0;
+        } else {
+            $result = 1;
+        }
+    #--------
+    } elsif ($relation == 3) {
+        my $text3 = <<"GFis";
+Lightblue lanes stop before left border, but continue to the right depending on the stopping column.
+The last element of the continuation is the diagonal element in the row before - 3.
+GF Di 2020-07-07
+GFis
+        $result = 3; # undefined
+        if (0) {
+        } elsif ($j == 1) {
+        	$coord = &line($i + 1, 4, 1, 6, "m3"); # lightgreen, right down
+        	$result = 2; # check below
+        } elsif ($j == 3) {
+        	$coord = &line($i + 1, 2, 1, 6, "m3"); # lightgreen, right down
+        	$result = 2; # check below
+        } elsif ($j == 5) { # diagonal must be +3
+            my $term2 = &get($i, $j);
+            $result = ($term2 + 3 == &get($i, $i)) ? 1 : 0;
+        } else {
+        }
+        if ($result == 2) {
+            my ($i2, $j2) = split(/\,/, $coord);
+            if ($j2 >= 2 * $i2 - 6) {
+                my $term2 = &get($i2, $j2);
+                $result = ($term2 + 3 == &get($i2 - 1, $i2 - 1)) ? 1 : 0;
+            } else { # not at the end of the lane because clip
+            	$result = 2;
+            }
+        }
+    #--------
+    } else {
+        print "<!-- invalid call check_relation($relation) -->\n";
+    } # switch $relat
+
+    if (0) {
+    } elsif ($result == 1) {
+        print "<!-- relation $relation succeeded for (i,j) = ($coord) -->\n";
+    } elsif ($result == 0) {
+        print "<!-- relation $relation FAILED    for (i,j) = ($i,$j), coord = ($coord) -->\n";
+    } else { 
+        # ignore
+    }   
+} # check_relation
+#----------------
 sub set_attributes { # colorize elements which have special attributes
     if ($known > 0) { # known values (delta = 3)
         # last 3 are known
         my $start = 2;
         for (my $i3 = 1; $i3 <= 3; $i3 ++) { # last 3
             #     row     col dr dc
-            &line($start, $i3, 1, 2, "k0"); # was k0
+            &line($start, $i3, 1, 2, "k0");
         } # last 3
-        # known lanes: 3 x {2, 5, 11, 23, 47 ...} starting at delta i = 2^n
+        # known lanes: 3 x {2, 5, 11, 23, 47, 95, 191, 383, 767, 1535, 3071, 6143, 12287, 24575, 49151...} 
+        # (A153893, or A083329(n+1), A055010(n+1), starting at delta i = 2^n
         $start = 3;
         my $delta = 1;
         while ($start <= $maxrow) {
             for (my $i3 = 1; $i3 <= 3; $i3 ++) { # last 3
-                #     row         col            dr  dc
-                &line($start    ,              1, 1,  2, "k1"); # right, down
-                &line($start + 1, $start * 2 - 2, 1, -2, "k2"); # left, down
-                &line($start + 2, $start * 2 - 7, 1, -6, "k3"); # left, down
-                &line($start + 3, $start * 2 -19, 1,-14, "k4"); # left, down
+                #                  row         col            dr  dc  style
+                my $coord1 = &line($start    ,              1, 1,  2, "k1"); # darkblue, right, down
+                my $coord2 = &line($start + 1, $start * 2 - 2, 1, -2, "k2"); # blue, left, down
+                &check_relation(2, $coord2);
+                my $coord3 = &line($start + 2, $start * 2 - 7, 1, -6, "k3"); # lightblue, left, down
+                &check_relation(3, $coord3);
+                my $coord4 = &line($start + 3, $start * 2 -19, 1,-14, "k4"); # lavender, left, down
                 $start += $delta;
             } # last 3
             $start -= $delta;
@@ -261,10 +371,11 @@ sub set_attributes { # colorize elements which have special attributes
             $start += $delta;
         } # while $start <= $maxrow
     } # known values
-    if ($strand > 0) { # |-> means: position in next row; last interesting element is $kear[i][2*i-1]
+    if (1) {
         # main diagonal,   darkred
         &line(  1,  1,  1,  1, "d0"); # 0,0
-
+    }
+    if ($strand > 0) { # |-> means: position in next row; last interesting element is $kear[i][2*i-1]
         # 1st derivatives, crimson
         &line(  3,  1,  2,  1, "d1"); # 1,0               d1,1  |->od0,1  left  4,7,8,9,24,14 ...
         &line(  4,  7,  2,  3, "d1"); # 0,1               d1,3  |->ed0,1  right 10,15,20,18,31 ...
@@ -305,24 +416,29 @@ sub set_attributes { # colorize elements which have special attributes
         &line( 18, 32, 16, 27, "d4"); # 2,5               d4,27 |-> d3,11 6,95
         &line( 16, 31, 16, 29, "d4"); # 0,2               d4,29 |-> d3,13 46,79
         &line( 57,113, 16, 31, "d4"); # -3,-1             d4,31 |-> d3,15 169,216
-    } # places
+    } # strands
 }  # set_attributes
 #----------------
-sub line { # draw the styles for a line
+sub line { # draw the styles for a line; return the position of the last styled cell 
     my ($i1, $j1, $idelta, $jdelta, $style) = @_;
     my $i = $i1;
     my $j = $j1;
-    while ($i <= $maxrow and $j >= 1) {
+    my $oterm = &get($i, $j);
+    my $result = "0,0"; # invalid range
+    my $busy = 1;
+    while ($busy == 1 and $i <= $maxrow and $j >= 1) { # $j does never pass beyond the right border
+        $result = "$i,$j";
         $clar[$i][$j] .= " $style";
-        if ($clar[$i][$j]  =~ m{k|meet}) {
-            # $clar[$i][$j] .= " meet";
-            my $jn = ($i > $j) ? ($i - $j) << 1 : (($j - $i) << 1) - 1;
-            my $in = $i + 1;
-            # $clar[$in][$jn] .= " k1";
-        }
         $i += $idelta;
         $j += $jdelta;
+        my $nterm = &get($i, $j);
+        if (($style !~ m{d}) and ($nterm != $oterm + 3)) {
+            $busy = 0;
+        } else {
+            $oterm = $nterm;
+        }
     } # while
+    return $result;
 } # line
 #----------------
 sub follow_chains {
@@ -431,7 +547,7 @@ sub print_row {
     while ($jcol < $irow * 2) {
         $clar[$irow][$jcol] =~ s{\A\s+}{}; #  remove leading spaces
         if (($clar[$irow][$jcol] =~ s{(\d)}{$1}g) >= 2) { # more than 1 attribute
-           $clar[$irow][$jcol] .= " meet";
+             $clar[$irow][$jcol] .= " meet";
         } # more than 1
         print "<td class=\"$clar[$irow][$jcol]\" title=\"$irow,$jcol\">"
             . &to_base($kear[$irow][$jcol])
@@ -470,51 +586,54 @@ tr,td,th,p
 .frame  { font-size:smaller; background-color: lightgray;}
 .arr    { background-color: lightyellow;}
 /* known values and their derivatives (delta=3) */
-.k0     { background-color:    black;  color: white; font-weight: bold; /* font-style: italic; */ }
-.k1     { background-color: darkblue;  color: white; font-weight: bold; /* font-style: italic; */ }
-.k2     { background-color:     blue;  color: white; font-weight: bold; /* font-style: italic; */ }
-.k3     { background-color: lightblue; color: black; font-weight: bold; /* font-style: italic; */ }
-.k4     { background-color: lavender;  color: black; font-weight: bold; /* font-style: italic; */ }
-.k5     { background-color: lavender;  color: black; font-weight: bold; /* font-style: italic; */ }
+.k0     { background-color:    black;   color: white; font-weight: bold; }
+.k1     { background-color: darkblue;   color: white; font-weight: bold; }
+.k2     { background-color:     blue;   color: white; font-weight: bold; }
+.k3     { background-color: lightblue;  color: black; font-weight: bold; }
+.k4     { background-color: lavender;   color: black; font-weight: bold; }
+.k5     { background-color: lavender;   color: black; font-weight: bold; }
+.m3     { background-color: lightgreen; color: black; font-weight: bold; }
 /* main diagonal and its strands */
-.d0     { background-color: darkred;   color: white; font-weight: bold; }
-.d1     { background-color: crimson;   color: white; }
-.d2     { background-color: orangered; color: white; }
-.d3     { background-color: orange;    color: black; }
-.d4     { background-color: yellow;    color: black; }
+.d0     { background-color: firebrick;  color: white; font-weight: bold; }
+.d1     { background-color: crimson;    color: white; }
+.d2     { background-color: orangered;  color: white; }
+.d3     { background-color: orange;     color: black; }
+.d4     { background-color: yellow;     color: black; }
 .meet /* several lines/colors meet in this element */
-        { background-color: limegreen; color: black; }
+        { border : 1px solid yellow  ; border-radius:  10px;
+        }
 </style>
 </head>
 <body>
 <h3>Kimberling Expulsion Array</h3>
 <table border="0">
 <tr>
-<td class="d0">   &nbsp; &nbsp; &nbsp; </td><td style="text-align:left;">main diagonal (A035505)</td>
-<td class="k0">   &nbsp; &nbsp; &nbsp; </td><td style="text-align:left;">known values</td>
+<td class="d0"      colspan="3"> &nbsp; &nbsp; &nbsp; </td><td colspan="8" style="text-align:left;">main diagonal (A035505)</td>
+<td class="k0"      colspan="3"> &nbsp; &nbsp; &nbsp; </td><td colspan="8" style="text-align:left;">known values</td>
 </tr>
 <tr>
-<td class="d1">   &nbsp; &nbsp; &nbsp; </td><td>1st level derived strands</td>
-<td class="k1">   &nbsp; &nbsp; &nbsp; </td><td style="text-align:left;">1st level known delta 3</td>
+<td class="d1"      colspan="3"> &nbsp; &nbsp; &nbsp; </td><td colspan="8">1st level derived strands</td>
+<td class="k1"      colspan="3"> &nbsp; &nbsp; &nbsp; </td><td colspan="8" style="text-align:left;">1st level known delta 3</td>
 </tr>
 <tr>
-<td class="d2">   &nbsp; &nbsp; &nbsp; </td><td>2nd level derived strands</td>
-<td class="k2">   &nbsp; &nbsp; &nbsp; </td><td style="text-align:left;">2nd level known delta 3</td>
+<td class="d2"      colspan="3"> &nbsp; &nbsp; &nbsp; </td><td colspan="8">2nd level derived strands</td>
+<td class="k2"      colspan="3"> &nbsp; &nbsp; &nbsp; </td><td colspan="8" style="text-align:left;">2nd level known delta 3</td>
 </tr>
 <tr>
-<td class="d3">   &nbsp; &nbsp; &nbsp; </td><td>3rd level derived strands</td>
-<td class="k3">   &nbsp; &nbsp; &nbsp; </td><td style="text-align:left;">3rd level known delta 3</td>
+<td class="d3"      colspan="3"> &nbsp; &nbsp; &nbsp; </td><td colspan="8">3rd level derived strands</td>
+<td class="k3"      colspan="3"> &nbsp; &nbsp; &nbsp; </td><td colspan="8" style="text-align:left;">3rd level known delta 3</td>
 </tr>
 <tr>
-<td class="d4">   &nbsp; &nbsp; &nbsp; </td><td>4th level derived strands</td>
-<td class="k4">   &nbsp; &nbsp; &nbsp; </td><td style="text-align:left;">4th level known delta 3</td>
+<td class="d4"      colspan="3"> &nbsp; &nbsp; &nbsp; </td><td colspan="8">4th level derived strands</td>
+<td class="k4"      colspan="3"> &nbsp; &nbsp; &nbsp; </td><td colspan="8" style="text-align:left;">4th level known delta 3</td>
 </tr>
 <tr>
-<td class="meet"> &nbsp; &nbsp; &nbsp; </td><td style="text-align:left;">crossing with known value</td>
-<td             > &nbsp; &nbsp; &nbsp; </td><td>&nbsp;</td>
+<td class="d0 meet" colspan="3"> &nbsp; &nbsp; &nbsp; </td><td colspan="8" style="text-align:left;">crossing with known value</td>
+<td                            > &nbsp; &nbsp; &nbsp; </td><td colspan="8">base $base (scroll to the right)</td>
 </tr>
+<td                 colspan="3"> &nbsp; &nbsp; &nbsp; </td><td colspan="8" style="text-align:left;"> &nbsp;                  </td>
 </table>
-<p>&nbsp;</p>
+
 <table border="0">
 GFis
 } # print_html_head
@@ -531,8 +650,8 @@ GFis
 __DATA__
 from A035505.txt,active part of Kimberling's expulsion (shuffle) array
 K(i,j)=i+j-1; (j>=2*i-3)
-K(i,j)=K(i-1,i-(j+2)/2); If j is Even and (j<2*i-3)
-K(i,j)=K(i-1,i+(j-1)/2); If j is Odd and (j<2*i-3) (End)
+K(i,j)=K(i-1,i-(j+2)/2); If j is even and (j<2*i-3)
+K(i,j)=K(i-1,i+(j-1)/2); If j is odd  and (j<2*i-3) (End)
 4 2; 6 2 7 4; 8 7 9 2 10 6; ...
 
 k[i   ,2j  ]    = k[i-1,i-(2j+2)/2]
@@ -582,3 +701,11 @@ D3, (i) = k(8i+3 ,11i+5) = D2,0(2i+1)  = 14,6,65
 D3, (i) = k(8i   ,13i+)    = D2,1(2i-1)  = 18,33,62,70
 D3, (i) = k(8i   ,9i)    = D2,1(2i-1)  = 18,33,62,70
 
+            while (&norm
+#                   $mrow >= $drow[$inext]
+#                 or
+#                 0 # $mcol >= $dcol[$inext]
+                  ) {
+                $mrow -= $drow[$inext];
+                $mcol -= $dcol[$inext];
+            } # whil not mod
