@@ -261,7 +261,7 @@ sub check_relation { # check various relations between array elements
     if (0) {
     } elsif ($relation == 0) {
         my $text1 = <<"GFis";
-The first columns occur in the next row in the last columns 
+The first columns occur in the next row in the last columns
 (backwards in steps of 2, before the constant 3).
 GF Di 2020-07-07
 K[i,2i-4]     = K[i-1,1]
@@ -270,9 +270,9 @@ K[i,2i-8]     = K[i-1,3]
 ...
 K[i,2(i-j-1)] = K[i-1,j] for 1 <= j <= 2(i-j-1);  K[18,12] = 12 = K[19,12]
 GFis
-        $i = 1; 
+        $i = 1;
         while ($result == 1 and $i<= $maxrow) {
-            $j = 1; 
+            $j = 1;
             while ($result == 1 and $j <= 2 * ($i - $j - 1)) {
                 if ($kear[$i-1][$j] != $kear[$i][2*($i-$j-1)]) {
                     $result = 0;
@@ -282,14 +282,14 @@ GFis
             $i ++;
         } # while $i
         if ($result == 0) {
-        	$i --;
-        	$j --;
+            $i --;
+            $j --;
         }
     #--------
     } elsif ($relation == 2) {
         my $text2 = <<"GFis";
-Bright blue lanes stop before left border, at K[i,1] for i = (2,?) 5,7,9, 13,17,21, 29,37,45 ...,
-and then K[i,i] = K[i,1] + 3.
+Bright blue lanes stop before the left border, at K[i,2] for i = 5,7,9, 13,17,21, 29,37,45 ...,
+and then K[i,i] = K[i,2] + 3.
 GF Di 2020-07-07
 GFis
         if ($j != 2) {
@@ -309,11 +309,11 @@ GFis
         $result = 3; # undefined
         if (0) {
         } elsif ($j == 1) {
-        	$coord = &line($i + 1, 4, 1, 6, "m3"); # lightgreen, right down
-        	$result = 2; # check below
+            $coord = &line($i + 1, 4, 1, 6, "m3"); # springgreen, right down
+            $result = 2; # check below
         } elsif ($j == 3) {
-        	$coord = &line($i + 1, 2, 1, 6, "m3"); # lightgreen, right down
-        	$result = 2; # check below
+            $coord = &line($i + 1, 2, 1, 6, "m3"); # springgreen, right down
+            $result = 2; # check below
         } elsif ($j == 5) { # diagonal must be +3
             my $term2 = &get($i, $j);
             $result = ($term2 + 3 == &get($i, $i)) ? 1 : 0;
@@ -325,7 +325,50 @@ GFis
                 my $term2 = &get($i2, $j2);
                 $result = ($term2 + 3 == &get($i2 - 1, $i2 - 1)) ? 1 : 0;
             } else { # not at the end of the lane because clip
-            	$result = 2;
+                $result = 2;
+            }
+        }
+    #--------
+    } elsif ($relation == 4) {
+        my $text3 = <<"GFis";
+Lavender lanes stop before left border, but continue to the right depending on the stopping column.
+The last element of the continuation is the diagonal element in the row before - 3.
+GF Mi 2020-07-08
+GFis
+        $result = 4; # undefined
+        if (0) {
+        } elsif ($j ==  1) {
+            $coord = &line($i + 1,12, 1,14, "m4"); # palegreen, right down
+            $result = 2; # check below
+        } elsif ($j ==  3) {
+            $coord = &line($i + 1,10, 1,14, "m4"); # palegreen, right down
+            $result = 2; # check below
+        } elsif ($j ==  5) { 
+            $coord = &line($i + 1, 8, 1,14, "m4"); # palegreen, right down
+            $result = 2; # check below
+        } elsif ($j ==  7) { # does not occur?
+        	print STDERR "# assertion: 7 in relation 4, (i,j) = ($i,$j)\n";
+        } elsif ($j ==  9) { 
+            $coord = &line($i + 1, 4, 1,14, "m4"); # palegreen, right down
+            $result = 2; # check below
+        } elsif ($j == 11) { 
+            $coord = &line($i + 1, 2, 1,14, "m4"); # palegreen, right down
+            $result = 2; # check below
+        } elsif ($j == 13) { # diagonal must be +3
+            my $term2 = &get($i, $j);
+            $result = ($term2 + 3 == &get($i, $i)) ? 1 : 0;
+        } elsif ($j == 15) { 
+            $coord = &line($i + 1, 1, 1,14, "m4"); # palegreen, right down
+            $result = 2; # check below
+        } else {
+        }
+        if (0 and $result == 2) {
+            my ($i2, $j2) = split(/\,/, $coord);
+            if ($j2 >= 2 * $i2 - 6) {
+                my $term2 = &get($i2, $j2);
+                $result = ($term2 + 3 == &get($i2 - 1, $i2 - 1)) ? 1 : 0;
+            } else { # not at the end of the lane because clip
+                $result = 2;
             }
         }
     #--------
@@ -338,9 +381,9 @@ GFis
         print "<!-- relation $relation succeeded for (i,j) = ($coord) -->\n";
     } elsif ($result == 0) {
         print "<!-- relation $relation FAILED    for (i,j) = ($i,$j), coord = ($coord) -->\n";
-    } else { 
+    } else {
         # ignore
-    }   
+    }
 } # check_relation
 #----------------
 sub set_attributes { # colorize elements which have special attributes
@@ -351,7 +394,7 @@ sub set_attributes { # colorize elements which have special attributes
             #     row     col dr dc
             &line($start, $i3, 1, 2, "k0");
         } # last 3
-        # known lanes: 3 x {2, 5, 11, 23, 47, 95, 191, 383, 767, 1535, 3071, 6143, 12287, 24575, 49151...} 
+        # known lanes: 3 x {2, 5, 11, 23, 47, 95, 191, 383, 767, 1535, 3071, 6143, 12287, 24575, 49151...}
         # (A153893, or A083329(n+1), A055010(n+1), starting at delta i = 2^n
         $start = 3;
         my $delta = 1;
@@ -364,6 +407,7 @@ sub set_attributes { # colorize elements which have special attributes
                 my $coord3 = &line($start + 2, $start * 2 - 7, 1, -6, "k3"); # lightblue, left, down
                 &check_relation(3, $coord3);
                 my $coord4 = &line($start + 3, $start * 2 -19, 1,-14, "k4"); # lavender, left, down
+                &check_relation(4, $coord4);
                 $start += $delta;
             } # last 3
             $start -= $delta;
@@ -419,7 +463,7 @@ sub set_attributes { # colorize elements which have special attributes
     } # strands
 }  # set_attributes
 #----------------
-sub line { # draw the styles for a line; return the position of the last styled cell 
+sub line { # draw the styles for a line; return the position of the last styled cell
     my ($i1, $j1, $idelta, $jdelta, $style) = @_;
     my $i = $i1;
     my $j = $j1;
@@ -586,19 +630,20 @@ tr,td,th,p
 .frame  { font-size:smaller; background-color: lightgray;}
 .arr    { background-color: lightyellow;}
 /* known values and their derivatives (delta=3) */
-.k0     { background-color:    black;   color: white; font-weight: bold; }
-.k1     { background-color: darkblue;   color: white; font-weight: bold; }
-.k2     { background-color:     blue;   color: white; font-weight: bold; }
-.k3     { background-color: lightblue;  color: black; font-weight: bold; }
-.k4     { background-color: lavender;   color: black; font-weight: bold; }
-.k5     { background-color: lavender;   color: black; font-weight: bold; }
-.m3     { background-color: lightgreen; color: black; font-weight: bold; }
+.k0     { background-color:    black;    color: white; font-weight: bold; }
+.k1     { background-color: darkblue;    color: white; font-weight: bold; }
+.k2     { background-color:     blue;    color: white; font-weight: bold; }
+.k3     { background-color: lightblue;   color: black; font-weight: bold; }
+.k4     { background-color: lavender;    color: black; font-weight: bold; }
+.k5     { background-color: lavender;    color: black; font-weight: bold; }
+.m3     { background-color: springgreen; color: black; font-weight: bold; }
+.m4     { background-color: greenyellow; color: black; font-weight: bold; }
 /* main diagonal and its strands */
-.d0     { background-color: firebrick;  color: white; font-weight: bold; }
-.d1     { background-color: crimson;    color: white; }
-.d2     { background-color: orangered;  color: white; }
-.d3     { background-color: orange;     color: black; }
-.d4     { background-color: yellow;     color: black; }
+.d0     { background-color: firebrick;   color: white; font-weight: bold; }
+.d1     { background-color: crimson;     color: white; }
+.d2     { background-color: orangered;   color: white; }
+.d3     { background-color: orange;      color: black; }
+.d4     { background-color: yellow;      color: black; }
 .meet /* several lines/colors meet in this element */
         { border : 1px solid yellow  ; border-radius:  10px;
         }

@@ -118,6 +118,23 @@ longer:
 	| perl longer.pl \
 	| tee $@.tmp
 #==========================
+inv160:
+	wget https://oeis.org/b160016.txt -O - | grep -E "^[0-9]" \
+	| perl -ne 'm{(\d+)\s+(\d+)}; print "$$2 $$1\n";' | sort -n | tee $@.tmp
+inv322:
+	wget https://oeis.org/b322469.txt -O - | grep -E "^[0-9]" \
+	| perl -ne 'm{(\d+)\s+(\d+)}; print "$$2 $$1\n";' | sort -n | tee $@.tmp
+i2:
+	perl increasing.pl inv322.tmp | tee b338208.txt
+	perl bf_csv.pl b338208.txt | cut -b1-400 | tee x.tmp
+inv307:
+	wget https://oeis.org/b307048.txt -O - | grep -E "^[0-9]" \
+	| perl -ne 'm{(\d+)\s+(\d+)}; print "$$2 $$1\n";' | sort -n | tee $@.tmp
+bf307:
+	perl a307048.pl $(N) | tee b307048.txt
+	grep -E "^[0-9]" b307048.txt \
+	| perl -ne 'm{(\d+)\s+(\d+)}; print "$$2 $$1\n";' | sort -n | tee inv307.tmp
+#==========================
 # old targets
 
 rails: 
