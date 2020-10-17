@@ -19,53 +19,53 @@ lists: style dirs templates
 #----
 dirs: comp double detail atab degr super roots
 comp: 
-	perl segment.pl         -n $(N)    -d $(D)                 -a comp   > $@.html
+	perl segment.pl       -n $(N) -m $(M)  -d $(D)                 -a comp   > $@.$(M)
 double: 
-	perl segment.pl         -n $(N)    -d $(D)                 -a double > $@.html
+	perl segment.pl       -n $(N) -m $(M)  -d $(D)                 -a double > $@.$(M)
 detail: 
-	perl segment.pl         -n $(N)    -d $(D)                 -a detail > $@.html
+	perl segment.pl       -n $(N) -m $(M)  -d $(D)                 -a detail > $@.$(M)
 super: 
-	perl segment.pl         -n $(N)    -d $(D)                 -a super  > $@.html
+	perl segment.pl       -n $(N) -m $(M)  -d $(D)                 -a super  > $@.$(M)
 roots: root1 root2_18 root2 root3 root4
 root1: 
-	perl segment.pl -r 1    -n $(N)    -d $(D)                 -a comp   > $@.html
+	perl segment.pl -r 1  -n $(N) -m $(M)  -d $(D)                 -a comp   > $@.$(M)
 root2_18: 
-	perl segment.pl -r 2    -n $(N)    -d $(D) -s 4  -i 18     -a comp   > $@.html 
+	perl segment.pl -r 2  -n $(N) -m $(M)  -d $(D) -s 4  -i 18     -a comp   > $@.$(M) 
 root2:  
-	perl segment.pl -r 2    -n $(N)    -d $(D) -s 1  -i 3      -a comp   > $@.html 
+	perl segment.pl -r 2  -n $(N) -m $(M)  -d $(D) -s 1  -i 3      -a comp   > $@.$(M) 
 root3:  
-	perl segment.pl -r 3    -n $(N)    -d $(D) -s 1  -i 3      -a comp   > $@.html 
+	perl segment.pl -r 3  -n $(N) -m $(M)  -d $(D) -s 1  -i 3      -a comp   > $@.$(M) 
 root4:  
-	perl segment.pl -r 4    -n $(N)    -d $(D) -s 1  -i 3      -a comp   > $@.html 
+	perl segment.pl -r 4  -n $(N) -m $(M)  -d $(D) -s 1  -i 3      -a comp   > $@.$(M) 
 
 t7_13_18:
-	perl segment.pl         -n $(N)    -d $(D) -s 7,13    -i 18   -a comp   > $@.html
+	perl segment.pl       -n $(N) -m $(M)  -d $(D) -s 7,13    -i 18   -a comp   > $@.$(M)
 t10_18:                                                   
 	# only lhs is yellow ("ending")
-	perl segment.pl         -n $(N)    -d $(D) -s 10      -i 18   -a comp   > $@.html
+	perl segment.pl       -n $(N) -m $(M)  -d $(D) -s 10      -i 18   -a comp   > $@.$(M)
 t16_18:                                                   
 	# yellow target                                       
-	perl segment.pl         -n $(N)    -d $(D) -s 16      -i 18   -a comp   > $@.html
+	perl segment.pl       -n $(N) -m $(M)  -d $(D) -s 16      -i 18   -a comp   > $@.$(M)
 r9_10:                                                    
 	# rules 9, 10; rather structured                
-	# perl segment.pl         -n $(N)    -d $(D) -s 10,22   -i 24   -a comp   > $@.html
-	perl segment.pl         -n $(N)    -d $(D) -s 2,6     -i 8    -a comp   > $@.html
+	# perl segment.pl       -n $(N) -m $(M)  -d $(D) -s 10,22   -i 24   -a comp   > $@.$(M)
+	perl segment.pl       -n $(N) -m $(M)  -d $(D) -s 2,6     -i 8    -a comp   > $@.$(M)
 #----                                                     
 degr: degree2 degree3 degree4                                    
 degree2:                                                  
-	perl segment.pl         -n $(N)    -d $(D) -s 4       -i 6    -a comp   > $@.html
+	perl segment.pl       -n $(N) -m $(M)  -d $(D) -s 4       -i 6    -a comp   > $@.$(M)
 degree3:                                                  
-	perl segment.pl         -n $(N)    -d $(D) -s 22      -i 36   -a comp   > $@.html
+	perl segment.pl       -n $(N) -m $(M)  -d $(D) -s 22      -i 36   -a comp   > $@.$(M)
 degree4:                                                  
-	perl segment.pl         -n $(N)    -d $(D) -s 22      -i 108  -a comp   > $@.html
+	perl segment.pl       -n $(N) -m $(M)  -d $(D) -s 22      -i 108  -a comp   > $@.$(M)
 #----                                                     
 t18:                                                      
-	perl segment.pl         -n 10000   -d $(D) -s 7,16    -i 18   -a comp   > $@.html
+	perl segment.pl         -n 10000   -d $(D) -s 7,16    -i 18   -a comp   > $@.$(M)
 tests: test1 test2                                        
 test1:                                                    
-	perl segment.pl         -n 100000  -d $(D) -m tsv             -a test1 | tee $@.html
+	perl segment.pl         -n 100000  -d $(D) -m tsv             -a test1 | tee $@.$(M)
 test2:                                                    
-	perl segment.pl         -n 100000  -d $(D) -m tsv             -a test2 | tee $@.html
+	perl segment.pl         -n 100000  -d $(D) -m tsv             -a test2 | tee $@.$(M)
 #----
 style:
 	perl segment.pl -a style | tee stylesheet.css
@@ -134,24 +134,27 @@ bf307:
 	perl a307048.pl $(N) | tee b307048.txt
 	grep -E "^[0-9]" b307048.txt \
 	| perl -ne 'm{(\d+)\s+(\d+)}; print "$$2 $$1\n";' | sort -n | tee inv307.tmp
+eval_root2:
+	make root2 M=tsv # N=
+	perl eval_root2.pl root2.tsv | sort | tee $@.tmp
 #==========================
 # old targets
 
 rails: 
-	perl collatz_rails.pl   -n $(N)    -d $(D) -s $(S) -i $(I) -a simple > rails.html
+	perl collatz_rails.pl -n $(N) -m $(M)  -d $(D) -s $(S) -i $(I) -a simple > rails.html
 eawefr: west east free
 west: 
-	perl collatz_rails.pl   -n $(N)    -d $(D) -s $(S) -i $(I) -a west   > west.html
+	perl collatz_rails.pl -n $(N) -m $(M)  -d $(D) -s $(S) -i $(I) -a west   > west.html
 east: 
-	perl collatz_rails.pl   -n $(N)    -d $(D) -s $(S) -i $(I) -a east   > east.html
+	perl collatz_rails.pl -n $(N) -m $(M)  -d $(D) -s $(S) -i $(I) -a east   > east.html
 free: 
-	perl collatz_rails.pl   -n $(N)    -d $(D) -s $(S) -i $(I) -a free   > free.html
+	perl collatz_rails.pl -n $(N) -m $(M)  -d $(D) -s $(S) -i $(I) -a free   > free.html
 crop: 
-	perl collatz_rails.pl   -n $(N)    -d $(D) -s $(S) -i $(I) -a crop   > crop.html
+	perl collatz_rails.pl -n $(N) -m $(M)  -d $(D) -s $(S) -i $(I) -a crop   > crop.html
 roads: 
-	perl collatz_roads.pl   -n $(N)    -d $(D) -s $(S) -i $(I) -a contig > roads.html
+	perl collatz_roads.pl -n $(N) -m $(M)  -d $(D) -s $(S) -i $(I) -a contig > roads.html
 txt:
-	perl collatz_roads.pl   -n $(N)    -d $(D) -s $(S) -i $(I) -a contig -m tsv > roads.txt
+	perl collatz_roads.pl -n $(N) -m $(M)  -d $(D) -s $(S) -i $(I) -a contig -m tsv > roads.txt
 fract6:
 	perl collatz_fract6.pl  -n $(N)    -s 4    -i 6    | tee fract6.html
 sub4mod6:

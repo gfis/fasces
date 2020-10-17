@@ -602,7 +602,7 @@ sub get_cell_html { # get the HTML of one table cell
     my $result = "<td";
     if ($id ne "") {
         my $rooted_id = &segm_root($id);
-        $result .= " id=\"$rooted_id\" debug=\"1\"";
+        $result .= " id=\"$rooted_id\"";
     }
     my $degree = &get_degree($elem);
     if ($degree >= 1) {
