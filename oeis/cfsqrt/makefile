@@ -1,15 +1,20 @@
 #!/bin/make
 
-# Continued fractrions of sqrt(n)
+# Continued fractions of sqrt(n)
 # @(#) $Id$
+# 2021-02-18: sqrt20k.txt
 # 2019-06-30, Georg Fischer
 #
 GITS=../../..
 COMMON=$(GITS)/OEIS-mat/common
-CFSQ= sqrt20k.txt
+CFSQ=sqrt20k.txt
 
 all:
 
+sqrt20k:
+	java -cp ../../../ramath/dist/ramath.jar org.teherba.ramath.ContinuedFraction -sqrt2 0 20000 \
+	> $@.txt
+#----
 # Central element(s) in continued fraction expansion of sqrt(n) or 0 if no such element exists or -1 if n is a square
 b308778:
 #----
