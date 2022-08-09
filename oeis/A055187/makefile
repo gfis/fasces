@@ -4,7 +4,7 @@
 # "cumulative counting" sequences as defined by Clark Kimberling.
 # http://faculty.evansville.edu/ck6/integer/unsolved.html, Problem 4
 # @(#) $Id$
-# 2018-04-27, Georg Fischer (previosu version in makefile2)
+# 2018-04-27, Georg Fischer (previous version in makefile2)
 #
 # C.f. listing.tmp (produced by target "listing", below)
 # Needs cumulcount.pl in current directory, and
@@ -352,6 +352,15 @@ listing:
 	make -s all TARGET=list1 | sort \
 	| tee listing.tmp
 	wc -l listing.tmp
+#--------
+gen1:
+	perl cumulcount.pl -m $(METHOD) -r $(ROW) -n $(NOEIS) -l $(LEN) -a $(APPEAR) -f $(FIRST) -o $(OFFSET) -s $(START) -p $(PARM) -w $(WITH0) -d 98
+#	echo " " [https://oeis.org/A$(NOEIS) A$(NOEIS)] Rule $(RULE).$(ROW) $(ORD) $(P1) $(P2) " "\
+#	`wc -l b$(NOEIS).txt | cut -d " " -f 1`
+gen:
+	make -s all TARGET=gen1 | sort \
+	| tee $@.tmp
+	wc -l $@.tmp
 #--------
 # e.g. https://oeis.org/search?q=id:A257908&fmt=text
 intern1:

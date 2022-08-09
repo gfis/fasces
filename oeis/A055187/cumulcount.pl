@@ -4,6 +4,7 @@
 # "cumulative counting" sequences as defined by Clark Kimberling.
 # http://faculty.evansville.edu/ck6/integer/unsolved.html, Problem 4
 # @(#) $Id$
+# 2022-01-13: debug=98 -> seq4 format
 # 2018-04-20, Georg Fischer (previosu version in cumulcount2.pl)
 #------------------------------------------------------
 # Comment from A217760:
@@ -85,13 +86,17 @@ while (scalar(@ARGV) > 0) {
 } # while ARGV
 
 if ($debug == 99) {
-	print " [http://oeis.org/A$noeis A$noeis] $method $start $appear $row";
-	if ($offset != 1) { print " offset=$offset"; }
-	if ($first  != 0) { print " first=$first"; }
-	if ($parm   != 0) { print " parm=$parm"; }
-	if ($with0  != 0) { print " with0=$with0"; }
-	print "\n";
-	exit(0);
+    print " [http://oeis.org/A$noeis A$noeis] $method $start $appear $row";
+    if ($offset != 1) { print " offset=$offset"; }
+    if ($first  != 0) { print " first=$first"; }
+    if ($parm   != 0) { print " parm=$parm"; }
+    if ($with0  != 0) { print " with0=$with0"; }
+    print "\n";
+    exit(0);
+}
+if ($debug == 98) { # seq4 format
+    print join("\t", "A$noeis", "cumulcnt", $offset, $method, $start, $appear, $row, $first, $with0, $parm) . "\n";
+    exit(0);
 }
 my ($sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst)
     = localtime (time);
@@ -140,9 +145,9 @@ if (0) {
     $seqlen[0] = 0;
 } elsif ($method =~ m{[S]}i) {
 } elsif ($method =~ m{[T]}i) {
-	if ($noeis eq "240508") {
-    	print "$k 1\n"; $k ++;
-	}
+    if ($noeis eq "240508") {
+        print "$k 1\n"; $k ++;
+    }
 } else {
     die "invalid method \"$method\" at bf(1)\n";
 }
@@ -176,16 +181,16 @@ sub advance { # count between 0 and $nmax, and store in @counts
         } # while incrementing
     } # segment length
     
-if ($debug >= 1) {
-    print "seg#$segno:";
-    for ($iseg = $first; $iseg < scalar(@segment); $iseg += 2) { # print the elements of this segment
-        $attr = $segment[$iseg + 0];
-        $noun = $segment[$iseg + 1];
-        print " $attr.$noun";
-    } # while copying
-    print "   seqlen=$seqlen[$segno]\n";
-    print "app1st: " . join(" ", @app1st) . "\n"; 
-} # debug
+    if ($debug >= 1) {
+        print "seg#$segno:";
+        for ($iseg = $first; $iseg < scalar(@segment); $iseg += 2) { # print the elements of this segment
+            $attr = $segment[$iseg + 0];
+            $noun = $segment[$iseg + 1];
+            print " $attr.$noun";
+        } # while copying
+        print "   seqlen=$seqlen[$segno]\n";
+        print "app1st: " . join(" ", @app1st) . "\n"; 
+    } # debug
 
     # now the b-file entries
     if (0) {
@@ -221,17 +226,17 @@ if ($debug >= 1) {
         }
 
     } elsif ($method =~ m{[D]}i) { # new terms (for $appear eq "fa")
-            if ($debug >= 1) {
-                print "range " . ($seqlen[$segno - 1]) . ".." . ($seqlen[$segno] - 1) . "\n";
+        if ($debug >= 1) {
+            print "range " . ($seqlen[$segno - 1]) . ".." . ($seqlen[$segno] - 1) . "\n";
+        }
+        for (my $iapp = $seqlen[$segno - 1]; $iapp < $seqlen[$segno]; $iapp ++) {
+            $iseg = $app1st[$iapp] << 1;
+            $attr = $segment[$iseg + 0];
+            $noun = $segment[$iseg + 1];
+            if ($attr != 0 or ($with0 & 1) != 0) {
+                &bfile($attr, $noun); 
             }
-            for (my $iapp = $seqlen[$segno - 1]; $iapp < $seqlen[$segno]; $iapp ++) {
-                $iseg = $app1st[$iapp] << 1;
-                $attr = $segment[$iseg + 0];
-                $noun = $segment[$iseg + 1];
-                if ($attr != 0 or ($with0 & 1) != 0) {
-                    &bfile($attr, $noun); 
-                }
-            } # for
+        } # for
 
     } elsif ($method =~ m{[N]}i) { # no. of new terms in segment
         &bfile($seqlen[$segno] - $seqlen[$segno - 1]);
@@ -283,21 +288,21 @@ if ($debug >= 1) {
 } # sub advance
 #----------------
 sub assemble {
-            my ($iseg) = @_;
-            $attr = $segment[$iseg + 0];
-            $noun = $segment[$iseg + 1];
-            if (($attr != 0 or ($with0 & 1) != 0) and ($row != 6)) {
-                if ($count[$attr] == 0) { # appears for the first time
-                    push(@app1st, $attr);
-                }
-                $count[$attr] ++;
-            }
-            if (($attr != 0 or ($with0 & 1) != 0) and ($noun != 0 or ($with0 & 2) != 0) and ($row != 5)) {
-                $count[$noun] ++;
-            }
-            if ($attr == 0 and $noeis eq "079668") {
-            	$first = 0;
-            }
+    my ($iseg) = @_;
+    $attr = $segment[$iseg + 0];
+    $noun = $segment[$iseg + 1];
+    if (($attr != 0 or ($with0 & 1) != 0) and ($row != 6)) {
+        if ($count[$attr] == 0) { # appears for the first time
+            push(@app1st, $attr);
+        }
+        $count[$attr] ++;
+    }
+    if (($attr != 0 or ($with0 & 1) != 0) and ($noun != 0 or ($with0 & 2) != 0) and ($row != 5)) {
+        $count[$noun] ++;
+    }
+    if ($attr == 0 and $noeis eq "079668") {
+        $first = 0;
+    }
 } # assemble
 #----------------
 sub bfile {

@@ -219,3 +219,17 @@ once3:
 #-----------------------
 coin:
 	perl mod_coin.pl | tee coin2.txt
+#-----------------------
+# new 2022-01-20
+detailoss:
+	perl segment.pl -m tsv -a detail -n 1000 | grep -vE "^\#" | cut -f 6- \
+	| perl -ne 'print join("\n", split(/\t/));' \
+	| sort -n \
+	| tee $@.tmp
+detailossa:
+	perl segment.pl -m tsv -a detail -n 1000 | grep -vE "^\#" | cut -f 2- \
+	| perl -ne 'print join("\n", split(/\t/));' \
+	| sort -n \
+	| uniq -c \
+	| sed -e "s/ 1 /   /" \
+	| tee $@.tmp
