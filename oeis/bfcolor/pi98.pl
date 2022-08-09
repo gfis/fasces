@@ -70,14 +70,23 @@ if (0) {
 }
 print <<"GFis";
 </pre>
+
 </body>
+<table width="720px"><tr><td>
+This image was created for Veronika Fischer on her forty-first birthday. 
+The square of sixty-four rows with sixty-four columns shows the first four thousand ninety-six 
+decimal digits of Archimedes&apos; number <strong>&pi; (Pi)</strong>, the most important transcendental mathematical constant.
+The digits below six are shown in red, while the other digits are in orange, and occurences 
+of the digit pairs nine, eight are successively highlighted.
+</td></tr>
+</table>
 </html>
 GFis
 #----
 sub out1 {
     my ($ch, $class) = @_;
     if ($class ne $old_class) {
-        print "</span><span class=\"$class\""
+        print "</span><span class=\"$class\"";
         if ($class eq "c98") {
             $id ++;
             print " id=\"$id\"";
@@ -113,8 +122,8 @@ sub get_html_head {
 <style type="text/css">
 body,table,p,td,th
         { font-family: Lucida console,monospace; font-weight: normal; font-size: 10px; line-height: 10px }
-table   { border-collapse: collapse; }
-td      { padding-right: 4px; }
+table   { border-collapse: collapse; font-family: Arial }
+td      { padding-left: 10px; }
 tr,td,th{ text-align: left; vertical-align:top; }
 .cn     { color: black        ;  background-color: white  ; }
 .c0,.c1,.c2,.c3,.c4
@@ -122,17 +131,31 @@ tr,td,th{ text-align: left; vertical-align:top; }
 .c5,.c6,.c7,.c8,.c9
         { color: firebrick    ;  background-color: orange    ; }
 .c98
-        { color: lightyellow  ;  
-          animation: mymove 1s infinite;
-        }
-\@keyframes mymove {
-    0\%  {background-color: darkred;}
-   50\%  {background-color: indianred;}
-  100\%  {background-color: darksalmon;}
-}
+        { color: orange       ;  background-color: firebrick ; }
+.c98i
+        { color: black        ;  background-color: yellow      }
 </style>
 </head>
-<body>
+<script language="javascript">
+function delay(){
+    return new Promise((resolve) => {
+         setTimeout(() => resolve(), 1600)
+    });
+}
+async function high98() 
+{
+  while (true) 
+  {
+    for (var ix=1; ix <= 49; ix ++){
+          var elem =  document.getElementById(ix)
+          elem.className = "c98i";
+          await delay();
+          elem.className = "c98";
+    }
+  }
+}
+</script>
+<body onload="high98()">
 <pre>
 GFis
 } # get_html_head
@@ -143,33 +166,14 @@ __DATA__
 .c5,.c6,.c7,.c8,.c9
         { color: white  ;  background-color: red    ; }
 
-
-
-.c0,.c2,.c4,.c6,.c8
-        { color: black  ;  background-color: yellow ; }
-.c1,.c3,.c5,.c7,.c9
-        { color: white  ;  background-color: red    ; }
-
-
-
-.c0     { color: black  ;  background-color: yellow ; }
-.c1     { color: black  ;  background-color: lime   ; }
-.c2     { color: black  ;  background-color: red    ; }
-.c3     { color: yellow ;  background-color: blue   ; }
-.c4     { color: white  ;  background-color: fuchsia; }
-.c5     { color: white  ;  background-color: green  ; }
-.c6     { color: yellow ;  background-color: purple ; }
-.c7     { color: black  ;  background-color: aqua   ; }
-.c8     { color: red    ;  background-color: silver ; }
-.c9     { color: white  ;  background-color: black  ; }
-                           
-.d0     { color: yellow ;  background-color: yellow ; }
-.d1     { color: lime   ;  background-color: lime   ; }
-.d2     { color: red    ;  background-color: red    ; }
-.d3     { color: blue   ;  background-color: blue   ; }
-.d4     { color: fuchsia;  background-color: fuchsia; }
-.d5     { color: green  ;  background-color: green  ; }
-.d6     { color: purple ;  background-color: purple ; }
-.d7     { color: aqua   ;  background-color: aqua   ; }
-.d8     { color: silver ;  background-color: silver ; }
-.d9     { color: black  ;  background-color: black  ; }
+/*
+.c98
+        { color: lightyellow  ;  
+          animation: mymove 1s infinite;
+        }
+\@keyframes mymove {
+    0\%  {background-color: darkred;}
+   50\%  {background-color: indianred;}
+  100\%  {background-color: darksalmon;}
+}
+*/
