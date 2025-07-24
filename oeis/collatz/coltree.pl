@@ -13,7 +13,7 @@
 #       -m  output mode: tsv, htm (no css), htm[l], latex
 #       -p  2**p is the maximum node on the main branch
 #       -r  2**r is the maximum level of dependant branches
-#       -s  
+#       -s
 #--------------------------------------------------------
 use strict;
 use integer;
@@ -30,7 +30,7 @@ my $action = "detail";
 my $debug  = 0;
 my $mode   = "html";
 my $pmax   = 24;
-my $rmax   = 16;
+my $rmax   = 64;
 my $start  = 0;
 while (scalar(@ARGV) > 0 and ($ARGV[0] =~ m{\A\-})) {
     my $opt = shift(@ARGV);
@@ -62,18 +62,19 @@ my %text   =
 &print_html_header();
 &print_preface();
 #----------------
-my @arr = ();
-my @asig = ();
+my @arrs = ();
+my @aops = ();
 &powRow();
 &divRow(0);
-&mulRow(1);
+# &mulRow(1);
 my $irow = 1;
 while ($irow < $rmax) { # expand each row
-    if ($asig[$irow] =~ m{d\Z}) { # created by "divRow", odd terms
+    if ($aops[$irow] =~ m{d\Z}) { # created by "divRow", odd terms
         &mulRow($irow);
+        # &divRow($irow);
     } else { # created by "mulRow", even terms
-        &divRow($irow);
         &mulRow($irow);
+        &divRow($irow);
     }
     $irow ++;
 } # while expanding
@@ -83,34 +84,34 @@ exit(0);
 #----------------
 sub powRow { # create a row with powers of 2
     my @row = ();
-    my $pow2 = 1;
+    my $pow2 = 16;
     for (my $icol = 0; $icol < $pmax; $icol ++) {
         $row[$icol] = $pow2;
-        $pow2 *= 2;
+        $pow2 *= 4;
     } # for $icol
-    push(@arr, [ @row ]);
-    push(@asig, "");
+    push(@arrs, [ @row ]);
+    push(@aops, "");
 } # powRow
 #----------------
 sub mulRow { # multiply a row by 2
     my ($irow) = @_;
     my @row = ();
     for (my $icol = 0; $icol < $pmax; $icol ++) {
-        $row[$icol] = $arr[$irow][$icol] * 2;
+        $row[$icol] = $arrs[$irow][$icol] * 2;
     } # for $icol
-    push(@arr, [ @row ]);
-    push(@asig, $asig[$irow] . "m");
+    push(@arrs, [ @row ]);
+    push(@aops, $aops[$irow] . "n");
 } # mulRow
 #----------------
 sub divRow { # subtract 1 and try to divide by 3
     my ($irow) = @_;
     my @row = ();
     for (my $icol = 0; $icol < $pmax; $icol ++) {
-        my $sub1 = $arr[$irow][$icol] - 1;
+        my $sub1 = $arrs[$irow][$icol] - 1;
         $row[$icol] = ($sub1 % 3 == 0) ? $sub1 / 3 : 0;
     } # for $icol
-    push(@arr, [ @row ]);
-    push(@asig, $asig[$irow] . "d");
+    push(@arrs, [ @row ]);
+    push(@aops, $aops[$irow] . "d");
 } # mulRow
 #----------------
 sub printArray { # print the whole array
@@ -119,19 +120,24 @@ sub printArray { # print the whole array
         # print "<table>\n";
     } elsif ($mode =~ m{\Atsv}) {
     }
-    for (my $irow = 0; $irow < scalar(@arr); $irow ++) {
+    for (my $irow = 0; $irow < scalar(@arrs); $irow ++) {
         if (0) {
         } elsif ($mode =~ m{\Ahtm}) {
-            print "<tr><td class=\"bor\">$asig[$irow]";
+            print "<tr><td class=\"bor\">$aops[$irow]";
         } elsif ($mode =~ m{\Atsv}) {
             print "\n";
         }
         for (my $icol = 0; $icol < $pmax; $icol ++) {
             if (0) {
             } elsif ($mode =~ m{\Ahtm}) {
-                print "</td><td class=\"bor\">$arr[$irow][$icol]";
+                my $elem = $arrs[$irow][$icol];
+                if ($elem == 0) {
+                    print "</td><td class=\"bor\">";
+                } else {
+                    print "</td><td class=\"bor\" title=\"" . sprintf("%b", $elem) . "\">$elem";
+                }
             } elsif ($mode =~ m{\Atsv}) {
-                print "\t" . $arr[$irow][$icol];
+                print "\t" . $arrs[$irow][$icol];
             }
         } # for $icol
         if (0) {
@@ -275,7 +281,7 @@ GFis
 <p>
 Generated with
 <a href="https://github.com/gfis/fasces/blob/master/oeis/collatz/coltree.pl" target="_blank">coltree.pl</a>
-$VERSION at $TIMESTAMP; 
+$VERSION at $TIMESTAMP;
 </p>
 <table style=\"border-collapse: collapse; text-align: right;  padding-right: 4px;\">
 GFis
@@ -366,3 +372,12 @@ GFis
 } # print_trailer
 #================================
 __DATA__
+
+dndnd 151         39768215                        10424999137431
+      10010111    10010111 1011010000 10010111    10010111 1011010000 10010111 1011010000 10010111
+      
+dnndnd			75									19884107									5212499568715
+      			1001011								1001011 11011010000 1001011					1001011 11011010000 1001011 11011010000 1001011
+      			
+dndnnd							19417									5090331609									1334399889591257	
+								100101111011001							100101111011010000 100101111011001			100101111011010000 100101111011010000 100101111011001
