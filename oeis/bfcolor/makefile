@@ -17,7 +17,8 @@ bfcolors:
 	make bfcolor1 FILE=b116229
 bfcolor1:
 	perl bfcolorize.pl -b $(FILE) \
-	| tidy --quiet yes --replace-color yes -o $(FILE).html
+	| tidy --quiet yes --replace-color yes -o $(FILE).html 
+	chmod 775 $(FILE).html
 #------------
 deploy: 
 	scp bfcolor4.html gfis@punctum.com:/var/www/html/teherba.org/fasces/oeis/bfcolor

@@ -30,7 +30,7 @@ while (scalar(@ARGV) > 0 and ($ARGV[0] =~ m{\A[\-\+]})) {
         die "invalid option \"$opt\"\n";
     }
 } # while $opt
-
+#--------
 # read the matrices
 my @planes = ();
 my @plane = ( # default planes[0]
@@ -43,12 +43,12 @@ while(<>) {
   s/\s+\Z//;
   my $line = $_;
   #                1   1
-  if ($line =~ m{\[(\d+)\]}) { # array element line
+  if ($line =~ m{\[(\d+)\]}) { # plane header line
     $ipla = $1;
     push(@planes, [@plane]); # previous accumulated plane
     @plane = ();
     #                          (1       1
-  } elsif ($line =~ m{\A[\(\,]\(([01\,\-]+)}) {
+  } elsif ($line =~ m{\A[\(\,]\(([01\,\-]+)}) { # line with matrix elements
     my @terms = map {
           if ($_ ne "1") {
             $_ = 0;
@@ -103,23 +103,7 @@ if (0) {
   } # for $ipla
 
 } elsif ($mode =~ m{square}) { # condensed notation for 2x2 cells 
-  my 
-  %codes = 
-    ( 14, "F"
-    ,  1, "."
-    , 11, "L"
-    ,  4, "l"
-    , 13, "T"
-    ,  8, "j"
-    ,  7, "J"
-    ,  2, "t"
-    , 12, "="
-    , 15, "#"
-    ,  6, "/"
-    ,  9, "\\"
-    ,  0, "_"
-    , 10, "|"
-    );
+  my %codes;
   %codes = 
     ( 14, "\x{259b}" # F
     ,  1, "\x{2597}" # .
@@ -136,7 +120,43 @@ if (0) {
     ,  0, "\x{2591}" # ' '
     , 10, "\x{258c}" # '|'
     );
-  for my $ipla (0..$#planes) {  
+  %codes = 
+    (  0, " "
+    ,  1, "."
+    ,  2, "t"
+    ,  3, "_"
+    ,  4, "l"
+    ,  5, "I"
+    ,  6, "/"
+    ,  7, "J"
+    ,  8, "j"
+    ,  9, "\\"
+    , 10, "|" 
+    , 11, "L"
+    , 12, "="
+    , 13, "T"
+    , 14, "F"
+    , 15, "#"
+    );
+  %codes = 
+    (  0, "0"
+    ,  1, "1"
+    ,  2, "2"
+    ,  3, "3"
+    ,  4, "4"
+    ,  5, "5"
+    ,  6, "6"
+    ,  7, "7"
+    ,  8, "8"
+    ,  9, "9"
+    , 10, "a" 
+    , 11, "b"
+    , 12, "c"
+    , 13, "d"
+    , 14, "e"
+    , 15, "f"
+    );
+  for my $ipla (1..$#planes) {  
     my $rowlen = $#{$planes[$ipla][0]} + 1; 
     my %counts = ();
     print "# planes[$ipla], rowlen=$rowlen\n";

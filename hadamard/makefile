@@ -13,10 +13,10 @@ all:
 	grep -P "^[a-z]" makefile
 #-------------------------------------------------------------------
 prep: # prepare the matrices obtained from SageMath
-	perl hadamard_prep.pl from_sage_1-11.4.txt | tee planes.inc
+	perl hadamard_prep.pl from_sage_1-26.txt | tee planes.inc
 
 #--
-ortho: # test for orthogonality
-	perl ortho_test.pl -d $(D)
+square: # show notation for 2x2 blocks
+	perl hadamard.pl -d $(D) -m square planes.inc | tee x.tmp
 #--------------------------------------
 

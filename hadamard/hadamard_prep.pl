@@ -22,21 +22,22 @@ while (scalar(@ARGV) > 0 and ($ARGV[0] =~ m{\A[\-\+]})) {
     }
 } # while $opt
 
+if (0) {
 print <<GFis;
 my \@planes = ();
 \$planes[0] = 
 ((1,1)
 ,(1,0)
 GFis
-
+}
 my $iplane = 0;
 my $sep;
 while (<>) {
   s/\s+\Z//; # chompr
   my $line = $_;
   if (0) {
-  } elsif ($line =~ m{\A(\d+)\s*\=\=}) { # plane index
-    $iplane = $1 / 4;
+  } elsif ($line =~ m{\Aplanes\D*(\d+)}) { # plane index
+    $iplane = $1;
     print ");\n";
     $sep = "(";
     print "\$planes[$iplane] = \n";
