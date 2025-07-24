@@ -8,7 +8,7 @@
 all: 
 	echo either make deploy-windows or make deploy-linux
 deploy-windows:
-	cp -v *.js *.html *.css c:/users/gfis/xampp/htdocs/threejs
+	cp -v *.js *.html *.css c:/xampp/htdocs/threejs
 deploy-linux:
 	sudo cp -v *.js *.html *.css         /var/www/html/threejs
 	sudo chown -R georg:www-data         /var/www/html/threejs/*
