@@ -9,6 +9,20 @@
 use strict;
 use integer;
 use warnings;
+my $debug = 0;
+my $mode  = "dump";
+while (scalar(@ARGV) > 0 and ($ARGV[0] =~ m{\A[\-\+]})) {
+    my $opt = shift(@ARGV);
+    if (0) {
+    } elsif ($opt  =~ m{d}) {
+        $debug     = shift(@ARGV);
+    } elsif ($opt  =~ m{m}) {
+        $mode      = shift(@ARGV);
+    } else {
+        die "invalid option \"$opt\"\n";
+    }
+} # while $opt
+#--------
 #----
 # read the raw matrix (hex codes for 2x2 blocks)
 # read the matrices
@@ -19,31 +33,42 @@ my @plane = ( # default planes[0]
 );
 
 my $ipla = -1;
-while(<DATA>) {
+while(<>) {
   s/\s+\Z//;
   my $line = $_;
   #                1   1
   if ($line =~ m{\[(\d+)\]}) { # plane header line
     $ipla = $1;
     push(@planes, [@plane]); # previous accumulated plane
-    @plane = ();
-    #                          (1       1
+    @plane = (); 
+    if ($debug >= 1) {
+      print STDERR "# reading planes[$ipla]\n";
+    }
   } elsif ($line =~ m{\A[0-9a-z]+}) { # line with block codes
     my @terms = split(//, $line);
     push(@plane, [@terms]);
   }
 } # while <>
 push(@planes, [@plane]); # last accumulated plane
-my $rowlen = $ipla * 2; # should be *4, but we read codes [0-9a-f] for 16 possible condensed 2x2 blocks
-#--------
-# print the SVG header
-my $width  = 1600;
-my $height = $width;
+
+if (1) {
+  for my $ipla (1..$#planes) {
+    &svg_print($ipla);
+  } # for $ipla
+}
+#----
+sub svg_print {
+    my ($ipla) = @_;
+    my $rowlen = $ipla * 2; # should be *4, but we read codes [0-9a-f] for 16 possible condensed 2x2 blocks
+    my $width  = 1600;
+    my $height = $width;
     my $dx = 1;
     my $dy = $dx;
     my $w  = 1;
     my $h  = $w;
-print <<"GFis";
+    my $filename = "hadamard.$ipla.svg";
+    open(SVG, ">", $filename) || die "cannot write $filename\n";
+    print SVG <<"GFis";
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.0//EN"
  "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd" [
@@ -59,22 +84,22 @@ print <<"GFis";
   >
   <defs>
     <style type="text/css"><![CDATA[
-      .k0 { fill: black           }
-      .k1 { fill: lightblue       }
+      .k0 { fill: dimgray         }
+      .k1 { fill: lightcoral      }
       .k2 { fill: lightgreen      }
-      .k3 { fill: lightred        }
-      .k4 { fill: lightyellow     }
+      .k3 { fill: lightblue       }
+      .k4 { fill: lemonchiffon    }
       .k5 { fill: lightorange     }
-      .k6 { fill: lightmagenta    }
+      .k6 { fill: magenta         }
       .k7 { fill: cyan            }
       .k8 { fill: darkcyan        }
       .k9 { fill: darkmagenta     }
       .ka { fill: darkorange      }
-      .kb { fill: darkyellow      }
-      .kc { fill: crimson         }
+      .kb { fill: yellow          }
+      .kc { fill: mediumblue      }
       .kd { fill: forestgreen     }
-      .ke { fill: darkblue        }
-      .kf { fill: white           }
+      .ke { fill: crimson         }
+      .kf { fill: seashell        }
       rect {
           stroke: black;  stroke-width: 0.02;
           width:  $w;
@@ -85,27 +110,24 @@ print <<"GFis";
 <title>Hadamard matrix $ipla</title>
 <g style="font-size:10">
 GFis
-
-if (1) {
-  for my $ipla ($#planes..$#planes) {  
     my $x  = 0;
     my $y  = $x;
-    my $rowlen = $#{$planes[$ipla][0]} + 1; 
-    print "<!-- planes[$ipla], rowlen=$rowlen -->\n";
+    print SVG "<!-- planes[$ipla], rowlen=$rowlen -->\n";
     for (my $irow = 0; $irow < $rowlen; $irow += 1) {
-      for (my $icol = 0; $icol < $rowlen; $icol += 1) { 
+      for (my $icol = 0; $icol < $rowlen; $icol += 1) {
         my $x = $icol * $dx;
         my $y = $irow * $dy;
         my $code = $planes[$ipla][$irow][$icol];
-        print "<rect class=\"k$code\" y=\"$y\" x=\"$x\" width=\"$w\" height=\"$h\" />\n";
+        print SVG "<rect class=\"k$code\" y=\"$y\" x=\"$x\" width=\"$w\" height=\"$h\" />\n";
       } # for $icol
-    } # for $irow 
-  } # for $ipla
-}
-print <<"GFis";
+    } # for $irow
+  print SVG <<"GFis";
 </g>
-</svg>
+</svg> 
 GFis
+  close(SVG);
+  print STDERR "# $filename written, rowlen=$rowlen\n";
+} # svg_print
 __DATA__
 # planes[17], rowlen=68
 eeddcfcdfeefffcecefefccceecdfcfdde

@@ -1,0 +1,239 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.0//EN"
+ "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd" [
+ <!ATTLIST svg xmlns:xlink CDATA #FIXED "http://www.w3.org/1999/xlink">
+]>
+<!--
+    2025-07-23, Dr. Georg Fischer: show a Hadamard matrix
+-->
+<svg width="1600px" height="1600px"
+  viewBox="0 0 14 14"
+  xmlns="http://www.w3.org/2000/svg"
+  xmlns:xlink="http://www.w3.org/1999/xlink"
+  >
+  <defs>
+    <style type="text/css"><![CDATA[
+      .k0 { fill: dimgray         }
+      .k1 { fill: lightcoral      }
+      .k2 { fill: lightgreen      }
+      .k3 { fill: lightblue       }
+      .k4 { fill: lemonchiffon    }
+      .k5 { fill: lightorange     }
+      .k6 { fill: magenta         }
+      .k7 { fill: cyan            }
+      .k8 { fill: darkcyan        }
+      .k9 { fill: darkmagenta     }
+      .ka { fill: darkorange      }
+      .kb { fill: yellow          }
+      .kc { fill: mediumblue      }
+      .kd { fill: forestgreen     }
+      .ke { fill: crimson         }
+      .kf { fill: seashell        }
+      rect {
+          stroke: black;  stroke-width: 0.02;
+          width:  1;
+          height: 1;
+      }
+    ]]></style>
+  </defs>
+<title>Hadamard matrix 7</title>
+<g style="font-size:10">
+<!-- planes[7], rowlen=14 -->
+<rect class="ke" y="0" x="0" width="1" height="1" />
+<rect class="kd" y="0" x="1" width="1" height="1" />
+<rect class="kd" y="0" x="2" width="1" height="1" />
+<rect class="kd" y="0" x="3" width="1" height="1" />
+<rect class="kd" y="0" x="4" width="1" height="1" />
+<rect class="kd" y="0" x="5" width="1" height="1" />
+<rect class="kd" y="0" x="6" width="1" height="1" />
+<rect class="kd" y="0" x="7" width="1" height="1" />
+<rect class="kd" y="0" x="8" width="1" height="1" />
+<rect class="kd" y="0" x="9" width="1" height="1" />
+<rect class="kd" y="0" x="10" width="1" height="1" />
+<rect class="kd" y="0" x="11" width="1" height="1" />
+<rect class="kd" y="0" x="12" width="1" height="1" />
+<rect class="kd" y="0" x="13" width="1" height="1" />
+<rect class="kb" y="1" x="0" width="1" height="1" />
+<rect class="k8" y="1" x="1" width="1" height="1" />
+<rect class="ke" y="1" x="2" width="1" height="1" />
+<rect class="k1" y="1" x="3" width="1" height="1" />
+<rect class="ke" y="1" x="4" width="1" height="1" />
+<rect class="ke" y="1" x="5" width="1" height="1" />
+<rect class="k1" y="1" x="6" width="1" height="1" />
+<rect class="k1" y="1" x="7" width="1" height="1" />
+<rect class="k1" y="1" x="8" width="1" height="1" />
+<rect class="k1" y="1" x="9" width="1" height="1" />
+<rect class="ke" y="1" x="10" width="1" height="1" />
+<rect class="ke" y="1" x="11" width="1" height="1" />
+<rect class="k1" y="1" x="12" width="1" height="1" />
+<rect class="ke" y="1" x="13" width="1" height="1" />
+<rect class="kb" y="2" x="0" width="1" height="1" />
+<rect class="ke" y="2" x="1" width="1" height="1" />
+<rect class="k8" y="2" x="2" width="1" height="1" />
+<rect class="ke" y="2" x="3" width="1" height="1" />
+<rect class="k1" y="2" x="4" width="1" height="1" />
+<rect class="ke" y="2" x="5" width="1" height="1" />
+<rect class="ke" y="2" x="6" width="1" height="1" />
+<rect class="k1" y="2" x="7" width="1" height="1" />
+<rect class="k1" y="2" x="8" width="1" height="1" />
+<rect class="k1" y="2" x="9" width="1" height="1" />
+<rect class="k1" y="2" x="10" width="1" height="1" />
+<rect class="ke" y="2" x="11" width="1" height="1" />
+<rect class="ke" y="2" x="12" width="1" height="1" />
+<rect class="k1" y="2" x="13" width="1" height="1" />
+<rect class="kb" y="3" x="0" width="1" height="1" />
+<rect class="k1" y="3" x="1" width="1" height="1" />
+<rect class="ke" y="3" x="2" width="1" height="1" />
+<rect class="k8" y="3" x="3" width="1" height="1" />
+<rect class="ke" y="3" x="4" width="1" height="1" />
+<rect class="k1" y="3" x="5" width="1" height="1" />
+<rect class="ke" y="3" x="6" width="1" height="1" />
+<rect class="ke" y="3" x="7" width="1" height="1" />
+<rect class="k1" y="3" x="8" width="1" height="1" />
+<rect class="k1" y="3" x="9" width="1" height="1" />
+<rect class="k1" y="3" x="10" width="1" height="1" />
+<rect class="k1" y="3" x="11" width="1" height="1" />
+<rect class="ke" y="3" x="12" width="1" height="1" />
+<rect class="ke" y="3" x="13" width="1" height="1" />
+<rect class="kb" y="4" x="0" width="1" height="1" />
+<rect class="ke" y="4" x="1" width="1" height="1" />
+<rect class="k1" y="4" x="2" width="1" height="1" />
+<rect class="ke" y="4" x="3" width="1" height="1" />
+<rect class="k8" y="4" x="4" width="1" height="1" />
+<rect class="ke" y="4" x="5" width="1" height="1" />
+<rect class="k1" y="4" x="6" width="1" height="1" />
+<rect class="ke" y="4" x="7" width="1" height="1" />
+<rect class="ke" y="4" x="8" width="1" height="1" />
+<rect class="k1" y="4" x="9" width="1" height="1" />
+<rect class="k1" y="4" x="10" width="1" height="1" />
+<rect class="k1" y="4" x="11" width="1" height="1" />
+<rect class="k1" y="4" x="12" width="1" height="1" />
+<rect class="ke" y="4" x="13" width="1" height="1" />
+<rect class="kb" y="5" x="0" width="1" height="1" />
+<rect class="ke" y="5" x="1" width="1" height="1" />
+<rect class="ke" y="5" x="2" width="1" height="1" />
+<rect class="k1" y="5" x="3" width="1" height="1" />
+<rect class="ke" y="5" x="4" width="1" height="1" />
+<rect class="k8" y="5" x="5" width="1" height="1" />
+<rect class="ke" y="5" x="6" width="1" height="1" />
+<rect class="k1" y="5" x="7" width="1" height="1" />
+<rect class="ke" y="5" x="8" width="1" height="1" />
+<rect class="ke" y="5" x="9" width="1" height="1" />
+<rect class="k1" y="5" x="10" width="1" height="1" />
+<rect class="k1" y="5" x="11" width="1" height="1" />
+<rect class="k1" y="5" x="12" width="1" height="1" />
+<rect class="k1" y="5" x="13" width="1" height="1" />
+<rect class="kb" y="6" x="0" width="1" height="1" />
+<rect class="k1" y="6" x="1" width="1" height="1" />
+<rect class="ke" y="6" x="2" width="1" height="1" />
+<rect class="ke" y="6" x="3" width="1" height="1" />
+<rect class="k1" y="6" x="4" width="1" height="1" />
+<rect class="ke" y="6" x="5" width="1" height="1" />
+<rect class="k8" y="6" x="6" width="1" height="1" />
+<rect class="ke" y="6" x="7" width="1" height="1" />
+<rect class="k1" y="6" x="8" width="1" height="1" />
+<rect class="ke" y="6" x="9" width="1" height="1" />
+<rect class="ke" y="6" x="10" width="1" height="1" />
+<rect class="k1" y="6" x="11" width="1" height="1" />
+<rect class="k1" y="6" x="12" width="1" height="1" />
+<rect class="k1" y="6" x="13" width="1" height="1" />
+<rect class="kb" y="7" x="0" width="1" height="1" />
+<rect class="k1" y="7" x="1" width="1" height="1" />
+<rect class="k1" y="7" x="2" width="1" height="1" />
+<rect class="ke" y="7" x="3" width="1" height="1" />
+<rect class="ke" y="7" x="4" width="1" height="1" />
+<rect class="k1" y="7" x="5" width="1" height="1" />
+<rect class="ke" y="7" x="6" width="1" height="1" />
+<rect class="k8" y="7" x="7" width="1" height="1" />
+<rect class="ke" y="7" x="8" width="1" height="1" />
+<rect class="k1" y="7" x="9" width="1" height="1" />
+<rect class="ke" y="7" x="10" width="1" height="1" />
+<rect class="ke" y="7" x="11" width="1" height="1" />
+<rect class="k1" y="7" x="12" width="1" height="1" />
+<rect class="k1" y="7" x="13" width="1" height="1" />
+<rect class="kb" y="8" x="0" width="1" height="1" />
+<rect class="k1" y="8" x="1" width="1" height="1" />
+<rect class="k1" y="8" x="2" width="1" height="1" />
+<rect class="k1" y="8" x="3" width="1" height="1" />
+<rect class="ke" y="8" x="4" width="1" height="1" />
+<rect class="ke" y="8" x="5" width="1" height="1" />
+<rect class="k1" y="8" x="6" width="1" height="1" />
+<rect class="ke" y="8" x="7" width="1" height="1" />
+<rect class="k8" y="8" x="8" width="1" height="1" />
+<rect class="ke" y="8" x="9" width="1" height="1" />
+<rect class="k1" y="8" x="10" width="1" height="1" />
+<rect class="ke" y="8" x="11" width="1" height="1" />
+<rect class="ke" y="8" x="12" width="1" height="1" />
+<rect class="k1" y="8" x="13" width="1" height="1" />
+<rect class="kb" y="9" x="0" width="1" height="1" />
+<rect class="k1" y="9" x="1" width="1" height="1" />
+<rect class="k1" y="9" x="2" width="1" height="1" />
+<rect class="k1" y="9" x="3" width="1" height="1" />
+<rect class="k1" y="9" x="4" width="1" height="1" />
+<rect class="ke" y="9" x="5" width="1" height="1" />
+<rect class="ke" y="9" x="6" width="1" height="1" />
+<rect class="k1" y="9" x="7" width="1" height="1" />
+<rect class="ke" y="9" x="8" width="1" height="1" />
+<rect class="k8" y="9" x="9" width="1" height="1" />
+<rect class="ke" y="9" x="10" width="1" height="1" />
+<rect class="k1" y="9" x="11" width="1" height="1" />
+<rect class="ke" y="9" x="12" width="1" height="1" />
+<rect class="ke" y="9" x="13" width="1" height="1" />
+<rect class="kb" y="10" x="0" width="1" height="1" />
+<rect class="ke" y="10" x="1" width="1" height="1" />
+<rect class="k1" y="10" x="2" width="1" height="1" />
+<rect class="k1" y="10" x="3" width="1" height="1" />
+<rect class="k1" y="10" x="4" width="1" height="1" />
+<rect class="k1" y="10" x="5" width="1" height="1" />
+<rect class="ke" y="10" x="6" width="1" height="1" />
+<rect class="ke" y="10" x="7" width="1" height="1" />
+<rect class="k1" y="10" x="8" width="1" height="1" />
+<rect class="ke" y="10" x="9" width="1" height="1" />
+<rect class="k8" y="10" x="10" width="1" height="1" />
+<rect class="ke" y="10" x="11" width="1" height="1" />
+<rect class="k1" y="10" x="12" width="1" height="1" />
+<rect class="ke" y="10" x="13" width="1" height="1" />
+<rect class="kb" y="11" x="0" width="1" height="1" />
+<rect class="ke" y="11" x="1" width="1" height="1" />
+<rect class="ke" y="11" x="2" width="1" height="1" />
+<rect class="k1" y="11" x="3" width="1" height="1" />
+<rect class="k1" y="11" x="4" width="1" height="1" />
+<rect class="k1" y="11" x="5" width="1" height="1" />
+<rect class="k1" y="11" x="6" width="1" height="1" />
+<rect class="ke" y="11" x="7" width="1" height="1" />
+<rect class="ke" y="11" x="8" width="1" height="1" />
+<rect class="k1" y="11" x="9" width="1" height="1" />
+<rect class="ke" y="11" x="10" width="1" height="1" />
+<rect class="k8" y="11" x="11" width="1" height="1" />
+<rect class="ke" y="11" x="12" width="1" height="1" />
+<rect class="k1" y="11" x="13" width="1" height="1" />
+<rect class="kb" y="12" x="0" width="1" height="1" />
+<rect class="k1" y="12" x="1" width="1" height="1" />
+<rect class="ke" y="12" x="2" width="1" height="1" />
+<rect class="ke" y="12" x="3" width="1" height="1" />
+<rect class="k1" y="12" x="4" width="1" height="1" />
+<rect class="k1" y="12" x="5" width="1" height="1" />
+<rect class="k1" y="12" x="6" width="1" height="1" />
+<rect class="k1" y="12" x="7" width="1" height="1" />
+<rect class="ke" y="12" x="8" width="1" height="1" />
+<rect class="ke" y="12" x="9" width="1" height="1" />
+<rect class="k1" y="12" x="10" width="1" height="1" />
+<rect class="ke" y="12" x="11" width="1" height="1" />
+<rect class="k8" y="12" x="12" width="1" height="1" />
+<rect class="ke" y="12" x="13" width="1" height="1" />
+<rect class="kb" y="13" x="0" width="1" height="1" />
+<rect class="ke" y="13" x="1" width="1" height="1" />
+<rect class="k1" y="13" x="2" width="1" height="1" />
+<rect class="ke" y="13" x="3" width="1" height="1" />
+<rect class="ke" y="13" x="4" width="1" height="1" />
+<rect class="k1" y="13" x="5" width="1" height="1" />
+<rect class="k1" y="13" x="6" width="1" height="1" />
+<rect class="k1" y="13" x="7" width="1" height="1" />
+<rect class="k1" y="13" x="8" width="1" height="1" />
+<rect class="ke" y="13" x="9" width="1" height="1" />
+<rect class="ke" y="13" x="10" width="1" height="1" />
+<rect class="k1" y="13" x="11" width="1" height="1" />
+<rect class="ke" y="13" x="12" width="1" height="1" />
+<rect class="k8" y="13" x="13" width="1" height="1" />
+</g>
+</svg> 

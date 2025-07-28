@@ -13,10 +13,21 @@ all:
 	grep -P "^[a-z]" makefile
 #-------------------------------------------------------------------
 prep: # prepare the matrices obtained from SageMath
-	perl hadamard_prep.pl from_sage_1-26.txt | tee planes.inc
+	perl hadamard_prep.pl from_sage_1-33.txt | tee planes.inc
 
 #--
 square: # show notation for 2x2 blocks
-	perl hadamard.pl -d $(D) -m square planes.inc | tee x.tmp
+	perl hadamard.pl -d $(D) -m square planes.inc | tee planes.tmp 
+svgen:
+	perl svgen.pl planes.tmp 
 #--------------------------------------
 
+h92:
+	perl hadamard_prep.pl from_sage.92.txt | tee plane.$@.inc
+	perl hadamard.pl -d $(D) -m square plane.$@.inc | tee plane.$@.tmp
+	perl svgen.pl plane.$@.tmp 
+h65:
+	perl hadamard_prep.pl from_sage.1-65.txt        > plane.$@.inc
+	perl hadamard.pl -d $(D) -m square plane.$@.inc > plane.$@.tmp
+	perl svgen.pl                                     plane.$@.tmp
+	

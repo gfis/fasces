@@ -68,27 +68,11 @@ https://sagecell.sagemath.org/
 2025-07-19: for *VF=44, *CZ=73
 
 from sage.combinat.matrices.hadamard_matrix import hadamard_matrix, skew_hadamard_matrix
-for i in range(1,12):
+for i in range(1,65):
   H = hadamard_matrix(4*i)
-  print (i, H.str())
-
-SageMathCellType some Sage code below and press Evaluate.
-
-1
-from sage.combinat.matrices.hadamard_matrix import hadamard_matrix, skew_hadamard_matrix
-2
-for i in range(1,12):
-3
-  H = hadamard_matrix(4*i)
-4
-  print (4*i, '=================')
-5
+  print ("planes[", i, "]")
   print (H.str())
-6
-​
-Language:
-Sage
-Share
+
 4 =================
 [ 1  1  1  1]
 [ 1 -1  1 -1]
