@@ -21,7 +21,12 @@ square: # show notation for 2x2 blocks
 svgen:
 	perl svgen.pl planes.tmp 
 #--------------------------------------
-
+sagen: # generate Hadamard matrices with sage in raw format; must be called under Ubuntu in directory /mnt/c/Users/drgeo/work/gits/fasces/hadamard
+	mkdir -p raw 
+	seq 1 256 | xargs -innn make sagen1 SEQ=nnn
+sagen1:
+	sage hadamard.sage $(SEQ) > raw/h$(SEQ).raw
+	echo raw/h$(SEQ) generated
 h92:
 	perl hadamard_prep.pl from_sage.92.txt | tee plane.$@.inc
 	perl hadamard.pl -d $(D) -m square plane.$@.inc | tee plane.$@.tmp

@@ -167,7 +167,7 @@ if (0) {
             = $planes[$ipla][$irow + 0][$icol + 0] << 3
             | $planes[$ipla][$irow + 0][$icol + 1] << 2
             | $planes[$ipla][$irow + 1][$icol + 0] << 1
-            | $planes[$ipla][$irow + 1][$icol + 1];
+            | $planes[$ipla][$irow + 1][$icol + 1] << 0;
         $counts{$mask} = defined($counts{$mask}) ? $counts{$mask} + 1 : 1;
         if (defined($codes{$mask})) {
             $nota22 .= $codes{$mask};

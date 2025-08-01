@@ -60,7 +60,7 @@ if (1) {
 sub svg_print {
     my ($ipla) = @_;
     my $rowlen = $ipla * 2; # should be *4, but we read codes [0-9a-f] for 16 possible condensed 2x2 blocks
-    my $width  = 1600;
+    my $width  = 1600; # $rowlen;
     my $height = $width;
     my $dx = 1;
     my $dy = $dx;
@@ -100,10 +100,33 @@ sub svg_print {
       .kd { fill: forestgreen     }
       .ke { fill: crimson         }
       .kf { fill: seashell        }
+      .t0 { stroke: black /* dimgray      */    }
+      .t1 { stroke: black /* lightcoral   */    }
+      .t2 { stroke: black /* lightgreen   */    }
+      .t3 { stroke: black /* lightblue    */    }
+      .t4 { stroke: black /* lemonchiffon */    }
+      .t5 { stroke: black /* lightorange  */    }
+      .t6 { stroke: black /* magenta      */    }
+      .t7 { stroke: black /* cyan         */    }
+      .t8 { stroke: white /* darkcyan     */    }
+      .t9 { stroke: white /* darkmagenta  */    }
+      .ta { stroke: white /* darkorange   */    }
+      .tb { stroke: white /* yellow       */    }
+      .tc { stroke: white /* mediumblue   */    }
+      .td { stroke: white /* forestgreen  */    }
+      .te { stroke: white /* crimson      */    }
+      .tf { stroke: white /* seashell     */    }
       rect {
           stroke: black;  stroke-width: 0.02;
           width:  $w;
           height: $h;
+      } 
+      text {
+        	font-size: 0.004pt;
+        	font-family: Lucida;
+        	stroke: black; 
+        	stroke-width: 0.1pt; 
+        	fill:none;
       }
     ]]></style>
   </defs>
@@ -119,6 +142,7 @@ GFis
         my $y = $irow * $dy;
         my $code = $planes[$ipla][$irow][$icol];
         print SVG "<rect class=\"k$code\" y=\"$y\" x=\"$x\" width=\"$w\" height=\"$h\" />\n";
+        # print SVG "<text class=\"t$code\" y=\"$y\" x=\"$x\" >$code</text>\n";
       } # for $icol
     } # for $irow
   print SVG <<"GFis";

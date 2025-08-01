@@ -4,7 +4,8 @@ https://sagecell.sagemath.org/
 2025-07-19: for *VF=44, *CZ=73
 
 from sage.combinat.matrices.hadamard_matrix import hadamard_matrix, skew_hadamard_matrix
-for i in range(1,33):
+for i in range(1,33):      
+  hadamard_matrix(4*i, existence=True, construction_name=True)
   H = hadamard_matrix(4*i)
   print ("planes[", i, "]")
   print (H.str())

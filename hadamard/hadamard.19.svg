@@ -29,10 +29,33 @@
       .kd { fill: forestgreen     }
       .ke { fill: crimson         }
       .kf { fill: seashell        }
+      .t0 { stroke: black /* dimgray      */    }
+      .t1 { stroke: black /* lightcoral   */    }
+      .t2 { stroke: black /* lightgreen   */    }
+      .t3 { stroke: black /* lightblue    */    }
+      .t4 { stroke: black /* lemonchiffon */    }
+      .t5 { stroke: black /* lightorange  */    }
+      .t6 { stroke: black /* magenta      */    }
+      .t7 { stroke: black /* cyan         */    }
+      .t8 { stroke: white /* darkcyan     */    }
+      .t9 { stroke: white /* darkmagenta  */    }
+      .ta { stroke: white /* darkorange   */    }
+      .tb { stroke: white /* yellow       */    }
+      .tc { stroke: white /* mediumblue   */    }
+      .td { stroke: white /* forestgreen  */    }
+      .te { stroke: white /* crimson      */    }
+      .tf { stroke: white /* seashell     */    }
       rect {
           stroke: black;  stroke-width: 0.02;
           width:  1;
           height: 1;
+      } 
+      text {
+        	font-size: 0.004pt;
+        	font-family: Lucida;
+        	stroke: black; 
+        	stroke-width: 0.1pt; 
+        	fill:none;
       }
     ]]></style>
   </defs>
