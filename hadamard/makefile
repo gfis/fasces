@@ -35,4 +35,7 @@ h65:
 	perl hadamard_prep.pl from_sage.1-65.txt        > plane.$@.inc
 	perl hadamard.pl -d $(D) -m square plane.$@.inc > plane.$@.tmp
 	perl svgen.pl                                     plane.$@.tmp
-	
+#----
+# Pyramid for *VF=44
+deploy:
+	cp -v hapyramid.html hapyramid_geometry.js c:/xampp/htdocs/threejs	 

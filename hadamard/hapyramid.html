@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<!--Meander cube with THREE.MeshLine.js and OrbitControls.js
+	@(#) $Id$
+	2018-02-18: three.min.js moved to js/
+	2017-09-09, Georg Fischer
+-->
+	<head>
+		<title>Orbit Meander</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			body {
+				color: #ccc;
+				font-family:Monospace;
+				font-size:13px;
+				text-align:center;
+				font-weight: bold;
+				background-color: #fff;
+				margin: 0px;
+				overflow: hidden;
+			}
+			#info {
+				color:#ccc;
+				position: absolute;
+				top: 0px; width: 100%;
+				padding: 5px;
+			}
+			a {
+				color: red;
+			}
+		/*
+		*/
+		</style>
+	</head>
+	<body>
+		<div id="container"></div>
+		<div id="info">
+			<a href="http://threejs.org" target="_blank" rel="noopener">three.js</a> - Pyramid of Hadamard Matrices by Georg Fischer
+		</div>
+		<script src="js/three.min.js"></script>
+		<script src="THREE.MeshLine.js"></script>
+		<script src="js/renderers/Projector.js"></script>
+		<script src="js/controls/OrbitControls.js"></script>
+		<script src="js/Detector.js"></script>
+		<script src="js/libs/stats.min.js"></script>
+		<script src="hapyramid_geometry.js"></script>
+		<script>
+			if ( ! Detector.webgl ) {
+				Detector.addGetWebGLMessage();
+			}
+			var stats;
+			var camera;
+			var controls;
+			var scene;
+			var renderer;
+			var loader = new THREE.FontLoader();
+			loader.load( 'fonts/helvetiker_regular.typeface.json', function ( font ) {
+				// all remaining main code must be placed in this block
+				init( font );
+				// render(); // remove when using next line for animation loop (requestAnimationFrame)
+				animate();
+			} ); // load
+
+			function init( myfont ) {
+				scene = new THREE.Scene();
+				scene.background = new THREE.Color( 0x000000 ); // 0xcccccc );
+				// scene.fog = new THREE.FogExp2( 0xcccccc, 0.002 );
+				renderer = new THREE.WebGLRenderer();
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				var container = document.getElementById( 'container' );
+				container.appendChild( renderer.domElement );
+				camera = new THREE.PerspectiveCamera( 33, window.innerWidth / window.innerHeight, 1, 10000 );
+				camera.position.z = 700;
+				controls = new THREE.OrbitControls( camera, renderer.domElement );
+				controls.addEventListener( 'change', render ); // remove when using animation loop
+				// enable animation loop when using damping or autorotation
+				controls.enableDamping = true;
+				controls.dampingFactor = 0.25;
+				controls.enableZoom = true;
+
+				world( scene, myfont );
+
+				if (false) { // lights
+					var lights = [];
+					lights[ 0 ] = new THREE.PointLight( 0xffffff, 1, 0 );
+					lights[ 1 ] = new THREE.PointLight( 0xffffff, 1, 0 );
+					lights[ 2 ] = new THREE.PointLight( 0xffffff, 1, 0 );
+					lights[ 0 ].position.set( 0, 200, 0 );
+					lights[ 1 ].position.set( 100, 200, 100 );
+					lights[ 2 ].position.set( - 100, - 200, - 100 );
+					scene.add( lights[ 0 ] );
+					scene.add( lights[ 1 ] );
+					scene.add( lights[ 2 ] );
+				} else { // lights                         
+					var 
+					light = new THREE.DirectionalLight( 0xffffff );
+					light.position.set( 1, 1, 1 );
+					scene.add( light );
+					light = new THREE.DirectionalLight( 0x002288 );
+					light.position.set( -1, -1, -1 );
+					scene.add( light );
+					light = new THREE.AmbientLight( 0x222222 );
+					scene.add( light );
+				} // lights
+				stats = new Stats();
+				container.appendChild( stats.dom );
+				window.addEventListener( 'resize', onWindowResize, false );
+			} // init
+			
+			function onWindowResize() {
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+				renderer.setSize( window.innerWidth, window.innerHeight );
+			}
+			function animate() {
+				requestAnimationFrame( animate );
+				controls.update(); // required if controls.enableDamping = true, or if controls.autoRotate = true
+				stats.update();
+				render();
+			}
+			function render() {
+				var time = Date.now() * 0.000004;
+				// time = 0.0;
+				for ( var i = 0; i < scene.children.length; i ++ ) {
+					var object = scene.children[i];
+					object.rotation.y = time; // * ( i % 2 ? 1 : -1 );
+				}
+				renderer.render( scene, camera );
+			}
+		</script>
+	</body>
+</html>
