@@ -1,8 +1,7 @@
 /**
-  hapyramid_geometry.js - Geometry of Hadamard pyramid
+  hapyramid_world.js - Overall geometry of the Hadamard pyramid
 	@(#) $Id$
-	2025-08-08: copied from web/threejs/Meander-BoxGeometry.js
-	2017-09-17, Georg Fischer: with THREE.CylinderGeometry
+	2025-08-08, Georg Fischer: extracted from hapyramid_geometry.js
 */
 			function world( scene, myfont ) {
 				// Default Vars
@@ -14,17 +13,18 @@
 				var size5  = parseInt(size / 5);
 				var corner = 4; // number of corners of the blocks
 				var thick  = parseInt(size5 / 1); // thickness of the blocks
-				var vec_Fs = [323,223,123,122,222,322,332,333];
-				var vec = vec_Fs;
+				var vec = vec_pyramid;
 				var materials = [
 					new THREE.MeshBasicMaterial( { color: 0xffffff, overdraw: 0.5 } ),
 					new THREE.MeshBasicMaterial( { color: 0xffffff, overdraw: 0.5 } )
 					];
 				var points = [];
+				var opacis = [];
 				for ( i = 0; i < vec.length; i ++ ) {
-					var digx5 = parseInt(vec[i] /  10) % 10 ;
-					var digy5 =          vec[i]        % 10;
-					var digz5 = parseInt(vec[i] / 100) % 10;
+					opacis[i] = (parseInt(vec[i] / 1000000) % 100) / 16 ;
+					var digz5 =  parseInt(vec[i] /   10000) % 100;
+					var digx5 =  parseInt(vec[i] /     100) % 100;
+					var digy5 =           vec[i]            % 100;
 					// digits run from 0 to 4 or -2 to +2
 					var x = center.x + (digx5 - 2) * size5;
 					var y = center.y + (digy5 - 2) * size5;
@@ -47,7 +47,7 @@
 					} // node values
 				} // for i
 				var shift = (size5 - thick) * 0.5;
-				for ( i = 0; i < points.length - 1; i ++ ) {
+				for ( i = 0; i < points.length; i ++ ) {
 				//var geometry = new THREE.BoxGeometry( thick, size5, thick ); // this made blocks of length 
 					var geometry = new THREE.BoxGeometry( thick, thick, thick );
 					var diff = vec[i + 1] - vec[i]; // either +-1, +-10 or +-100
@@ -88,8 +88,9 @@
 					}
 					// color gradient
 					var color3 = new THREE.Color( 0xffffff );
-					//color3.setHSL( i * 0.8 / points.length, 1.0, 0.5 ); 
+					//color3.setHSL( i * 0.8 / points.length + 0.1, 1.0, 0.5 ); 
 					var opac =  i / points.length; // 0.5
+					opac = opacis[i];
 					var material = new THREE.MeshBasicMaterial(
 						{ color: color3
 						, alphaMap: 0x000000

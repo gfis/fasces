@@ -38,4 +38,4 @@ h65:
 #----
 # Pyramid for *VF=44
 deploy:
-	cp -v hapyramid.html hapyramid_geometry.js c:/xampp/htdocs/threejs	 
+	cp -v hapyramid.html hapyramid_world.js hapyramid_blocks.js c:/xampp/htdocs/threejs	 
