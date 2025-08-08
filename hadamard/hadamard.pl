@@ -1,6 +1,6 @@
 #!perl
 
-# hadamard.plcondense.pl test for orthogonality
+# hadamard.pl test for orthogonality
 # @(#) $Id$
 # 2024-07-24, Georg Fischer
 #:#

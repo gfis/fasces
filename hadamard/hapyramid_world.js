@@ -13,7 +13,6 @@
 				var size5  = parseInt(size / 5);
 				var corner = 4; // number of corners of the blocks
 				var thick  = parseInt(size5 / 1); // thickness of the blocks
-				var displ  = 10;
 				var shift = (size5 - thick) * 0.5;
 				var vec = vec_pyramid;
 				var materials = [
@@ -23,17 +22,17 @@
 				var points = [];
 				var opacis = [];
 				for ( i = 0; i < vec.length; i ++ ) {
-					opacis[i] = (parseInt(vec[i] / 1000000) % 100) / 16 ;
+					opacis[i] = (parseInt(vec[i] / 1000000) % 100) / 16;
 					var digz5 =  parseInt(vec[i] /   10000) % 100;
 					var digx5 =  parseInt(vec[i] /     100) % 100;
-					var digy5 =           vec[i]            % 100;
-					// digits run from 0 to 4 or -2 to +2
+					var digy5 =  parseInt(vec[i] /       1) % 100;
+					// digits run from 0 to 99 or -50 to +49
 					var x = center.x + (digx5 - displ) * size5;
 					var y = center.y + (digy5 - displ) * size5;
 					var z = center.z + (digz5 - displ) * size5;
 					points.push(new THREE.Vector3(x, y, z));
-					if (false) { // with annotation: node values
-						var geometry = new THREE.TextGeometry( vec[i],
+					if (true) { // with annotation: node values
+						var geometry = new THREE.TextGeometry( Math.floor(vec[i] / 100) % 10000,
 							{ font: myfont
 							, size: 6
 							, height: 1
@@ -49,34 +48,11 @@
 					} // node values
 				} // for i
 				for ( i = 0; i < points.length; i ++ ) {
-				//var geometry = new THREE.BoxGeometry( thick, size5, thick ); // this made blocks of length 
 					var geometry = new THREE.BoxGeometry( thick, thick, thick );
 					var diff = vec[i + 1] - vec[i]; // either +-1, +-10 or +-100
 					var adiff = diff;
 					if (adiff < 0) {
 						adiff = - adiff;
-					}
-					if (false) {
-					} else if (diff ==  -100) { // move in +x
-						geometry.rotateZ(  pi2);
-						geometry.translate(- shift, 0, 0);
-					} else if (diff ==  +100) { // move in -x
-						geometry.rotateZ(- pi2);
-						geometry.translate(+ shift, 0, 0);
-					} else if (diff ==    1) { // move in +y
-						geometry.rotateZ(pi2 -  pi2);
-						geometry.translate(0, + shift, 0);
-					} else if (diff ==   -1) { // move in -y
-						geometry.rotateZ(pi2 + pi2);
-						geometry.translate(0, - shift, 0);
-					} else if (diff ==  10000) { // move in +z
-						geometry.rotateX(+ pi2);
-						geometry.translate(0, 0, + shift);
-					} else if (diff == -10000) { // move in -z
-						geometry.rotateX(- pi2);
-						geometry.translate(0, 0, - shift);
-					} else if (diff ==    0) { // last vertex
-						geometry = new THREE.BoxGeometry( thick, thick, thick );
 					}
 					geometry.translate
 						( points[i].x
@@ -95,8 +71,6 @@
 					var material = new THREE.MeshBasicMaterial(
 						{ color: color3
 						, alphaMap: 0x000000
-					//	, emissive: color3
-					//, flatShading: true
 						, opacity: opac
 						, transparent: true
 					//	, wireframe: true
