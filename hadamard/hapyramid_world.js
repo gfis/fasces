@@ -13,6 +13,8 @@
 				var size5  = parseInt(size / 5);
 				var corner = 4; // number of corners of the blocks
 				var thick  = parseInt(size5 / 1); // thickness of the blocks
+				var displ  = 10;
+				var shift = (size5 - thick) * 0.5;
 				var vec = vec_pyramid;
 				var materials = [
 					new THREE.MeshBasicMaterial( { color: 0xffffff, overdraw: 0.5 } ),
@@ -26,11 +28,11 @@
 					var digx5 =  parseInt(vec[i] /     100) % 100;
 					var digy5 =           vec[i]            % 100;
 					// digits run from 0 to 4 or -2 to +2
-					var x = center.x + (digx5 - 2) * size5;
-					var y = center.y + (digy5 - 2) * size5;
-					var z = center.z + (digz5 - 2) * size5;
+					var x = center.x + (digx5 - displ) * size5;
+					var y = center.y + (digy5 - displ) * size5;
+					var z = center.z + (digz5 - displ) * size5;
 					points.push(new THREE.Vector3(x, y, z));
-					if (true) { // with annotation: node values
+					if (false) { // with annotation: node values
 						var geometry = new THREE.TextGeometry( vec[i],
 							{ font: myfont
 							, size: 6
@@ -46,7 +48,6 @@
 						scene.add( group );
 					} // node values
 				} // for i
-				var shift = (size5 - thick) * 0.5;
 				for ( i = 0; i < points.length; i ++ ) {
 				//var geometry = new THREE.BoxGeometry( thick, size5, thick ); // this made blocks of length 
 					var geometry = new THREE.BoxGeometry( thick, thick, thick );
@@ -56,10 +57,10 @@
 						adiff = - adiff;
 					}
 					if (false) {
-					} else if (diff ==  -10) { // move in +x
+					} else if (diff ==  -100) { // move in +x
 						geometry.rotateZ(  pi2);
 						geometry.translate(- shift, 0, 0);
-					} else if (diff ==  +10) { // move in -x
+					} else if (diff ==  +100) { // move in -x
 						geometry.rotateZ(- pi2);
 						geometry.translate(+ shift, 0, 0);
 					} else if (diff ==    1) { // move in +y
@@ -68,10 +69,10 @@
 					} else if (diff ==   -1) { // move in -y
 						geometry.rotateZ(pi2 + pi2);
 						geometry.translate(0, - shift, 0);
-					} else if (diff ==  100) { // move in +z
+					} else if (diff ==  10000) { // move in +z
 						geometry.rotateX(+ pi2);
 						geometry.translate(0, 0, + shift);
-					} else if (diff == -100) { // move in -z
+					} else if (diff == -10000) { // move in -z
 						geometry.rotateX(- pi2);
 						geometry.translate(0, 0, - shift);
 					} else if (diff ==    0) { // last vertex
