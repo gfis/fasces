@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
-<!--hapyramid.html for *VF=44
-	@(#) $Id$                  
+<!--hapyramid.html
+	@(#) $Id$
+	2025-08-09: *VF=44
 	2025-08-08: copied from Meander.html
 	2018-02-18: three.min.js moved to js/
 	2017-09-09, Georg Fischer
@@ -35,7 +36,8 @@
 	<body>
 		<div id="container"></div>
 		<div id="info">
-			<a href="http://threejs.org" target="_blank" rel="noopener">three.js</a> - Hadamard Matrices for *VF=44
+			<a href="http://threejs.org" target="_blank" rel="noopener">three.js</a> - 
+			<a href="https://teherba.org/tehowiki/index.php/Hadamard_Matrices">Hadamard Matrices</a> for *VF=44
 		</div>
 		<script src="js/three.min.js"></script>
 		<script src="THREE.MeshLine.js"></script>
@@ -94,8 +96,8 @@
 					scene.add( lights[ 0 ] );
 					scene.add( lights[ 1 ] );
 					scene.add( lights[ 2 ] );
-				} else { // lights                         
-					var 
+				} else { // lights
+					var
 					light = new THREE.DirectionalLight( 0xffffff );
 					light.position.set( 1, 1, 1 );
 					scene.add( light );
@@ -109,7 +111,7 @@
 				container.appendChild( stats.dom );
 				window.addEventListener( 'resize', onWindowResize, false );
 			} // init
-			
+
 			function onWindowResize() {
 				camera.aspect = window.innerWidth / window.innerHeight;
 				camera.updateProjectionMatrix();
@@ -118,7 +120,7 @@
 			function animate() {
 				requestAnimationFrame( animate );
 				try {
-					controls.update(); // required if controls.enableDamping = true, or if controls.autoRotate = true  
+					controls.update(); // required if controls.enableDamping = true, or if controls.autoRotate = true
 					stats.update();
 				} catch (exc) {
 				}

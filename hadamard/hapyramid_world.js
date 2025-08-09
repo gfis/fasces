@@ -1,6 +1,7 @@
 /**
   hapyramid_world.js - Overall geometry of the Hadamard pyramid
 	@(#) $Id$
+	2025-08-09: *VF=44
 	2025-08-08, Georg Fischer: extracted from hapyramid_geometry.js
 */
 			function world( scene, myfont ) {
@@ -22,7 +23,7 @@
 				var points = [];
 				var opacis = [];
 				for ( i = 0; i < vec.length; i ++ ) {
-					opacis[i] = (parseInt(vec[i] / 1000000) % 100) / 16;
+					opacis[i] =  parseInt(vec[i] / 1000000) % 100;
 					var digz5 =  parseInt(vec[i] /   10000) % 100;
 					var digx5 =  parseInt(vec[i] /     100) % 100;
 					var digy5 =  parseInt(vec[i] /       1) % 100;
@@ -67,7 +68,7 @@
 					var color3 = new THREE.Color( 0xffffff );
 					//color3.setHSL( i * 0.8 / points.length + 0.1, 1.0, 0.5 ); 
 					var opac =  i / points.length; // 0.5
-					opac = opacis[i];
+					opac = opacis[i] / 100;
 					var material = new THREE.MeshBasicMaterial(
 						{ color: color3
 						, alphaMap: 0x000000

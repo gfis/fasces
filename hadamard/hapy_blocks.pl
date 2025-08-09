@@ -1,12 +1,11 @@
 #!perl
 
-# hapy_empty - generate blocks for empty pyramid
+# hapy_blocks - generate blocks with Hadamard opacities/colors
 # @(#) $Id$
-# 2025-08-09: *VF=44
-# 2025-08-08, Georg Fischer
+# 2025-08-09, Georg Fischer: copied from hapy_empty.pl; *VF=44
 #:#
 #:# Usage:
-#:#   perl hapy_empty.pl [-d debug] > hapyramid_blocks.js
+#:#   perl hapy_blocks.pl [-d debug] planes.tmp > hapyramid_blocks.js
 #:#       -d 0=none, 1=some, 2=more debuging output
 #:#       -m max. edge length (default 22)
 #----------------
@@ -29,6 +28,35 @@ while (scalar(@ARGV) > 0 and ($ARGV[0] =~ m{\A[\-\+]})) {
         die "invalid option \"$opt\"\n";
     }
 } # while $opt
+#--------
+# read the matrices
+my @planes = ();
+my @plane = ( # default planes[0]
+ [ 1, 1 ],
+ [ 1, 0 ]
+);
+
+my $ipla = -1;
+while(<>) {
+  s/\s+\Z//;
+  my $line = $_;
+  #                1   1
+  if ($line =~ m{\[(\d+)\]}) { # plane header line
+    $ipla = $1;
+    push(@planes, [@plane]); # previous accumulated plane
+    @plane = ();
+    #                          (1       1
+  } elsif ($line =~ m{\A[\(\,]\(([01\,\-]+)}) { # line with matrix elements
+    my @terms = map {
+          if ($_ ne "1") {
+            $_ = 0;
+          }
+          $_
+        } split(/ *\, */, $1);
+    push(@plane, [@terms]);
+  }
+} # while <>
+push(@planes, [@plane]); # last accumulated plane
 #----
 my $displ = 50;
 print <<"GFis";
