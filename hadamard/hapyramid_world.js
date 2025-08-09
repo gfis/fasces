@@ -47,7 +47,26 @@
 						group.add( mesh );
 						scene.add( group );
 					} // node values
-				} // for i
+				} // for i 
+				var colors = 
+				[ 0x696969    // .k0 { fill: dimgray         }
+        ,  0xf08080    // .k1 { fill: lightcoral      }
+        ,  0x90ee90    // .k2 { fill: lightgreen      }
+        ,  0xadd8e6    // .k3 { fill: lightblue       }
+        ,  0xfffacd    // .k4 { fill: lemonchiffon    }
+        ,  0xffa500    // .k5 { fill: lightorange     }
+        ,  0xff00ff    // .k6 { fill: magenta         }
+        ,  0x00ffff    // .k7 { fill: cyan            }
+        ,  0x008b8b    // .k8 { fill: darkcyan        }
+        ,  0x008b8b    // .k9 { fill: darkmagenta     }
+        ,  0xff8c00    // .ka { fill: darkorange      }
+        ,  0xffff00    // .kb { fill: yellow          }
+        ,  0x0000cd    // .kc { fill: mediumblue      }
+        ,  0x228b22    // .kd { fill: forestgreen     }
+        ,  0xdc143c    // .ke { fill: crimson         }
+        ,  0xfff5ee    // .kf { fill: seashell        }
+        ];    
+
 				for ( i = 0; i < points.length; i ++ ) {
 					var geometry = new THREE.BoxGeometry( thick, thick, thick );
 					var diff = vec[i + 1] - vec[i]; // either +-1, +-10 or +-100
@@ -66,15 +85,20 @@
 					}
 					// color gradient
 					var color3 = new THREE.Color( 0xffffff );
-					//color3.setHSL( i * 0.8 / points.length + 0.1, 1.0, 0.5 ); 
-					var opac =  i / points.length; // 0.5
-					opac = opacis[i] * 6 / 100;
+					// color3.setHSL( i * 0.8 / points.length + 0.1, 1.0, 0.5 ); 
+					// var opac =  i / points.length; // 0.5
+					var opac = opacis[i]; 
+					if (true) { // grey shades
+					  opac = opac * 6 / 100;
+				  } else { // HTML colors
+					  color3 = new THREE.Color(colors[opac]); 
+					  opac = 1;  
+				  } 
 					var material = new THREE.MeshBasicMaterial(
 						{ color: color3
 						, alphaMap: 0x000000
 						, opacity: opac
 						, transparent: true
-					//	, wireframe: true
 						} ); // 0x0000ff} );
 					var mesh = new THREE.Mesh( geometry, material );
 					scene.add( mesh );
