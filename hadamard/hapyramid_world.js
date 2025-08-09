@@ -31,7 +31,7 @@
 					var y = center.y + (digy5 - displ) * size5;
 					var z = center.z + (digz5 - displ) * size5;
 					points.push(new THREE.Vector3(x, y, z));
-					if (true) { // with annotation: node values
+					if (false) { // with annotation: node values
 						var geometry = new THREE.TextGeometry( Math.floor(vec[i] / 100) % 10000,
 							{ font: myfont
 							, size: 6
@@ -58,7 +58,7 @@
 						( points[i].x
 						, points[i].y
 						, points[i].z);
-					if (true) { // with edges
+					if (false) { // with edges
 						var edges = new THREE.EdgesGeometry( geometry );
 						var line = new THREE.LineSegments( edges, new THREE.LineBasicMaterial( { color: 0xffffff } ) );
 						scene.add( line );
