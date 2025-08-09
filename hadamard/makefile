@@ -40,11 +40,13 @@ h65:
 # Pyramid for *VF=44
 E=22
 empty: # block with random opacity/color
-	perl hapy_empty.pl -e $(E) > hapyramid_blocks.js
+	perl hapy_empty.pl  -e $(E) \
+	>     hapyramid_blocks.js
 	cp -v hapyramid_blocks.js c:/xampp/htdocs/threejs/
 
-blocks: square # block with hex encoded opacity/color
-	perl hapy_blocks.pl -e $(E) > hapyramid_blocks.js
+blocks: # block with hex encoded opacity/color
+	perl hapy_blocks.pl -e $(E) planes.tmp \
+	>     hapyramid_blocks.js
 	cp -v hapyramid_blocks.js c:/xampp/htdocs/threejs/
 
 deploy:

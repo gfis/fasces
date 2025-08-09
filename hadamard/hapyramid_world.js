@@ -68,7 +68,7 @@
 					var color3 = new THREE.Color( 0xffffff );
 					//color3.setHSL( i * 0.8 / points.length + 0.1, 1.0, 0.5 ); 
 					var opac =  i / points.length; // 0.5
-					opac = opacis[i] / 100;
+					opac = opacis[i] * 6 / 100;
 					var material = new THREE.MeshBasicMaterial(
 						{ color: color3
 						, alphaMap: 0x000000
