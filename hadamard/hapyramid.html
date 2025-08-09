@@ -116,12 +116,15 @@
 			}
 			function animate() {
 				requestAnimationFrame( animate );
-				controls.update(); // required if controls.enableDamping = true, or if controls.autoRotate = true
-				stats.update();
+				try {
+					controls.update(); // required if controls.enableDamping = true, or if controls.autoRotate = true  
+					stats.update();
+				} catch (exc) {
+				}
 				render();
 			}
 			function render() {
-				var time = Date.now() * 0.00004;
+				var time = Date.now() * 0.00001;
 				// time = 0.0;
 				for ( var i = 0; i < scene.children.length; i ++ ) {
 					var object = scene.children[i];

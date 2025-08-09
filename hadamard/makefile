@@ -42,4 +42,5 @@ deploy:
 
 E=22
 empty:
-	perl hapy_empty.pl -e $(E) > c:/xampp/htdocs/threejs/hapyramid_blocks.js
+	perl hapy_empty.pl -e $(E) > hapyramid_blocks.js
+	cp -v hapyramid_blocks.js c:/xampp/htdocs/threejs/
