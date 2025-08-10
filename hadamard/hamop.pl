@@ -34,6 +34,10 @@ while (scalar(@ARGV) > 0) {
     &help();
   } elsif ($oper eq "debug") {
     $debug     = shift(@ARGV);
+  } elsif ($oper eq "dump1") {
+    &dump1();
+  } elsif ($oper eq "dump4") {
+    &dump4();
   } elsif ($oper eq "read1") {
     &read1(shift(@ARGV));
   } elsif ($oper eq "read4") {
@@ -115,26 +119,84 @@ sub read1 { # read an array of binary (1,-1) matrices with separators from a fil
     close(STDIN);
   }
 } # read1
-__DATA__
-#--------
-# evaluate the mode(s)
-if (0) {
+#----
+sub read4 { # read an array of hexadecimal [0-9a-f] matrices with*OUT* separators from a file
+  my ($file) = @_;
+  if ($file eq "-") {
+  } else {
+    open(STDIN, "<", $file) or die "# cannot read \"$file\"\n";
+  }
 
-} elsif ($mode =~ m{dump}) { # dump the matrices
-  for my $ipla (0..$#planes) {
-    print "planes[$ipla]\n" if $debug >= 2;
-    for my $irow (0..$#{$planes[$ipla]}) {
-      print "planes[$ipla,$irow]\n" if $debug >= 2;
-      my $sep = "[";
-      for my $icol (0..$#{$planes[$ipla][$irow]}) {
-        print "planes[$ipla][$irow][$icol]\n" if $debug >= 2;
-        print "$sep$planes[$ipla][$irow][$icol]" if $debug >= 1;
-        $sep = ",";
+  @hma4 = ();
+  my @hmi = ( # default hma4[0]
+    [ 0xe ]
+  );
+  @counts = (1, 3);
+  my %bit_counts = qw(
+    0 0    1 1    2 1    3 2
+    4 1    5 2    6 2    7 3
+    8 1    9 2    a 2    b 3
+    c 2    d 3    e 3    f 4
+    );
+
+  my $ihm = 0;
+  while(<STDIN>) {
+    s/\s+\Z//;
+    my $line = $_;
+    if ($debug >= 1) {
+      print "# read4: $line\n";
+    }
+    #                1   1
+    if ($line =~ m{\[ *(\d+) *\]}) { # plane header line
+      my $iplane = $1;
+      &show_counts(1, $ihm);
+      $ihm = $iplane;
+      push(@hma4, [@hmi]); # previous accumulated plane
+      @hmi = ();
+      @counts = (0, 0);
+    } elsif ($line =~ m{\A[0-9a-fA-F])}) { # hex line
+      my @terms = map {
+            $counts[1] = $bit_counts[$_]; ++;
+            $counts[0] = 16 - $bit_counts[$_];
+            hex($_)
+          } split(//, lc($line));
+      push(@hmi, [@terms]);
+    }
+  } # while <IN>
+  push(@hma4, [@hmi]); # last accumulated plane
+  &show_counts(1, $ihm);
+  if ($file ne "-") {
+    close(STDIN);
+  }
+} # read4
+#----
+sub dump1 { # write matrices as bin digits without separators 
+  for my $ihm (0..$#hma1) {
+    print "==== hma1[$ihm]\n"; # start of 1 matrix
+    for my $irow   (0..$#{$hma1[$ihm]}) {
+      for my $icol (0..$#{$hma1[$ihm][$irow]}) {
+        print             $hma1[$ihm][$irow][$icol];
       } # for $icol
-      print "]\n" if $debug >= 1;
+      print "\n";
     } # for $irow
-    print "\n";
-  } # for $ipla
+    print "\n"; # at end of 1 matrix
+  } # for $ihm
+} # dump1
+#----
+sub dump4 { # write matrices as hex digits without separators 
+  for my $ihm (0..$#hma4) {
+    print "==== hma4[$ihm]\n"; # start of 1 matrix
+    for my $irow   (0..$#{$hma4[$ihm]}) {
+      for my $icol (0..$#{$hma4[$ihm][$irow]}) {
+        print             $hma4[$ihm][$irow][$icol];
+      } # for $icol
+      print "\n";
+    } # for $irow
+    print "\n"; # at end of 1 matrix
+  } # for $ihm
+} # dump4
+__DATA__
+
 
 } elsif ($mode =~ m{half}) { # check for half coincidence
   for my $ipla (0..$#planes) {

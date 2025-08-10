@@ -37,20 +37,3 @@ h65:
 	perl hadamard.pl -d $(D) -m square plane.$@.inc > plane.$@.tmp
 	perl svgen.pl                                     plane.$@.tmp
 #----
-# Pyramid for *VF=44
-E=22
-empty: # block with random opacity/color
-	perl hapy_empty.pl  -e $(E) \
-	>     hapyramid_blocks.js
-	cp -v hapyramid_blocks.js c:/xampp/htdocs/threejs/
-
-blocks: # block with hex encoded opacity/color
-	perl hapy_blocks.pl -e $(E) planes.tmp \
-	>     hapyramid_blocks.js
-	cp -v hapyramid_blocks.js c:/xampp/htdocs/threejs/
-
-deploy:
-	cp -v hapyramid.html hapyramid_world.js hapyramid_blocks.js c:/xampp/htdocs/threejs
-
-remote:
-	scp hapyramid.html hapyramid_world.js hapyramid_blocks.js gfis@teherba.org:/var/www/html/teherba.org/threejs/
