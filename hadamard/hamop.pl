@@ -58,6 +58,9 @@ while (scalar(@ARGV) > 0) {
     &help();
   } elsif ($oper eq "debug") {
     $debug     = shift(@ARGV);
+
+  } elsif ($oper eq "coltest") {
+    &coltest();
   } elsif ($oper eq "dump1") {
     &dump1();
   } elsif ($oper eq "dump4") {
@@ -328,152 +331,75 @@ sub read4 { # read an array of hexadecimal [0-9a-f] matrices from a file
   print "# read4 $ihmin..$ihmax\n" if ($debug >= 1);
 } # read4
 #----
-sub rowtest { # test all different rows whether one half of the  columns is coincident and one half is not
+sub get_diff {
+  my ($diff) = @_;
+  if (abs($diff) >= length($letters)) {
+    $diff = "*";
+  } elsif ($diff < 0) {
+    $diff = uc(substr($letters, -$diff, 1));
+  } elsif ($diff > 0) {
+    $diff = lc(substr($letters, -$diff, 1));
+  } else { # $diff == 0
+    $diff = "=";
+  }
+} # get_diff
+
+sub rowtest { # test all pairs of rows whether one half of the columns is coincident and one half is not
+  # the diagonal is also shown, though it never fulfills the condition
   print "# rowtest $ihmin..$ihmax\n" if ($debug >= 1);
   if ($ok1 == 0) {
     &fill1();
   }
   for my $ihm ($ihmin..$ihmax) {
     print "# rowtest $ihm\n";
-    for my $irow0  (0..$#{$hma1[$ihm]} - 1) {
+    for (my $irow0 = 0; $irow0 <= $#{$hma1[$ihm]} - 1; $irow0 ++) {
       print "" . (" " x $irow0);
-      for my $irow1  ($irow0..$#{$hma1[$ihm]}) {
+      for (my $irow1 = $irow0; $irow1 <= $#{$hma1[$ihm]}; $irow1 ++) {
         my $rowlen = $#{$hma1[$ihm][$irow0]} + 1;
         my $iscoin = 0; # number of coincidences
         my $nocoin = 0; # number of non-coincidences
-        for my $icol (0..$#{$hma1[$ihm][$irow0]}) {
+        for (my $icol = 0; $icol < $rowlen; $icol ++) {
           if ($hma1[$ihm][$irow0][$icol] == $hma1[$ihm][$irow1][$icol]) {
             $iscoin ++;
           } else {
             $nocoin ++;
           }
-        } # for $icol 
-        my $diff = $iscoin - $nocoin;
-        if (abs($diff) >= length($letters)) {
-        	$diff = "*";
-        } elsif ($diff < 0) {
-        	$diff = uc(substr($letters, -$diff, 1));
-        } elsif ($diff > 0) {
-        	$diff = lc(substr($letters, -$diff, 1));
-        } else { # $diff == 0
-        	$diff = "=";
-        }
-        print $diff;
+        } # for $icol
+        print &get_diff($iscoin - $nocoin);
       } # for $irow1
       print "\n";
     } # for $irow0
     print "\n"; # at end of 1 matrix
   } # for $ihm
-
 } # rowtest
+
+sub coltest { # test all pairs of columns whether one half of the rows is coincident and one half is not
+  # the diagonal is also shown, though it never fulfills the condition
+  print "# coltest $ihmin..$ihmax\n" if ($debug >= 1);
+  if ($ok1 == 0) {
+    &fill1();
+  }
+  for my $ihm ($ihmin..$ihmax) {
+    print "# coltest $ihm\n";
+    for (my $icol0 = 0; $icol0 <= $#{$hma1[$ihm][0]} - 1; $icol0 ++) {
+      print "" . (" " x $icol0);
+      for (my $icol1 = $icol0; $icol1 <= $#{$hma1[$ihm][0]}; $icol1 ++) {
+        my $collen = $#{$hma1[$ihm]} + 1;
+        my $iscoin = 0; # number of coincidences
+        my $nocoin = 0; # number of non-coincidences
+        for (my $irow = 0; $irow < $collen; $irow ++) {
+          if ($hma1[$ihm][$irow][$icol0] == $hma1[$ihm][$irow][$icol1]) {
+            $iscoin ++;
+          } else {
+            $nocoin ++;
+          }
+        } # for $irow
+        print &get_diff($iscoin - $nocoin);
+      } # for $icol1
+      print "\n";
+    } # for $icol0
+    print "\n"; # at end of 1 matrix
+  } # for $ihm
+} # coltest
 __DATA__
 
-
-} elsif ($mode =~ m{half}) { # check for half coincidence
-  for my $ipla (0..$#planes) {
-    my $plane_ok = 1; # assume success
-    for my $irow (0..$#{$planes[$ipla]} - 1) {
-      my $rowlen = $#{$planes[$ipla][$irow]} + 1;
-      for my $jrow ($irow + 1 .. $#{$planes[$ipla]}) { # pairs of rows
-        my $coins = 0; # number of coincidences
-        for my $icol (0..$#{$planes[$ipla][$irow]}) {
-          if ($planes[$ipla][$irow][$icol] == $planes[$ipla][$jrow][$icol]) {
-            $coins ++;
-          }
-        } # for $icol
-        if ($plane_ok && $coins != $rowlen / 2) { # coincide in 1/2 of the columns?
-          $plane_ok = 0;
-          print "# first difference for planes[$ipla][$irow][$jrow], rowlen=$rowlen, coincidences=$coins\n";
-        }
-      } # for $jrow
-    } # for $irow
-    if ($plane_ok) {
-      print "# planes[$ipla] ok\n";
-    }
-  } # for $ipla
-
-} elsif ($mode =~ m{square}) { # condensed notation for 2x2 cells
-  my %codes;
-  %codes =
-    ( 14, "\x{259b}" # F
-    ,  1, "\x{2597}" # .
-    , 11, "\x{2599}" # 'L'
-    ,  4, "\x{259d}" # 'l'
-    , 13, "\x{259c}" # 'T'
-    ,  8, "\x{2598}" # "j"
-    ,  7, "\x{259f}" # 'J'
-    ,  2, "\x{2596}" # 't'
-    , 12, "\x{2594}" # '='
-    , 15, "\x{2588}" # '#'
-    ,  6, "\x{259e}" # '/'
-    ,  9, "\x{259a}" # \\
-    ,  0, "\x{2591}" # ' '
-    , 10, "\x{258c}" # '|'
-    );
-  %codes =
-    (  0, " "
-    ,  1, "."
-    ,  2, "t"
-    ,  3, "_"
-    ,  4, "l"
-    ,  5, "I"
-    ,  6, "/"
-    ,  7, "J"
-    ,  8, "j"
-    ,  9, "\\"
-    , 10, "|"
-    , 11, "L"
-    , 12, "="
-    , 13, "T"
-    , 14, "F"
-    , 15, "#"
-    );
-  %codes =
-    (  0, "0"
-    ,  1, "1"
-    ,  2, "2"
-    ,  3, "3"
-    ,  4, "4"
-    ,  5, "5"
-    ,  6, "6"
-    ,  7, "7"
-    ,  8, "8"
-    ,  9, "9"
-    , 10, "a"
-    , 11, "b"
-    , 12, "c"
-    , 13, "d"
-    , 14, "e"
-    , 15, "f"
-    );
-  for my $ipla (1..$#planes) {
-    my $rowlen = $#{$planes[$ipla][0]} + 1;
-    my %counts = ();
-    print "# planes[$ipla], rowlen=$rowlen\n";
-    for (my $irow = 0; $irow < $rowlen; $irow += 2) {
-      my $nota22 = "";
-      for (my $icol = 0; $icol < $rowlen; $icol += 2) {
-        my $mask
-            = $planes[$ipla][$irow + 0][$icol + 0] << 3
-            | $planes[$ipla][$irow + 0][$icol + 1] << 2
-            | $planes[$ipla][$irow + 1][$icol + 0] << 1
-            | $planes[$ipla][$irow + 1][$icol + 1] << 0;
-        $counts{$mask} = defined($counts{$mask}) ? $counts{$mask} + 1 : 1;
-        if (defined($codes{$mask})) {
-            $nota22 .= $codes{$mask};
-        } else {
-            $nota22 .= "?$mask";
-        }
-      } # for $icol
-      print "$nota22\n";
-    } # for $irow
-    print "\n";
-    foreach my $key (sort(keys(%counts))) {
-      print "  $counts{$key}*\"$codes{$key}\"";
-    }
-    print "\n\n";
-  } # for $ipla
-
-} else {
-  print STDERR "# invalid mode \"$mode\"\n";
-}
