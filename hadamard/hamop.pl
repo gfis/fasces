@@ -29,6 +29,7 @@ if (scalar(@ARGV) == 0) {
   &help();
   exit;
 }
+my $letters = "=abcdefghijklmnopqrstuvwxyz"; # for rowtest, coltest
 my $ihmin = 2961947; # very high; set by "range" operation
 my $ihmax = 0;
 my $ok1 = 0; # whether @hma1 is complete
@@ -45,9 +46,9 @@ my %bit_counts = qw(
    12 2   13 3   14 3   15 4
     );
 if ($debug >= 2) {
-	foreach my $ix (keys(%bit_counts))  {
-		print "# init: bit_counts{$ix} = $bit_counts{$ix}\n";
-	}
+  foreach my $ix (keys(%bit_counts))  {
+    print "# init: bit_counts{$ix} = $bit_counts{$ix}\n";
+  }
 }
 
 while (scalar(@ARGV) > 0) {
@@ -75,6 +76,8 @@ while (scalar(@ARGV) > 0) {
     &read1(shift(@ARGV));
   } elsif ($oper eq "read4") {
     &read4(shift(@ARGV));
+  } elsif ($oper eq "rowtest") {
+    &rowtest();
   } elsif ($oper eq "separ") {
     $sep = shift(@ARGV);
     $sep =~ s{[\'\"]}{}; # remove quotes
@@ -324,6 +327,45 @@ sub read4 { # read an array of hexadecimal [0-9a-f] matrices from a file
   $ok4 = 1;
   print "# read4 $ihmin..$ihmax\n" if ($debug >= 1);
 } # read4
+#----
+sub rowtest { # test all different rows whether one half of the  columns is coincident and one half is not
+  print "# rowtest $ihmin..$ihmax\n" if ($debug >= 1);
+  if ($ok1 == 0) {
+    &fill1();
+  }
+  for my $ihm ($ihmin..$ihmax) {
+    print "# rowtest $ihm\n";
+    for my $irow0  (0..$#{$hma1[$ihm]} - 1) {
+      print "" . (" " x $irow0);
+      for my $irow1  ($irow0..$#{$hma1[$ihm]}) {
+        my $rowlen = $#{$hma1[$ihm][$irow0]} + 1;
+        my $iscoin = 0; # number of coincidences
+        my $nocoin = 0; # number of non-coincidences
+        for my $icol (0..$#{$hma1[$ihm][$irow0]}) {
+          if ($hma1[$ihm][$irow0][$icol] == $hma1[$ihm][$irow1][$icol]) {
+            $iscoin ++;
+          } else {
+            $nocoin ++;
+          }
+        } # for $icol 
+        my $diff = $iscoin - $nocoin;
+        if (abs($diff) >= length($letters)) {
+        	$diff = "*";
+        } elsif ($diff < 0) {
+        	$diff = uc(substr($letters, -$diff, 1));
+        } elsif ($diff > 0) {
+        	$diff = lc(substr($letters, -$diff, 1));
+        } else { # $diff == 0
+        	$diff = "=";
+        }
+        print $diff;
+      } # for $irow1
+      print "\n";
+    } # for $irow0
+    print "\n"; # at end of 1 matrix
+  } # for $ihm
+
+} # rowtest
 __DATA__
 
 
