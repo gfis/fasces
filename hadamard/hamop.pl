@@ -6,16 +6,18 @@
 #:#
 #:# Usage:
 #:#   perl hamop.pl [-d debug] op1 op2 ...
-#:#       help         print usage info
 #:#       debug mode   0=none, 1=some, 2=more debuging output
-#:#       read1 file   read binary matrices
-#:#       read4 file   read hexadecimal matrices
-#:#       to4          convert from binary to hexadecimal
-#:#       to1          convert from hexadecmal to binary
-#:#       check        test (binary) for 2/2 condition
-#:#       svg   dir    generate SVG files in dir from hex
 #:#       dump1        write bin with no separators
 #:#       dump4        write hex with no separators
+#:#       fill4        convert from binary to hexadecimal
+#:#       fill1        convert from hexadecmal to binary
+#:#       help         print usage info
+#:#       range lo-hi  range of matrix indexes
+#:#       read1 file   read binary matrices
+#:#       read4 file   read hexadecimal matrices
+#:#       rowtest      test (binary) rows for 2/2 condition
+#:#       separ ","    use separators for input or output
+#:#       svg   dir    generate SVG files in dir from hex
 #----------------
 use strict;
 use warnings;
@@ -27,6 +29,12 @@ if (scalar(@ARGV) == 0) {
   &help();
   exit;
 }
+my $ihmin = 1; # set by "range" operation
+my $ihmax;
+my $ok1 = 0; # whether @hma1 is complete
+my $ok4 = 0; # whether @hma4 is complete
+my $sep = ""; # separator (for input and output)
+
 while (scalar(@ARGV) > 0) {
   $oper = shift(@ARGV);
   if (0) {
@@ -38,10 +46,21 @@ while (scalar(@ARGV) > 0) {
     &dump1();
   } elsif ($oper eq "dump4") {
     &dump4();
+  } elsif ($oper eq "fill4") {
+    &fill4();
+  } elsif ($oper eq "range") {
+    my $range = shift(@ARGV);
+    ($ihmin, $ihmax) = split(/\D+/, $range); # split by non-digits 
+    if (! defined($ihmax)) {
+      $ihmax = $ihmin;
+    }
   } elsif ($oper eq "read1") {
     &read1(shift(@ARGV));
   } elsif ($oper eq "read4") {
     # &read4(shift(@ARGV));
+  } elsif ($oper eq "separ") {
+    $sep = shift(@ARGV);
+    $sep =~ s{[\'\"]}{}; # remove quotes
   } else {
       die "# invalid operation \"$oper\"\n";
   }
@@ -56,19 +75,33 @@ sub help {
     }
 } # help
 
-my @hma1   = (); # binary matrices
-my @hma4   = (); # hexadecimal matrices
-my @counts = (); # counts of bits [0, 1] or hexadecimal digits in one matrix
+my @hma1    = (); # binary matrices
+my @hma4    = (); # hexadecimal matrices
+my %counts1 = (); # counts of binary      digits in one matrix
+my %counts4 = (); # counts of hexadecimal digits in one matrix
+my %bit_counts = qw(
+    0x0 0    0x1 1    0x2 1    0x3 2    0x4 1    0x5 2    0x6 2    0x7 3
+    0x8 1    0x9 2    0xa 2    0xb 3    0xc 2    0xd 3    0xe 3    0xf 4
+    );
+
 #----
 sub show_counts {
-  my ($unit, $ihm) = @_; # unit=[1,4]
+  my ($unit, $ih) = @_; # unit=[1,4]
+  if ($debug == 0) {
+    return;
+  }
   if (0) {
   } elsif ($unit == 1) {
-    my $diff  = abs($counts[1] - $counts[0]);
+    my $diff  = abs($counts1{1} - $counts1{0});
     my $diff4 = $diff / 4;
-    print STDERR "# plane [$ihm]: $counts[0]*0, $counts[1]*1, diff=$diff, diff/4=$diff4\n";
+    my $rest  = ($diff4 == $ih) ? "" : (", /$ih=" . $diff4/$ih);
+    print "# matrix [$ih]: $counts1{0}*0 $counts1{1}*1, diff=$diff, diff/4=$diff4$rest\n";
   } elsif ($unit == 4) {
-    print STDERR "# plane [$ihm]: $counts[0]*0, $counts[1]*1\n";
+    print "# matrix [$ih]:";
+    foreach my $hx (sort(keys(%counts4))) {
+      print " $counts4{$hx}*" . sprintf("%01x", $hx);
+    } # foreach $hx
+    print "\n";
   }
 } # show_counts
 #----
@@ -84,7 +117,7 @@ sub read1 { # read an array of binary (1,-1) matrices with separators from a fil
     [ 1, 1 ],
     [ 1, 0 ]
   );
-  @counts = (1, 3);
+  %counts1 = (0, 1, 1, 3); # 1*0, 3*1
 
   my $ihm = 0;
   while(<STDIN>) {
@@ -95,30 +128,70 @@ sub read1 { # read an array of binary (1,-1) matrices with separators from a fil
     }
     #                1   1
     if ($line =~ m{\[ *(\d+) *\]}) { # plane header line
-      my $iplane = $1;
+      my $ihtemp = $1;
       &show_counts(1, $ihm);
-      $ihm = $iplane;
+      $ihm = $ihtemp;
       push(@hma1, [@hmi]); # previous accumulated plane
       @hmi = ();
-      @counts = (0, 0);
+      %counts1 = (0, 0, 1, 0);
     } elsif ($line =~ m{\A(\[ *\-?1)}) { # raw Sage output
       $line =~ s{\-1}{0}g;
       $line =~ s{[^01]+}{ }g;
       $line =~ s{\A +}{};
       $line =~ s{ +\Z}{};
-      my @terms = map {
-            $counts[$_] ++;
+      my @temp = map {
+            $counts1{$_} ++;
             $_
           } split(/ +/, $line);
-      push(@hmi, [@terms]);
+      push(@hmi, [ @temp ]);
     }
   } # while <IN>
-  push(@hma1, [@hmi]); # last accumulated plane
+  push(@hma1, [ @hmi ]); # last accumulated plane
   &show_counts(1, $ihm);
   if ($file ne "-") {
     close(STDIN);
   }
+  $ihmax = $ihm;
+  $ok1 = 1;
 } # read1
+#----
+sub fill4 { # fill @hma4 from @hma1
+  if ($ok4 == 1) { # is already filled
+  	print "# hma4 already filled\n";
+    return;
+  }
+        if ($debug >= 2) {
+          print "ihmin=$ihmin, ihmax=$ihmax\n";
+        }
+  @hma4 = ();
+  my @hmi = ( # default hma4[0]
+    [ 0xe ]
+  ); 
+  push(@hma4, [ @hmi ]);
+  %counts4 = ();
+  for my $ihm ($ihmin..$ihmax) {
+    @hmi  = ();
+    for (my $irow = 0; $irow <= $#{$hma1[$ihm]}; $irow += 2) {
+      my @temp = ();
+      for (my $icol = 0; $icol <= $#{$hma1[$ihm][$irow]}; $icol += 2) { 
+        if ($debug >= 2) {
+          print "ihm=$ihm, irow=$irow, icol=$icol\n";
+        }
+        my $mask
+            = $hma1[$ihm][$irow + 0][$icol + 0] << 3
+            | $hma1[$ihm][$irow + 0][$icol + 1] << 2
+            | $hma1[$ihm][$irow + 1][$icol + 0] << 1
+            | $hma1[$ihm][$irow + 1][$icol + 1] << 0;
+        $counts4{$mask} = defined($counts4{$mask}) ? $counts4{$mask} + 1 : 1;
+        push(@temp, $mask);
+      } # for $icol
+      push(@hmi, [ @temp ]);
+    } # for $irow
+    push(@hma4, [ @hmi ]);
+    &show_counts(4, $ihm);
+  } # for $ihm
+  $ok4 = 1;
+} # fill4
 #----
 sub read4 { # read an array of hexadecimal [0-9a-f] matrices with*OUT* separators from a file
   my ($file) = @_;
@@ -131,14 +204,7 @@ sub read4 { # read an array of hexadecimal [0-9a-f] matrices with*OUT* separator
   my @hmi = ( # default hma4[0]
     [ 0xe ]
   );
-  @counts = (1, 3);
-  my %bit_counts = qw(
-    0 0    1 1    2 1    3 2
-    4 1    5 2    6 2    7 3
-    8 1    9 2    a 2    b 3
-    c 2    d 3    e 3    f 4
-    );
-
+  %counts4 = (0xe, 1);
   my $ihm = 0;
   while(<STDIN>) {
     s/\s+\Z//;
@@ -153,14 +219,14 @@ sub read4 { # read an array of hexadecimal [0-9a-f] matrices with*OUT* separator
       $ihm = $iplane;
       push(@hma4, [@hmi]); # previous accumulated plane
       @hmi = ();
-      @counts = (0, 0);
-    } elsif ($line =~ m{\A[0-9a-fA-F])}) { # hex line
-      my @terms = map {
-            $counts[1] = $bit_counts[$_]; ++;
-            $counts[0] = 16 - $bit_counts[$_];
-            hex($_)
+      %counts4 = ();
+    } elsif ($line =~ m{\A[0-9a-fA-F]}) { # hex line
+      my @temp = map {
+            my $hx = hex($_);
+            $counts4{$hx} = defined($counts4{$hx}) ? $counts4{$hx} + 1 : 1;
+            $hx
           } split(//, lc($line));
-      push(@hmi, [@terms]);
+      push(@hmi, [@temp]);
     }
   } # while <IN>
   push(@hma4, [@hmi]); # last accumulated plane
@@ -168,13 +234,21 @@ sub read4 { # read an array of hexadecimal [0-9a-f] matrices with*OUT* separator
   if ($file ne "-") {
     close(STDIN);
   }
+  $ihmax = $ihm;
+  $ok4 = 1;
 } # read4
 #----
-sub dump1 { # write matrices as bin digits without separators 
-  for my $ihm (0..$#hma1) {
+sub dump1 { # write matrices as bin digits
+  if ($ok1 == 0) {
+  # &fill1();
+  }
+  for my $ihm ($ihmin..$ihmax) {
     print "==== hma1[$ihm]\n"; # start of 1 matrix
     for my $irow   (0..$#{$hma1[$ihm]}) {
       for my $icol (0..$#{$hma1[$ihm][$irow]}) {
+        if ($icol > 0) {
+          print $sep;
+        }
         print             $hma1[$ihm][$irow][$icol];
       } # for $icol
       print "\n";
@@ -183,12 +257,18 @@ sub dump1 { # write matrices as bin digits without separators
   } # for $ihm
 } # dump1
 #----
-sub dump4 { # write matrices as hex digits without separators 
-  for my $ihm (0..$#hma4) {
+sub dump4 { # write matrices as hex digits
+  if ($ok4 == 0) {
+    &fill4();
+  }
+  for my $ihm ($ihmin..$ihmax) {
     print "==== hma4[$ihm]\n"; # start of 1 matrix
     for my $irow   (0..$#{$hma4[$ihm]}) {
       for my $icol (0..$#{$hma4[$ihm][$irow]}) {
-        print             $hma4[$ihm][$irow][$icol];
+        if ($icol > 0) {
+          print $sep;
+        }
+        print sprintf("%01x", $hma4[$ihm][$irow][$icol]);
       } # for $icol
       print "\n";
     } # for $irow

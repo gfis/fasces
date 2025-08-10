@@ -96,15 +96,15 @@ if (0) {
           print "# first difference for planes[$ipla][$irow][$jrow], rowlen=$rowlen, coincidences=$coins\n";
         }
       } # for $jrow
-    } # for $irow 
+    } # for $irow
     if ($plane_ok) {
-    	print "# planes[$ipla] ok\n";
+      print "# planes[$ipla] ok\n";
     }
   } # for $ipla
 
-} elsif ($mode =~ m{square}) { # condensed notation for 2x2 cells 
+} elsif ($mode =~ m{square}) { # condensed notation for 2x2 cells
   my %codes;
-  %codes = 
+  %codes =
     ( 14, "\x{259b}" # F
     ,  1, "\x{2597}" # .
     , 11, "\x{2599}" # 'L'
@@ -120,7 +120,7 @@ if (0) {
     ,  0, "\x{2591}" # ' '
     , 10, "\x{258c}" # '|'
     );
-  %codes = 
+  %codes =
     (  0, " "
     ,  1, "."
     ,  2, "t"
@@ -131,14 +131,14 @@ if (0) {
     ,  7, "J"
     ,  8, "j"
     ,  9, "\\"
-    , 10, "|" 
+    , 10, "|"
     , 11, "L"
     , 12, "="
     , 13, "T"
     , 14, "F"
     , 15, "#"
     );
-  %codes = 
+  %codes =
     (  0, "0"
     ,  1, "1"
     ,  2, "2"
@@ -149,21 +149,21 @@ if (0) {
     ,  7, "7"
     ,  8, "8"
     ,  9, "9"
-    , 10, "a" 
+    , 10, "a"
     , 11, "b"
     , 12, "c"
     , 13, "d"
     , 14, "e"
     , 15, "f"
     );
-  for my $ipla (1..$#planes) {  
-    my $rowlen = $#{$planes[$ipla][0]} + 1; 
+  for my $ipla (1..$#planes) {
+    my $rowlen = $#{$planes[$ipla][0]} + 1;
     my %counts = ();
     print "# planes[$ipla], rowlen=$rowlen\n";
     for (my $irow = 0; $irow < $rowlen; $irow += 2) {
       my $nota22 = "";
-      for (my $icol = 0; $icol < $rowlen; $icol += 2) { 
-        my $mask 
+      for (my $icol = 0; $icol < $rowlen; $icol += 2) {
+        my $mask
             = $planes[$ipla][$irow + 0][$icol + 0] << 3
             | $planes[$ipla][$irow + 0][$icol + 1] << 2
             | $planes[$ipla][$irow + 1][$icol + 0] << 1
@@ -176,10 +176,10 @@ if (0) {
         }
       } # for $icol
       print "$nota22\n";
-    } # for $irow 
+    } # for $irow
     print "\n";
     foreach my $key (sort(keys(%counts))) {
-    	print "  $counts{$key}*\"$codes{$key}\"";
+      print "  $counts{$key}*\"$codes{$key}\"";
     }
     print "\n\n";
   } # for $ipla
