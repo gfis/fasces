@@ -6,7 +6,7 @@
 # 2024-07-24, Georg Fischer
 #:#
 #:# Usage:
-#:#   perl hadamard.pl [-d debug] [-m mode]
+#:#   perl hadamard.pl [-d debug] [-m mode] [-s]
 #:#       -d 0=none, 1=some, 2=more debuging output
 #:#       -m block  print the block counts and their sum
 #:#       -m dump   print the matrices with 0/1
@@ -24,6 +24,7 @@ use utf8;
 binmode(STDOUT, ":utf8");
 my $debug = 0;
 my $mode  = "dump";
+my $sorted = 0;
 while (scalar(@ARGV) > 0 and ($ARGV[0] =~ m{\A[\-\+]})) {
     my $opt = shift(@ARGV);
     if (0) {
@@ -31,6 +32,8 @@ while (scalar(@ARGV) > 0 and ($ARGV[0] =~ m{\A[\-\+]})) {
         $debug     = shift(@ARGV);
     } elsif ($opt  =~ m{\-m}) {
         $mode      = shift(@ARGV);
+    } elsif ($opt  =~ m{\-s}) {
+        $sorted    = 1;
     } else {
         die "invalid option \"$opt\"\n";
     }
@@ -74,26 +77,18 @@ if (0) {
     my @row_changes = ();
     my $row_sum = 0;
     for my $irow (0..$#{$planes[$ipla]}) {
-      print "planes[$ipla,$irow]\n" if $debug >= 2;
-      my $sep = "[";
       my $changes = 0;
       my $prev = -1;
       for my $icol (0..$#{$planes[$ipla][$irow]}) {
-        print "planes[$ipla][$irow][$icol]\n" if $debug >= 2;
-        print "$sep$planes[$ipla][$irow][$icol]" if $debug >= 1;
         if ($prev != $planes[$ipla][$irow][$icol]) {
             $changes ++;
-            $prev = $planes[$ipla][$irow][$icol];
+            $prev  = $planes[$ipla][$irow][$icol];
         }
-        $sep = ",";
       } # for $icol
-      print "]" if $debug >= 1;
-      print " $changes\n";
       $row_sum += $changes;
       push(@row_changes, $changes);
     } # for $irow
-#   print join(",", sort numerically @row_changes) . " rowsum = $row_sum\n";
-    print join(",",                  @row_changes) . " rowsum = $row_sum\n";
+    print join(",", ($sorted > 0) ?  sort numerically @row_changes : @row_changes) . " rowsum = $row_sum\n";
 
     my @col_changes = ();
     my $col_sum = 0;
@@ -103,14 +98,13 @@ if (0) {
       for my $irow (0..$#{$planes[$ipla]}) {
         if ($prev != $planes[$ipla][$irow][$icol]) {
             $changes ++;
-            $prev = $planes[$ipla][$irow][$icol];
+            $prev  = $planes[$ipla][$irow][$icol];
         }
       } # for $icol
       $col_sum += $changes;
       push(@col_changes, $changes);
     } # for $irow
-#   print join(",", sort numerically @col_changes) . " colsum = $col_sum\n";
-    print join(",",                  @col_changes) . " colsum = $col_sum\n";
+    print join(",", ($sorted > 0) ?  sort numerically @col_changes : @col_changes) . " colsum = $col_sum\n";
   } # for $ipla
 
 } elsif ($mode =~ m{dump}) { # dump the matrices
