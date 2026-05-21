@@ -24,7 +24,7 @@ svgen:
 #--------------------------------------
 sagen: # generate Hadamard matrices with sage in raw format; must be called under Ubuntu in directory /mnt/c/Users/drgeo/work/gits/fasces/hadamard
 	mkdir -p raw 
-	seq 1 256 | xargs -innn make sagen1 SEQ=nnn
+	seq 0 2 256 | xargs -innn make sagen1 SEQ=nnn
 sagen1:
 	sage hadamard.sage $(SEQ) > raw/h$(SEQ).raw
 	echo raw/h$(SEQ) generated
