@@ -2,17 +2,18 @@
 
 # hadamat.pl - operations on Hadamard matrices
 # @(#) $Id$
-# 2026-06-08: copied from hamop.pl; only 1 matrix, no oper4; *FP=12
+# 2026-06-08: copied from hamop.pl; only 1 matrix, no oper4; *FP=12; *RP=78
 # 2024-08-10, Georg Fischer
 #:#
 #:# Usage:
 #:#   perl hadamat.pl [-d debug] op1 op2 ...
 #:#       debug mode     0=none, 1=some, 2=more debuging output
-#:#       dump           write binary terms with no separators
+#:#       dump<i>        write terms in "1-" format, optionally separate in <i> subblocks
 #:#       help           print usage info
 #:#       read  file     read matrices in "sage", "10" or "+-" format
-#:#       coltest        test columns for 1/2 condition
-#:#       rowtest        test rows for 1/2 condition
+#:#       coltest        test columns for 1/2 condition and show triangle
+#:#       rowtest        test rows for 1/2 condition and show triangle
+#:#       ortest         test rows and columns for 1/2 condition and show summary only
 #:#       svg            generate an SVG file
 #----------------
 use strict;
@@ -21,7 +22,8 @@ use integer;
 
 my $debug = 0;
 my $oper  = "help";
-my $sep   = "";
+my $sep   = ""; 
+my $order = 0;
 if (scalar(@ARGV) == 0) {
   &help();
   exit;
@@ -43,21 +45,22 @@ if ($debug >= 2) {
 while (scalar(@ARGV) > 0) {
   $oper = shift(@ARGV);
   if (0) {
-  } elsif ($oper eq "help") {
-                    &help();
-  } elsif ($oper eq "debug") {
-                    $debug     = shift(@ARGV);
-
-  } elsif ($oper eq "coltest") {
-                    &coltest();
-  } elsif ($oper eq "dump") {
-                    &dump_hm();
-  } elsif ($oper eq "fill1") {
-    # nyi
-  } elsif ($oper eq "read") {
-                    &read_hm(shift(@ARGV));
-  } elsif ($oper eq "rowtest") {
-                    &rowtest();
+  } elsif ($oper eq  "help") {
+                     &help();
+  } elsif ($oper eq  "debug") {
+                     $debug     = shift(@ARGV);
+  } elsif ($oper eq  "coltest") {
+                     &coltest(1);
+  } elsif ($oper =~ m{dump\d*}) {
+                     &dump0($oper);
+  } elsif ($oper eq  "ortest") { 
+                     &ortest();
+  } elsif ($oper eq  "fill1") {
+    # nyi           
+  } elsif ($oper eq  "read") {
+                     &read_hm(shift(@ARGV));
+  } elsif ($oper eq  "rowtest") {
+                     &rowtest(1);
   } else {
       die "# invalid operation \"$oper\"\n";
   }
@@ -86,13 +89,17 @@ sub get_diff {
 } # get_diff
 
 sub rowtest { # test all pairs of rows whether one half of the columns is coincident and one half is not
+  my ($show) = @_;
+  my $result = 1;
   if ($debug >= 1) {
     print "# rowtest\n";
   }
-  my $rowlen = scalar($hm[0]);
+  my $rowlen = $#hm + 1;
   my $collen = $rowlen;
-  for (my $irow0 = 0; $irow0 < $rowlen; $irow0 ++) {
-    print "" . (" " x $irow0);
+  for my $irow0 (0..$#hm) {
+    if ($show > 0) {
+      print "" . (" " x $irow0);
+    }
     for (my $irow1 = $irow0 + 1; $irow1 < $rowlen; $irow1 ++) {
       my $iscoin = 0; # number of coincidences
       my $nocoin = 0; # number of non-coincidences
@@ -103,21 +110,32 @@ sub rowtest { # test all pairs of rows whether one half of the columns is coinci
           $nocoin ++;
         }
       } # for $icol
-      print &get_diff($iscoin - $nocoin);
+      if ($show > 0) {
+        print &get_diff($iscoin - $nocoin);
+      }
+      if ($iscoin != $nocoin) {
+        $result = 0;
+      }
     } # for $irow1
-    print "\n";
+    if ($show > 0) {
+      print "\n";
+    }
   } # for $irow0
-  print "\n"; # at end of 1 matrix
+  return $result;
 } # rowtest
 
 sub coltest { # test all pairs of columns whether one half of the rows is coincident and one half is not
+  my ($show) = @_;
+  my $result = 1;
   if ($debug >= 1) {
     print "# coltest\n";
   }
-  my $rowlen = scalar($hm[0]);
+  my $rowlen = $#hm + 1;
   my $collen = $rowlen;
-  for (my $icol0 = 0; $icol0 < $collen; $icol0 ++) {
-    print "" . (" " x $icol0);
+  for my $icol0 (0..$#hm) {
+    if ($show > 0) {
+      print "" . (" " x $icol0);
+    }
     for (my $icol1 = $icol0 + 1; $icol1 < $collen; $icol1 ++) {
       my $iscoin = 0; # number of coincidences
       my $nocoin = 0; # number of non-coincidences
@@ -128,15 +146,39 @@ sub coltest { # test all pairs of columns whether one half of the rows is coinci
           $nocoin ++;
         }
       } # for $irow
-      print &get_diff($iscoin - $nocoin);
+      if ($show > 0) {
+        print &get_diff($iscoin - $nocoin);
+      }
+      if ($iscoin != $nocoin) {
+        $result = 0;
+      }
     } # for $icol1
-    print "\n";
+    if ($show > 0) {
+      print "\n";
+    }
   } # for $icol0
-  print "\n"; # at end of 1 matrix
+  return $result;
 } # coltest
+
+sub ortest {
+  my $sum = 0;
+  $sum += &rowtest(0);
+  $sum += &coltest(0);
+  print "# ortest=$sum, order=$order, order/4=" . ($order/4) . "\n";
+} # ortest
 #----
-sub dump_hm { # write matrices as binary digits 0,1
+sub dump0 { # write matrices as binary digits 0,1
+  my ($name) = @_;
+  my $ord4 = 19470629; # very high
+  if ($name =~ m{dump(\d+)}) {
+    my $div = $1;
+    $ord4 = ($#hm + 1) / $div;
+  }
+  # print STDERR "dump0: name=$name, ord4=$ord4\n";
   for my $irow   (0..$#hm) {
+    if ($irow > 0 && $irow % $ord4 == 0) {
+      print "\n";
+    }
     for my $icol (0..$#{$hm[$irow]}) {
       if ($icol > 0) {
         print $sep;
@@ -145,12 +187,15 @@ sub dump_hm { # write matrices as binary digits 0,1
       if ($ch == 0) {
         $ch = "-";
       }
+      if ($icol > 0 && $icol % $ord4 == 0) {
+        print " ";
+      }
       print $ch;
     } # for $icol
     print "\n";
   } # for $irow
   print "\n"; # at end of 1 matrix
-} # dump_hm
+} # dump0
 #----
 sub read_hm { # read an array of binary (1,-1) matrices from a file
   my ($file) = @_;
@@ -171,16 +216,18 @@ sub read_hm { # read an array of binary (1,-1) matrices from a file
     if (($line =~ m{plane}) || ($line =~ m{\A\s*\Z}) ) { # plane header or empty line 
       next;
     } 
-    if ($line =~ m{\A\[[\+\-]*\]}) { # sage separator line
+    if ($line =~ m{\A\[?[\+\-]*\]}) { # sage separator line
       next;
     } 
-    if ($first) { #determine input format from first line: "sage", "10", "+-"
+    if ($first) { #determine input format from first line: "sage", "10", "+-", "1-"
       $first = 0;
       if (0) {
-      } elsif ($line =~ m{\A\[ *\-?1}) { # raw Sage output
+      } elsif ($line =~ m{\A\[? *\-?1}) { # raw Sage output
         $informat = "sage";
       } elsif ($line =~ m{\A *[\+\- ]+\Z}) { # +-
         $informat = "+-";
+      } elsif ($line =~ m{\A *[1\- ]+\Z}) { # 1-
+        $informat = "1-";
       } elsif ($line =~ m{\A *[10 ]+\Z}) { # 10
         $informat = "10";
       } else {
@@ -190,18 +237,24 @@ sub read_hm { # read an array of binary (1,-1) matrices from a file
     my $found = 0;
     if (0) {
     } elsif ($informat eq "sage") {
-      if ($line =~ m{\A\[ *\-?1}) {
-        $line =~ s{\-1}{0}g;
+      if ($line =~ m{\A\[? *\-?1}) {
+        $line =~ s{\-1}{0}g; # negative -> 0
         $line =~ s{[^01]}{}g; # remove any non-binary characters
         $found = 1;
       }
     } elsif ($informat eq "10") {
-      if ($line =~ m{\A *[\+\- ]+\Z}) {
+      if ($line =~ m{\A *[10 ]+\Z}) {
         $line =~ s{[^01]}{}g; # remove any other characters
         $found = 1;
       }
+    } elsif ($informat eq "1-") {
+      if ($line =~ m{\A *[1\- ]+\Z}) {
+        $line =~ s{[^1\-]}{}g; # remove any other characters
+        $line =~ tr{1\-}{10};
+        $found = 1;
+      }
     } elsif ($informat eq "+-") {
-      if ($line =~ m{\A *[10 ]+\Z}) {
+      if ($line =~ m{\A *[\+\- ]+\Z}) {
         $line =~ s{[^\+\-]}{}g; # remove any other characters
         $line =~ tr{\+\-}{10};
         $found = 1;
@@ -216,6 +269,7 @@ sub read_hm { # read an array of binary (1,-1) matrices from a file
   if ($#hm != $#{$hm[0]}) {
     print STDERR "non-square matrix: $#hm x $#{$hm[0]}\n";
   }
+  $order = $#hm + 1;
   if ($file ne "-") {
     close(STDIN);
   }
