@@ -7,29 +7,40 @@
 #:#
 #:# Usage:
 #:#   perl hadamat.pl [-d debug] op1 op2 ...
-#:#       debug mode     0=none, 1=some, 2=more debuging output
-#:#       dump<i>        write terms in "1-" format, optionally separate in <i> subblocks
-#:#       help           print usage info
-#:#       read  file     read matrices in "sage", "10" or "+-" format
-#:#       coltest        test columns for 1/2 condition and show triangle
-#:#       rowtest        test rows for 1/2 condition and show triangle
-#:#       ortest         test rows and columns for 1/2 condition and show summary only
-#:#       svg            generate an SVG file
+#:#     debug    mode      0=none, 1=some, 2=more debugging output
+#:#     dump<i>            write terms in "1-" format, optionally separate in <i> subblocks
+#:#     help               print usage info
+#:#     read     file      read matrices in "sage", "10" or "+-" format
+#:#     order    n         specify the desired order for gen (must be a multiply of 4)
+#:#     gen      method    generate a Hadamard matrix with method 
+#:#     coltest            test columns for 1/2 condition and show triangle
+#:#     rowtest            test rows for 1/2 condition and show triangle
+#:#     ortest             test rows and columns for 1/2 condition and show summary only
+#:#     legendre p         compute the legendre symbols (a/p) for a=0..p-1 (p prime), with debug >= 1
+#:#     svg                generate an SVG file
+#
+# C.f. https://en.wikipedia.org/wiki/Paley_construction -> Jacobsthal matrix -> Legendre symbol
 #----------------
 use strict;
 use warnings;
 use integer;
 
-my $debug = 0;
-my $oper  = "help";
-my $sep   = ""; 
-my $order = 0;
+my $debug  = 0;
+my $oper   = "help";
+my $sep    = ""; 
+my $order  = 7;
+my $method = "paleyI";
 if (scalar(@ARGV) == 0) {
   &help();
   exit;
 }
 my $letters = "=abcdefghijklmnopqrstuvwxyz"; # for rowtest, coltest
 my @hm      = (); # the matrix
+my @chi; # stores the Legendre symbol of (n/p) for n=0..p-1 
+my %squares; # maps n -> sqrt(n)
+for my $n (0..100) {
+  $squares{$n**2} = $n;
+}
 my %bit_counts = qw(
     0 0    1 1    2 1    3 2
     4 1    5 2    6 2    7 3
@@ -51,12 +62,16 @@ while (scalar(@ARGV) > 0) {
                      $debug     = shift(@ARGV);
   } elsif ($oper eq  "coltest") {
                      &coltest(1);
+  } elsif ($oper eq  "legendre") {
+                     &legendre(shift(@ARGV));
   } elsif ($oper =~ m{dump\d*}) {
                      &dump0($oper);
+  } elsif ($oper eq  "order") { 
+                     $order = shift(@ARGV);;
   } elsif ($oper eq  "ortest") { 
                      &ortest();
-  } elsif ($oper eq  "fill1") {
-    # nyi           
+  } elsif ($oper eq  "gen") {
+                     &gen(shift(@ARGV));
   } elsif ($oper eq  "read") {
                      &read_hm(shift(@ARGV));
   } elsif ($oper eq  "rowtest") {
@@ -74,6 +89,32 @@ sub help {
       }
     }
 } # help
+#----
+sub legendre { # parameter: p 
+  # from https://en.wikipedia.org/wiki/Paley_construction
+  my ($q) = @_;
+  @chi = (0); # [0] is always 0
+  for my $a (1..$q - 1) {
+    my $result = -1; # assume non-square
+    my $busy = 1;
+    my $b = 1;
+    while ($busy == 1 && $b < $q) {
+      my $b2 = $b**2;
+      if ($debug >= 2) {
+        print "a=$a, busy=$busy, result=$result, b=$b, b2=$b2, q=$q, b2 % q= " . ($b2 % $q) . "\n";
+      }
+      if ($b2 % $q == $a) { # quadratic residue
+        $busy = 0;
+        $result = 1;
+      }
+      $b++;
+    } 
+    push(@chi, $result);
+  } # for $a
+  if ($debug >= 1) {
+    print join(",", @chi) . "\n";
+  }
+} # legendre
 #----
 sub get_diff {
   my ($diff) = @_;
@@ -274,44 +315,35 @@ sub read_hm { # read an array of binary (1,-1) matrices from a file
     close(STDIN);
   }
 } # read_hm
-__DATA__
 #----
-sub fill1 { # fill @hma1 from @hma4
-  print "# fill1 $ihmin..$ihmax\n" if ($debug >= 1);
-  if ($ok1 == 1) { # is already filled
-    print "# fill1: @hma1 already filled\n";
-    return;
-  }
-  @hma1 = ();
-  my @hmi = ( # default hma1[0]
-    [ 1, 1 ],
-    [ 1, 0 ]
-  );
-  push(@hma1, [ @hmi ]);
-  %counts1 = (0, 0, 1, 0);
-  for my $ihm ($ihmin..$ihmax) {
-    @hmi  = ();
-    for (my $irow = 0; $irow <= $#{$hma4[$ihm]}; $irow ++) {
-      my @temp0 = (); # upper row
-      my @temp1 = (); # lower row
-      for (my $icol = 0; $icol <= $#{$hma4[$ihm][$irow]}; $icol ++) {
-        my $mask = $hma4[$ihm][$irow][$icol];
-        if ($debug >= 2) {
-          print "# fill1: ihm=$ihm, irow=$irow, icol=$icol, mask=$mask, bit_counts{$mask}=$bit_counts{$mask}\n";
-        }
-        $counts1{0} += 16 - $bit_counts{$mask};
-        $counts1{1} +=      $bit_counts{$mask};
-        push(@temp0, ($mask >> 3) & 1, ($mask >> 2) & 1);
-        push(@temp1, ($mask >> 1) & 1, ($mask >> 0) & 1);
+sub gen { # (method); fill @hm
+  my ($method) = @_;
+  @hm = ();
+  my @row  = ();
+  if (0) {
+  } elsif ($method =~ m{paley(I|1)\Z}i) {
+  #--------
+    &legendre($order - 1);
+    for (my $icol = 0; $icol < $order; $icol ++) { # row 0 = ones
+      push(@row, 1);
+    } # for $icol
+    push(@hm, [ @row ]);
+    for (my $irow = 1; $irow < $order; $irow ++) { # rows 1..order = Legendre symbols (skew)
+      @row = (1); # column 0 = 0 (originally -1)
+      for (my $icol = 0; $icol < $order; $icol ++) {
+      	my $elem = $chi[$irow - $icol]; 
+      	if ($irow == $icol) {
+      	  $elem = 1;
+      	}
+        push(@row, $elem);
       } # for $icol
-      push(@hmi, [ @temp0 ]);
-      push(@hmi, [ @temp1 ]);
+      push(@hm, [ @row ]);
     } # for $irow
-    $hm = [ @hmi ];
-    &show_counts(1, $ihm);
-  } # for $ihm
-  $ok1 = 1;
-} # fill1
+  #--------
+  } else {
+    die "unknown method $method\n";
+  }
+} # gen
 #----
 __DATA__
 
