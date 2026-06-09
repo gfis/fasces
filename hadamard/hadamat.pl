@@ -6,28 +6,62 @@
 # 2024-08-10, Georg Fischer
 #:#
 #:# Usage:
-#:#   perl hadamat.pl [-d debug] op1 op2 ...
+#:#   perl hadamat.pl [-d debug] arg1 arg2 ...
+#:#     coltest            test columns for 1/2 condition and show triangle
 #:#     debug    mode      0=none, 1=some, 2=more debugging output
 #:#     dump<i>            write terms in "1-" format, optionally separate in <i> subblocks
+#:#     gen      method    generate a Hadamard matrix with method
 #:#     help               print usage info
-#:#     read     file      read matrices in "sage", "10" or "+-" format
-#:#     order    n         specify the desired order for gen (must be a multiply of 4)
-#:#     gen      method    generate a Hadamard matrix with method 
-#:#     coltest            test columns for 1/2 condition and show triangle
-#:#     rowtest            test rows for 1/2 condition and show triangle
-#:#     ortest             test rows and columns for 1/2 condition and show summary only
 #:#     legendre p         compute the legendre symbols (a/p) for a=0..p-1 (p prime), with debug >= 1
+#:#     order    n         specify the desired order for gen (must be a multiply of 4)
+#:#     ortest             test rows and columns for 1/2 condition and show summary only
+#:#     push               copy the accumlator hma to the auxiliary matrix hmb
+#:#     read     file      read matrices in "sage", "10" or "+-" format
+#:#     rowtest            test rows for 1/2 condition and show triangle
 #:#     svg                generate an SVG file
+#:#
+#:# Input formats may be either:
+#:#   sage   [1,-1 ...
+#:#   +-     only "+" for +1, "-" for -1
+#:#   1-     1 and -1 for -1
+#:#   10     1 and 0 for -1
+#:#
+#:# Generation methods:
+#:#   paley1, paleyI
+#:#   sylvester (doubling, original must be pushed to hmb)
+#:#
+#:#
+#:#
+#:#
+#--------
+# Internally the matrices are represented by $POS1 (1) and $NEG1 (0).
+# Multiplication and division of 1/-1 elements is replaced by "coincides" (not differs, not xor) of 1/0 elements,
+# and negation ix replaced by xor with 1,
+# according to the following table:
+#  a  b  a*b  a/b  -a | a  b  a xor b  a coin b  1 xor a
+# -1 -1   1    1    1 | 0  0     0        1         1
+# -1  1  -1   -1    1 | 0  1     1        0         1
+#  1 -1  -1   -1   -1 | 1  0     1        0         0
+#  1  1   1    1   -1 | 1  1     0        1         0
 #
-# C.f. https://en.wikipedia.org/wiki/Paley_construction -> Jacobsthal matrix -> Legendre symbol
-#----------------
+# C.f.
+# https://en.wikipedia.org/wiki/Hadamard_matrix
+# https://en.wikipedia.org/wiki/Paley_construction -> Jacobsthal matrix
+# https://en.wikipedia.org/wiki/Legendre_symbol
+#
+# The method paley1 yields skew matrices for order/4 =
+# 1,2,3,5,6,8,11,12,15,17,18,20,21,26,27,32,33,35,38,41,42,45,48,50,53,56,57,60,63 ...
+# -> OEIS A005099: Numbers k such that 4*k - 1 is prime.
+#--------
 use strict;
 use warnings;
 use integer;
 
+my $POS1   = 1;
+my $NEG1   = 0;
 my $debug  = 0;
 my $oper   = "help";
-my $sep    = ""; 
+my $sep    = "";
 my $order  = 7;
 my $method = "paleyI";
 if (scalar(@ARGV) == 0) {
@@ -35,8 +69,9 @@ if (scalar(@ARGV) == 0) {
   exit;
 }
 my $letters = "=abcdefghijklmnopqrstuvwxyz"; # for rowtest, coltest
-my @hm      = (); # the matrix
-my @chi; # stores the Legendre symbol of (n/p) for n=0..p-1 
+my @hma      = (); # accumulator matrix
+my @hmb      = (); # auxiliary   matrix
+my @chi; # stores the Legendre symbol of (n/p) for n=0..p-1
 my %squares; # maps n -> sqrt(n)
 for my $n (0..100) {
   $squares{$n**2} = $n;
@@ -56,26 +91,17 @@ if ($debug >= 2) {
 while (scalar(@ARGV) > 0) {
   $oper = shift(@ARGV);
   if (0) {
-  } elsif ($oper eq  "help") {
-                     &help();
-  } elsif ($oper eq  "debug") {
-                     $debug     = shift(@ARGV);
-  } elsif ($oper eq  "coltest") {
-                     &coltest(1);
-  } elsif ($oper eq  "legendre") {
-                     &legendre(shift(@ARGV));
-  } elsif ($oper =~ m{dump\d*}) {
-                     &dump0($oper);
-  } elsif ($oper eq  "order") { 
-                     $order = shift(@ARGV);;
-  } elsif ($oper eq  "ortest") { 
-                     &ortest();
-  } elsif ($oper eq  "gen") {
-                     &gen(shift(@ARGV));
-  } elsif ($oper eq  "read") {
-                     &read_hm(shift(@ARGV));
-  } elsif ($oper eq  "rowtest") {
-                     &rowtest(1);
+  } elsif ($oper =~ m{coltest} ) { &coltest(1);
+  } elsif ($oper =~ m{debug}   ) { $debug     = shift(@ARGV);
+  } elsif ($oper =~ m{dump\d*} ) { &dump0($oper);
+  } elsif ($oper =~ m{gen}     ) { &gen        (shift(@ARGV));
+  } elsif ($oper =~ m{help}    ) { &help();
+  } elsif ($oper =~ m{legendre}) { &legendre   (shift(@ARGV));
+  } elsif ($oper =~ m{order}   ) { $order =     shift(@ARGV);;
+  } elsif ($oper =~ m{ortest}  ) { &ortest();
+  } elsif ($oper =~ m{push}    ) { &push_hm();
+  } elsif ($oper =~ m{read}    ) { &read_hm    (shift(@ARGV));
+  } elsif ($oper =~ m{rowtest} ) { &rowtest(1);
   } else {
       die "# invalid operation \"$oper\"\n";
   }
@@ -90,12 +116,12 @@ sub help {
     }
 } # help
 #----
-sub legendre { # parameter: p 
+sub legendre { # parameter: p
   # from https://en.wikipedia.org/wiki/Paley_construction
   my ($q) = @_;
-  @chi = (0); # [0] is always 0
+  @chi = ($NEG1); # [0] is always 0
   for my $a (1..$q - 1) {
-    my $result = 0; # assume non-square
+    my $result = $NEG1; # assume non-square
     my $busy = 1;
     my $b = 1;
     while ($busy == 1 && $b < $q) {
@@ -105,10 +131,10 @@ sub legendre { # parameter: p
       }
       if ($b2 % $q == $a) { # quadratic residue
         $busy = 0;
-        $result = 1;
+        $result = $POS1;
       }
       $b++;
-    } 
+    }
     push(@chi, $result);
   } # for $a
   if ($debug >= 1) {
@@ -116,7 +142,7 @@ sub legendre { # parameter: p
   }
 } # legendre
 #----
-sub get_diff {
+sub eval_sums { # evaluate the sum of coincidences minus the sum of differences; "=" if both sums are equal.
   my ($diff) = @_;
   if (abs($diff) >= length($letters)) {
     $diff = "*";
@@ -127,17 +153,17 @@ sub get_diff {
   } else { # $diff == 0
     $diff = "=";
   }
-} # get_diff
+} # eval_sums
 
-sub rowtest { # test all pairs of rows whether one half of the columns is coincident and one half is not
+sub rowtest { # (show); test all pairs of rows whether one half of the columns is coincident and one half is not
   my ($show) = @_;
   my $result = 1;
-  if ($debug >= 1) {
-    print "# rowtest\n";
-  }
-  my $rowlen = $#hm + 1;
+  my $rowlen = $#hma + 1;
   my $collen = $rowlen;
-  for my $irow0 (0..$#hm) {
+  if ($debug >= 1) {
+    print "# rowtest $rowlen\n";
+  }
+  for my $irow0 (0..$#hma) {
     if ($show > 0) {
       print "" . (" " x $irow0);
     }
@@ -145,14 +171,14 @@ sub rowtest { # test all pairs of rows whether one half of the columns is coinci
       my $iscoin = 0; # number of coincidences
       my $nocoin = 0; # number of non-coincidences
       for (my $icol = 0; $icol < $collen; $icol ++) {
-        if ($hm[$irow0][$icol] == $hm[$irow1][$icol]) {
+        if ($hma[$irow0][$icol] == $hma[$irow1][$icol]) {
           $iscoin ++;
         } else {
           $nocoin ++;
         }
       } # for $icol
       if ($show > 0) {
-        print &get_diff($iscoin - $nocoin);
+        print &eval_sums($iscoin - $nocoin);
       }
       if ($iscoin != $nocoin) {
         $result = 0;
@@ -165,15 +191,15 @@ sub rowtest { # test all pairs of rows whether one half of the columns is coinci
   return $result;
 } # rowtest
 
-sub coltest { # test all pairs of columns whether one half of the rows is coincident and one half is not
+sub coltest { # (show); test all pairs of columns whether one half of the rows is coincident and one half is not
   my ($show) = @_;
   my $result = 1;
-  if ($debug >= 1) {
-    print "# coltest\n";
-  }
-  my $rowlen = $#hm + 1;
+  my $rowlen = $#hma + 1;
   my $collen = $rowlen;
-  for my $icol0 (0..$#hm) {
+  if ($debug >= 1) {
+    print "# coltest $collen\n";
+  }
+  for my $icol0 (0..$#hma) {
     if ($show > 0) {
       print "" . (" " x $icol0);
     }
@@ -181,14 +207,14 @@ sub coltest { # test all pairs of columns whether one half of the rows is coinci
       my $iscoin = 0; # number of coincidences
       my $nocoin = 0; # number of non-coincidences
       for (my $irow = 0; $irow < $rowlen; $irow ++) {
-        if ($hm[$irow][$icol0] == $hm[$irow][$icol1]) {
+        if ($hma[$irow][$icol0] == $hma[$irow][$icol1]) {
           $iscoin ++;
         } else {
           $nocoin ++;
         }
       } # for $irow
       if ($show > 0) {
-        print &get_diff($iscoin - $nocoin);
+        print &eval_sums($iscoin - $nocoin);
       }
       if ($iscoin != $nocoin) {
         $result = 0;
@@ -210,25 +236,25 @@ sub ortest {
 #----
 sub dump0 { # write matrices as binary digits 0,1
   my ($name) = @_;
-  my $ord4 = 19470629; # very high
+  my $block_len = 19470629; # very high - avoid separting lines
   if ($name =~ m{dump(\d+)}) {
     my $div = $1;
-    $ord4 = ($#hm + 1) / $div;
+    $block_len = ($#hma + 1) / $div;
   }
-  # print STDERR "dump0: name=$name, ord4=$ord4\n";
-  for my $irow   (0..$#hm) {
-    if ($irow > 0 && $irow % $ord4 == 0) {
+  # print STDERR "dump0: name=$name, block_len=$block_len\n";
+  for my $irow   (0..$#hma) {
+    if ($irow > 0 && $irow % $block_len == 0) {
       print "\n";
     }
-    for my $icol (0..$#{$hm[$irow]}) {
+    for my $icol (0..$#{$hma[$irow]}) {
       if ($icol > 0) {
         print $sep;
       }
-      my $ch = $hm[$irow][$icol];
-      if ($ch == 0) {
+      my $ch = $hma[$irow][$icol];
+      if ($ch == $NEG1) {
         $ch = "-";
-      }
-      if ($icol > 0 && $icol % $ord4 == 0) {
+      } # else $POS1 remains unchanged
+      if ($icol > 0 && $icol % $block_len == 0) {
         print " ";
       }
       print $ch;
@@ -238,13 +264,27 @@ sub dump0 { # write matrices as binary digits 0,1
   print "\n"; # at end of 1 matrix
 } # dump0
 #----
-sub read_hm { # read an array of binary (1,-1) matrices from a file
+sub push_hm { # copy hma to hmb
+  @hmb = ();
+  for my $irow   (0..$#hma) {
+    my @row = ();
+    for my $icol (0..$#{$hma[$irow]}) {
+      push(@row, $hma[$irow][$icol]);
+    }
+    push(@hmb, [ @row ]);
+  } # for $irow
+  if ($debug >= 1) {
+    print "# hma(" . ($#hma + 1) . ") pushed to hmb (" . ($#hmb + 1) . ")\n";
+  }
+} # push_hm
+#----
+sub read_hm { # read an array of binary matrices from a file and generate a 0/1-matrix
   my ($file) = @_;
   if ($file eq "-") {
   } else {
     open(STDIN, "<", $file) or die "# read_hm: cannot read \"$file\"\n";
   }
-  @hm = ();
+  @hma = ();
   my $first = 1;
   my $informat = "sage";
   while(<STDIN>) {
@@ -254,12 +294,12 @@ sub read_hm { # read an array of binary (1,-1) matrices from a file
       print "# read_hm: $line\n";
     }
     #                1   1
-    if (($line =~ m{plane}) || ($line =~ m{\A\s*\Z}) ) { # plane header or empty line 
+    if (($line =~ m{plane}) || ($line =~ m{\A\s*\Z}) ) { # plane header or empty line
       next;
-    } 
+    }
     if ($line =~ m{\A\[?[\+\-]*\]}) { # sage separator line
       next;
-    } 
+    }
     if ($first) { #determine input format from first line: "sage", "10", "+-", "1-"
       $first = 0;
       if (0) {
@@ -303,41 +343,80 @@ sub read_hm { # read an array of binary (1,-1) matrices from a file
     }
     if ($found) {
       my @row = split(//, $line);
-      push(@hm, [ @row ]);
+      push(@hma, [ @row ]);
     }
   } # while <STDIN>
-  # &show_counts(1, $ihm); 
-  if ($#hm != $#{$hm[0]}) {
-    print STDERR "non-square matrix: $#hm x $#{$hm[0]}\n";
+  # &show_counts(1, $ihm);
+  if ($#hma != $#{$hma[0]}) {
+    print STDERR "non-square matrix: $#hma x $#{$hma[0]}\n";
   }
-  $order = $#hm + 1;
+  $order = scalar(@hma);
   if ($file ne "-") {
     close(STDIN);
   }
 } # read_hm
 #----
-sub gen { # (method); fill @hm
+sub gen { # (method); fill @hma
   my ($method) = @_;
-  @hm = ();
-  my @row  = ();
+  my @row;
   if (0) {
-  } elsif ($method =~ m{paley(I|1)\Z}i) {
   #--------
+  } elsif ($method =~ m{paley(I|1)\Z}i) {
+    @hma = ();
     &legendre($order - 1);
+    @row = ();
     for (my $icol = 0; $icol < $order; $icol ++) { # row 0 = ones
-      push(@row, 1);
+      push(@row, $POS1);
     } # for $icol
-    push(@hm, [ @row ]);
+    push(@hma, [ @row ]);
     for (my $irow = 0; $irow < $order - 1; $irow ++) { # rows 1..order = Legendre symbols (skew)
-      @row = (0); # column 0 = 0 (originally -1)
+      @row = ($NEG1); # column 0 = 0 (originally -1)
       for (my $icol = 0; $icol < $order - 1; $icol ++) {
-        my $elem = $chi[$irow - $icol]; 
+        my $elem = $chi[$irow - $icol];
         if ($irow == $icol) {
           $elem = 1;
         }
         push(@row, $elem);
       } # for $icol
-      push(@hm, [ @row ]);
+      push(@hma, [ @row ]);
+    } # for $irow
+  #--------
+  } elsif ($method =~ m{\Amul|\Aprod}i) { # multiply, product C = A (x) B
+    my @hmc = ();
+    my $rowlena = scalar(@hma);
+    my $collena = $rowlena;
+    my $rowlenb = scalar(@hmb);
+    my $collenb = $rowlenb;
+    $order = $rowlena * $rowlenb;
+    for (my $irow = 0; $irow < $order; $irow ++) {
+      my @row = ();
+      for (my $icol = 0; $icol < $order; $icol ++) {
+        my $elema = $hma[$irow / $rowlenb][$icol / $collenb];
+        my $elemb = $hmb[$irow % $rowlenb][$icol % $collenb];
+        my $elemc = ($elema == $elemb) ? $POS1 : $NEG1; # differs
+        push(@row, $elemc);
+      } # for icol
+      push(@hmc, [ @row ]);
+    } # for irow
+    @hma = @hmc;
+  #--------
+  } elsif ($method =~ m{\Asyl}i) { # Sylvester
+    my $rowlen = scalar(@hmb);
+    my $collen = $rowlen;
+    $order = $rowlen*2;
+    if ($debug >= 1) {
+      print "# gen sylvester from $rowlen x $collen\n";
+    }
+    for (my $irow = 0; $irow < $order; $irow ++) {
+      my @row = ();
+      for (my $icol = 0; $icol < $order; $icol ++) {
+        my $elem = $hmb[$irow % $rowlen][$icol % $collen]; # take it from upper left block
+        if ($irow >= $rowlen && $icol >= $collen) {      # negate it for lower right block
+          $elem = 1 ^ $elem; # NEGATE
+        }
+        push(@row, $elem);
+      } # for $icol
+      push(@hma, [ @row ]);
     } # for $irow
   #--------
   } else {
