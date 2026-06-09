@@ -46,4 +46,10 @@ do10: # H= ; convert from ./ranew/$(H).raw to ./10/$(H).10
 paleyI:
 	grep -iH "paleyI " ranew/*
 #----
-sloane: # read from Sloane's directory with "wget https://neilsloane.com/hadamard/had.92.will.txt -q -O -"
+paley1_test:
+	rm -f    $@.tmp
+	seq 4 4 256 \
+	| xargs -innn perl hadamat.pl order nnn gen paley1 ortest | tee -a $@.tmp
+	tail -n4 $@.tmp
+	wc -l    $@.tmp
+

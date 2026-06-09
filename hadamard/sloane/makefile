@@ -9,6 +9,7 @@ D=0
 all:
 	grep -P "^[a-z]" makefile
 #----------------
+# read from Sloane's directory with "wget https://neilsloane.com/hadamard/had.92.will.txt -q -O -"
 index: # get Neil's main page
 	wget https://neilsloane.com/hadamard/ -O index.html
 get: # A= ; get 1 file*.txt
