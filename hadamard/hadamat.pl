@@ -95,7 +95,7 @@ sub legendre { # parameter: p
   my ($q) = @_;
   @chi = (0); # [0] is always 0
   for my $a (1..$q - 1) {
-    my $result = -1; # assume non-square
+    my $result = 0; # assume non-square
     my $busy = 1;
     my $b = 1;
     while ($busy == 1 && $b < $q) {
@@ -328,13 +328,13 @@ sub gen { # (method); fill @hm
       push(@row, 1);
     } # for $icol
     push(@hm, [ @row ]);
-    for (my $irow = 1; $irow < $order; $irow ++) { # rows 1..order = Legendre symbols (skew)
-      @row = (1); # column 0 = 0 (originally -1)
-      for (my $icol = 0; $icol < $order; $icol ++) {
-      	my $elem = $chi[$irow - $icol]; 
-      	if ($irow == $icol) {
-      	  $elem = 1;
-      	}
+    for (my $irow = 0; $irow < $order - 1; $irow ++) { # rows 1..order = Legendre symbols (skew)
+      @row = (0); # column 0 = 0 (originally -1)
+      for (my $icol = 0; $icol < $order - 1; $icol ++) {
+        my $elem = $chi[$irow - $icol]; 
+        if ($irow == $icol) {
+          $elem = 1;
+        }
         push(@row, $elem);
       } # for $icol
       push(@hm, [ @row ]);
