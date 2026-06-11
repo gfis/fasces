@@ -2,7 +2,7 @@
 
 # hadamat.pl - operations on Hadamard matrices
 # @(#) $Id$
-# 2026-06-11: non-square matrices, +1/0/-1; +ML=10
+# 2026-06-11: non-square matrices, +1/0/-1, product, slice; +ML=10
 # 2026-06-08: copied from hamop.pl; only 1 matrix, no oper4; *FP=12; *RP=78
 # 2024-08-10, Georg Fischer
 #:#
@@ -32,7 +32,7 @@
 #:#
 #:# Generation methods:
 #:#   paley1, paleyI
-#:#   sylvester            doubling (after push)
+#:#   sylvester            doubling (implies push)
 #--------
 # Internally the matrices are represented by $POS1 (1) and $NEG1 (0).
 # Multiplication and division of 1/-1 elements is replaced by "coincides" (not differs, not xor) of 1/0 elements,
@@ -58,13 +58,14 @@ use strict;
 use warnings;
 use integer;
 
-my $POS1   = 1;
-my $NEG1   = 0;
+my $POS1   = +1; # 1st sort of matrix element
+my $NEG1   = -1; # 2nd sort of matrix element
+my $NULL   =  0; # 3rd sort of matrix element (from Legendre symbol)
 my $debug  = 0;
 my $oper   = "help";
 my $sep    = "";
-my $order  = 7;
 my $method = "paleyI";
+my $order  = 8; # from GF(7)
 if (scalar(@ARGV) == 0) {
   &help();
   exit;
@@ -113,8 +114,8 @@ sub help {
 sub legendre { # parameter: p; compute @chi for prime p
   # from https://en.wikipedia.org/wiki/Paley_construction
   my ($q) = @_;
-  @chi = ($NEG1); # [0] is always 0
-  for my $a (1..$q - 1) {
+  @chi = ($NULL); # [0] is always 0
+  for (my $a = 1; $a <= $q - 1; $a ++) {
     my $result = $NEG1; # assume non-square
     my $busy = 1;
     my $b = 1;
@@ -159,7 +160,7 @@ sub rowtest { # (show); test all pairs of rows whether one half of the columns i
   my $result = 1;
   my $rowlen = scalar(@hma);
   my $collen = $#{$hma[0]} + 1;
-  if ($debug >= 0) {
+  if ($show > 0) {
     print "# rowtest: $rowlen x $collen\n";
   }
   for (my $irow0 = 0; $irow0 < $rowlen - 1; $irow0 ++) {
@@ -195,7 +196,7 @@ sub coltest { # (show); test all pairs of columns whether one half of the rows i
   my $result = 1;
   my $rowlen = scalar(@hma);
   my $collen = $#{$hma[0]} + 1;
-  if ($debug >= 0) {
+  if ($show > 0) {
     print "# coltest: $rowlen x $collen\n";
   }
   for (my $icol0 = 0; $icol0 < $collen - 1; $icol0 ++) {
@@ -230,7 +231,7 @@ sub ortest {
   my $sum = 0;
   $sum += &rowtest(0);
   $sum += &coltest(0);
-  print "# ortest=$sum, order=$order, order/4=" . ($order/4) . "\n";
+  print "# ortest: " . (($sum == 2) ? "ack" : "NAK") . ", order=$order, order/4=" . ($order/4) . "\n";
 } # ortest
 #----
 sub dump_hm { # write matrices as binary digits 0,1
@@ -313,21 +314,21 @@ sub read_hm { # read an array of binary matrices from a file and generate a 0/1-
     if ($debug >= 1) {
       print "# read: $line\n";
     }
-    if (($line =~ m{\A\s*\#}) || ($line =~ m{plane}) || ($line =~ m{\A\s*\Z}) || ($line =~ m{\A\[?[\+\-]*\]})) {
+    if (($line =~ m{\A\s*\#}) || ($line =~ m{plane}) || ($line =~ m{\A\s*\Z}) || ($line =~ m{\A\[?[\+\- ]*\]})) {
       # ignore comment or plane header or empty or sage separator lines
       next;
     }
     if ($first) { #determine input format from first line: "sage", "10", "+-", "1-"
       $first = 0;
       if (0) {
-      } elsif ($line =~ m{\A\[? *\-?1}) { # raw Sage output
-        $informat = "sage";
-      } elsif ($line =~ m{\A[\+\- ]+\Z}) { # +-
-        $informat = "+-";
-      } elsif ($line =~ m{\A[1\- ]+\Z}) { # 1-
-        $informat = "1-";
-      } elsif ($line =~ m{\A[10 ]+\Z}) { # 10
-        $informat = "10";
+      } elsif ($line =~ m{\A *\[ *\-?1}) { # raw Sage output
+        $informat       = "sage";
+      } elsif ($line =~ m{\A[0\+\- ]+\Z}) { # 0+-
+        $informat       = "0+-";
+      } elsif ($line =~ m{\A[10\- ]+\Z})  { # 10-
+        $informat       = "10-";
+      } elsif ($line =~ m{\A[10 ]+\Z})    { # 10-
+        $informat       = "10";
       } else {
         die "#** hadamat.pl: cannot recognize input format of \"$line\"\n";
       }
@@ -335,42 +336,44 @@ sub read_hm { # read an array of binary matrices from a file and generate a 0/1-
     my $found = 0;
     if (0) {
     } elsif ($informat eq "sage") {
-      if ($line =~ m{\A\[? *\-?1}) {
-        $line =~ s{\-1}{0}g; # negative -> 0
-        $line =~ s{[^01]}{}g; # remove any non-binary characters
+      if (     $line =~ m{\A *\[? \+*\-?1}) {
+        $line =~ s{\+1}{1}g;
+        $line =~ s{\-1}{-}g;
+        $line =~ s{[^10\-]}{}g; # remove any other characters
         $found = 1;
       }
-    } elsif ($informat eq "10") {
-      if ($line =~ m{\A *[10 ]+\Z}) {
-        $line =~ s{[^01]}{}g; # remove any other characters
+    } elsif ($informat eq "0+-") {
+      if (     $line =~ m{\A[\+\- ]+\Z}) {
+        $line =~ s{[^0\+\-]}{}g; # remove any other characters
+        $line =~ tr{\+}{1};
         $found = 1;
       }
-    } elsif ($informat eq "1-") {
-      if ($line =~ m{\A *[1\- ]+\Z}) {
-        $line =~ s{[^1\-]}{}g; # remove any other characters
-        $line =~ tr{1\-}{10};
+    } elsif ($informat eq "10-") {
+      if (    $line =~ m{\A[10\- ]+\Z}) {
+        $line =~ s{[^10\-]}{}g; # remove any other characters
         $found = 1;
       }
-    } elsif ($informat eq "+-") {
-      if ($line =~ m{\A *[\+\- ]+\Z}) {
-        $line =~ s{[^\+\-]}{}g; # remove any other characters
-        $line =~ tr{\+\-}{10};
+    } elsif ($informat eq "10") { # never reached, maybe later if explicitly specified
+      if (    $line =~ m{\A[10 ]+\Z}) {
+        $line =~ s{[^10]}{}g; # remove any other characters
+        $line =~ s{0}{\-}g; # such "0" means $NEG1
         $found = 1;
       }
     }
+    if ($debug >= 2) {
+      print "# read: found= $found, informat=$informat, line=$line\n";
+    }
     if ($found) {
-      my @row = split(//, $line);
+      my @row = map { ($_ eq "-") ? -1 : $_ } split(//, $line);
       push(@hma, [ @row ]);
     }
   } # while <STDIN>
+  close(SRC);
   # &show_counts(1, $ihm);
   if ($#hma != $#{$hma[0]}) {
-    print STDERR "non-square matrix: " . ($#hma + 1) . " x " . ($#{$hma[0]} + 1) . "\n";
+    print STDERR "# read: non-square matrix: " . scalar(@hma) . " x " . ($#{$hma[0]} + 1) . "\n";
   }
   $order = scalar(@hma);
-  if ($file ne "-") {
-    close(SRC);
-  }
 } # read_hm
 #----
 sub write_hm { # write hma in "1-0" format to the specified file
@@ -420,16 +423,19 @@ sub gen { # (method); fill @hma
     @hma = ();
     &legendre($order - 1);
     @row = ();
+    if ($debug >= 1) {
+      print "# gen sylvester $order x $order\n";
+    }
     for (my $icol = 0; $icol < $order; $icol ++) { # row 0 = ones
       push(@row, $POS1);
     } # for $icol
     push(@hma, [ @row ]);
     for (my $irow = 0; $irow < $order - 1; $irow ++) { # rows 1..order = Legendre symbols (skew)
       @row = ($NEG1); # column 0 = 0 (originally -1)
-      for (my $icol = 0; $icol < $order - 1; $icol ++) { # here we determine the Jacobsthal matrix Q
+      for (my $icol = 0; $icol < $order - 1; $icol ++) { # compute the Jacobsthal matrix Q
         my $elem = $chi[$irow - $icol];
         if ($irow == $icol) {
-          $elem = 1;
+          $elem = $POS1;
         }
         push(@row, $elem);
       } # for $icol
@@ -437,18 +443,20 @@ sub gen { # (method); fill @hma
     } # for $irow
   #--------
   } elsif ($method =~ m{\Asyl}i) { # Sylvester
+    &push_hm();
     my $rowlen = scalar(@hmb);
-    my $collen = $rowlen;
-    $order = $rowlen*2;
+    my $collen = $rowlen; # matrix must be quadratic
+    $order = 2*$rowlen;
     if ($debug >= 1) {
-      print "# gen sylvester from $rowlen x $collen\n";
+      print "# gen sylvester $order x $order from $rowlen x $collen\n";
     }
+    @hma = ();
     for (my $irow = 0; $irow < $order; $irow ++) {
       my @row = ();
       for (my $icol = 0; $icol < $order; $icol ++) {
         my $elem = $hmb[$irow % $rowlen][$icol % $collen]; # take it from upper left block
         if ($irow >= $rowlen && $icol >= $collen) {      # negate it for lower right block
-          $elem = 1 ^ $elem; # NEGATE
+          $elem = -$elem; # NEGATE
         }
         push(@row, $elem);
       } # for $icol
@@ -456,34 +464,12 @@ sub gen { # (method); fill @hma
     } # for $irow
   #--------
   } else {
-    die "unknown method $method\n";
+    die "#** hadamat.pl: unknown method \"$method\"\n";
   }
 } # gen
 #----
 __DATA__
-
-sub show_counts {
-  my ($unit, $ih) = @_; # unit=[1,4]
-  if ($debug == 0) {
-    return;
-  }
-  print "# show counts$unit $ih\n";
-  if (0) {
-  } elsif ($unit == 1) {
-    my $diff  = abs($counts1{1} - $counts1{0});
-    my $diff4 = $diff / 4;
-    my $rest  = ($diff4 == $ih) ? "" : (", /$ih=" . $diff4/$ih);
-    print "# matrix $ih: $counts1{0}*0 $counts1{1}*1, diff=$diff, diff/4=$diff4$rest\n";
-  } elsif ($unit == 4) {
-    print "# matrix $ih:";
-    foreach my $hx (sort(keys(%counts4))) {
-      print " $counts4{$hx}*" . sprintf("%01x", $hx);
-    } # foreach $hx
-    print "\n";
-  }
-} # show_counts
-
-planes[ 9 ]
+planes[ 9 ] (Sage format)
 [ 1  1| 1  1| 1  1| 1  1| 1  1| 1  1| 1  1| 1  1| 1  1| 1  1| 1  1| 1  1| 1  1| 1  1| 1  1| 1  1| 1  1| 1  1]
 [ 1 -1|-1  1|-1  1|-1  1|-1  1|-1  1|-1  1|-1  1|-1  1|-1  1|-1  1|-1  1|-1  1|-1  1|-1  1|-1  1|-1  1|-1  1]
 [-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----]

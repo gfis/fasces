@@ -43,6 +43,7 @@ do10: # H= ; convert from ./ranew/$(H).raw to ./10/$(H).10
 	| sed -e "s/[\,\)\(]//g"  | tee 10/$(H).10
 
 # h11 -> 13913485480364
+#----
 paleyI:
 	grep -iH "paleyI " ranew/*
 #----
