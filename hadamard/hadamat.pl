@@ -18,8 +18,10 @@
 #:#     ortest             test rows and columns for 1/2 condition and show summary only
 #:#     product            Kronecker product hma = hma (x) hmb (after push)
 #:#     push               copy the accumlator hma to the auxiliary matrix hmb
-#:#     read     file      read matrices in "sage", "10" or "+-" format
+#:#     read     file      read a matrix in "sage", "10", "1-" or "+-" format
 #:#     rowtest            test rows for 1/2 condition and show triangle
+#:#     slice    rxc,hxw   extract a submatrix height x width at upper left corner row x col (implies push)
+#:#     write    file      write hma in "1-0" format
 #:#     svg                generate an SVG file
 #:#
 #:# Input formats may be either:
@@ -45,7 +47,7 @@
 # C.f.
 # https://en.wikipedia.org/wiki/Hadamard_matrix
 # https://en.wikipedia.org/wiki/Paley_construction -> Jacobsthal matrix
-# https://en.wikipedia.org/wiki/Legendre_symbol 
+# https://en.wikipedia.org/wiki/Legendre_symbol
 # https://www.cs.ox.ac.uk/teaching/courses/projects/sample/3rdYear/Implementing%20Hadamard%20Matrices%20in%20SageMath.pdf
 #
 # The method paley1 yields skew matrices for order/4 =
@@ -92,6 +94,8 @@ while (scalar(@ARGV) > 0) {
   } elsif ($oper =~ m{\Apush}           ) { &push_hm    ();
   } elsif ($oper =~ m{\Aread}           ) { &read_hm    (shift(@ARGV));
   } elsif ($oper =~ m{\Arowt(est)?}     ) { &rowtest    (1);
+  } elsif ($oper =~ m{\Aslice}          ) { &slice      (shift(@ARGV));
+  } elsif ($oper =~ m{\Awrite}          ) { &write_hm   (shift(@ARGV));
   } else {
       die "# invalid operation \"$oper\"\n";
   }
@@ -238,7 +242,7 @@ sub dump_hm { # write matrices as binary digits 0,1
     my $div = $1;
     $block_len = $rowlen / $div;
   }
-  # print STDERR "dump0: name=$name, block_len=$block_len\n";
+  print "# dump: $rowlen x $collen\n";
   for (my $irow = 0; $irow < $rowlen; $irow ++) {
     if ($irow > 0 && $irow % $block_len == 0) {
       print "\n";
@@ -258,7 +262,6 @@ sub dump_hm { # write matrices as binary digits 0,1
     } # for $icol
     print "\n";
   } # for $irow
-  print "\n"; # at end of 1 matrix
 } # dump_hm
 #----
 sub push_hm { # copy hma to hmb
@@ -273,30 +276,45 @@ sub push_hm { # copy hma to hmb
     push(@hmb, [ @row ]);
   } # for $irow
   if ($debug >= 1) {
-    print "# hma(" . ($#hma + 1) . ") pushed to hmb (" . ($#hmb + 1) . ")\n";
+    print "# hma $rowlen x $collen copied to hmb\n";
   }
 } # push_hm
 #----
+sub slice { # slice    rxc,hxw   extract a submatrix height x width at upper left corner row x col (zero based, implies push)
+  my ($geom) = @_;
+  my ($start, $block)   = split(/\,/, $geom);
+  my ($rowsta, $colsta) = split(/x/ , $start);
+  my ($height, $width)  = split(/x/ , $block);
+  my $rowlen = scalar(@hma);
+  my $collen = $#{$hma[0]} + 1;
+  if ($debug >= 1) {
+    print "# slice $rowsta x $colsta, $height x $width\n";
+  }
+  &push_hm();
+  @hma = ();
+  for (my $irow = $rowsta; $irow < $rowsta + $height; $irow ++) {
+    my @row = ();
+    for (my $icol = $colsta; $icol < $colsta + $width; $icol ++) {
+      push(@row, $hmb[$irow][$icol]);
+    }
+    push(@hma, [ @row ]);
+  } # for $irow
+} # slice
+#----
 sub read_hm { # read an array of binary matrices from a file and generate a 0/1-matrix
   my ($file) = @_;
-  if ($file eq "-") {
-  } else {
-    open(STDIN, "<", $file) or die "# read_hm: cannot read \"$file\"\n";
-  }
+  open(SRC, "<", $file) or die "#** hadamat.pl: cannot read \"$file\"\n";
   @hma = ();
   my $first = 1;
   my $informat = "sage";
-  while(<STDIN>) {
+  while(<SRC>) {
     s/\s+\Z//; # chompr
     my $line = $_;
-    if ($debug >= 2) {
-      print "# read_hm: $line\n";
+    if ($debug >= 1) {
+      print "# read: $line\n";
     }
-    #                1   1
-    if (($line =~ m{plane}) || ($line =~ m{\A\s*\Z}) ) { # plane header or empty line
-      next;
-    }
-    if ($line =~ m{\A\[?[\+\-]*\]}) { # sage separator line
+    if (($line =~ m{\A\s*\#}) || ($line =~ m{plane}) || ($line =~ m{\A\s*\Z}) || ($line =~ m{\A\[?[\+\-]*\]})) {
+      # ignore comment or plane header or empty or sage separator lines
       next;
     }
     if ($first) { #determine input format from first line: "sage", "10", "+-", "1-"
@@ -311,7 +329,7 @@ sub read_hm { # read an array of binary matrices from a file and generate a 0/1-
       } elsif ($line =~ m{\A[10 ]+\Z}) { # 10
         $informat = "10";
       } else {
-        die "cannot recognize input format of \"$line\"\n";
+        die "#** hadamat.pl: cannot recognize input format of \"$line\"\n";
       }
     } # if first
     my $found = 0;
@@ -351,9 +369,27 @@ sub read_hm { # read an array of binary matrices from a file and generate a 0/1-
   }
   $order = scalar(@hma);
   if ($file ne "-") {
-    close(STDIN);
+    close(SRC);
   }
 } # read_hm
+#----
+sub write_hm { # write hma in "1-0" format to the specified file
+  my ($file) = @_;
+  my $rowlen = scalar(@hma);
+  my $collen = $#{$hma[0]} + 1;
+  open(TAR, ">", $file) or die "#** hadamat.pl: cannot write \"$file\"\n";
+  for (my $irow = 0; $irow < $rowlen; $irow ++) {
+    for (my $icol = 0; $icol < $collen; $icol ++) {
+      my $ch = $hma[$irow][$icol];
+      if ($ch == $NEG1) {
+        $ch = "-"; 
+      } # else $POS1 and 0 remain unchanged
+      print TAR $ch;
+    } # for $icol
+    print TAR "\n";
+  } # for $irow 
+  close(TAR);
+} # write_hm
 #----
 sub product { # multiply, Kronecker product C = A (x) B
   my $rowlena = scalar(@hma);
