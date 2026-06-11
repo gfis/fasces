@@ -2,6 +2,7 @@
 
 # hadamat.pl - operations on Hadamard matrices
 # @(#) $Id$
+# 2026-06-11: non-square matrices, +1/0/-1; +ML=10
 # 2026-06-08: copied from hamop.pl; only 1 matrix, no oper4; *FP=12; *RP=78
 # 2024-08-10, Georg Fischer
 #:#
@@ -15,24 +16,21 @@
 #:#     legendre p         compute the legendre symbols (a/p) for a=0..p-1 (p prime), with debug >= 1
 #:#     order    n         specify the desired order for gen (must be a multiply of 4)
 #:#     ortest             test rows and columns for 1/2 condition and show summary only
+#:#     product            Kronecker product hma = hma (x) hmb (after push)
 #:#     push               copy the accumlator hma to the auxiliary matrix hmb
 #:#     read     file      read matrices in "sage", "10" or "+-" format
 #:#     rowtest            test rows for 1/2 condition and show triangle
 #:#     svg                generate an SVG file
 #:#
 #:# Input formats may be either:
-#:#   sage   [1,-1 ...
-#:#   +-     only "+" for +1, "-" for -1
-#:#   1-     1 and -1 for -1
-#:#   10     1 and 0 for -1
+#:#   sage                 [1,-1 ...
+#:#   +-                   only "+" for +1, "-" for -1
+#:#   1-                   1 and -1 for -1
+#:#   10                   1 and 0 for -1
 #:#
 #:# Generation methods:
 #:#   paley1, paleyI
-#:#   sylvester (doubling, original must be pushed to hmb)
-#:#
-#:#
-#:#
-#:#
+#:#   sylvester            doubling (after push)
 #--------
 # Internally the matrices are represented by $POS1 (1) and $NEG1 (0).
 # Multiplication and division of 1/-1 elements is replaced by "coincides" (not differs, not xor) of 1/0 elements,
@@ -47,7 +45,8 @@
 # C.f.
 # https://en.wikipedia.org/wiki/Hadamard_matrix
 # https://en.wikipedia.org/wiki/Paley_construction -> Jacobsthal matrix
-# https://en.wikipedia.org/wiki/Legendre_symbol
+# https://en.wikipedia.org/wiki/Legendre_symbol 
+# https://www.cs.ox.ac.uk/teaching/courses/projects/sample/3rdYear/Implementing%20Hadamard%20Matrices%20in%20SageMath.pdf
 #
 # The method paley1 yields skew matrices for order/4 =
 # 1,2,3,5,6,8,11,12,15,17,18,20,21,26,27,32,33,35,38,41,42,45,48,50,53,56,57,60,63 ...
@@ -71,37 +70,28 @@ if (scalar(@ARGV) == 0) {
 my $letters = "=abcdefghijklmnopqrstuvwxyz"; # for rowtest, coltest
 my @hma      = (); # accumulator matrix
 my @hmb      = (); # auxiliary   matrix
-my @chi; # stores the Legendre symbol of (n/p) for n=0..p-1
+my @chi; # stores the Legendre symbols of (n/p) for n=0..p-1
 my %squares; # maps n -> sqrt(n)
 for my $n (0..100) {
   $squares{$n**2} = $n;
-}
-my %bit_counts = qw(
-    0 0    1 1    2 1    3 2
-    4 1    5 2    6 2    7 3
-    8 1    9 2   10 2   11 3
-   12 2   13 3   14 3   15 4
-    );
-if ($debug >= 2) {
-  foreach my $ix (keys(%bit_counts))  {
-    print "# init: bit_counts{$ix} = $bit_counts{$ix}\n";
-  }
 }
 
 while (scalar(@ARGV) > 0) {
   $oper = shift(@ARGV);
   if (0) {
-  } elsif ($oper =~ m{coltest} ) { &coltest(1);
-  } elsif ($oper =~ m{debug}   ) { $debug     = shift(@ARGV);
-  } elsif ($oper =~ m{dump\d*} ) { &dump0($oper);
-  } elsif ($oper =~ m{gen}     ) { &gen        (shift(@ARGV));
-  } elsif ($oper =~ m{help}    ) { &help();
-  } elsif ($oper =~ m{legendre}) { &legendre   (shift(@ARGV));
-  } elsif ($oper =~ m{order}   ) { $order =     shift(@ARGV);;
-  } elsif ($oper =~ m{ortest}  ) { &ortest();
-  } elsif ($oper =~ m{push}    ) { &push_hm();
-  } elsif ($oper =~ m{read}    ) { &read_hm    (shift(@ARGV));
-  } elsif ($oper =~ m{rowtest} ) { &rowtest(1);
+  } elsif ($oper =~ m{\Acolt(est)?}     ) { &coltest    (1);
+  } elsif ($oper =~ m{\Adebug}          ) { $debug     = shift(@ARGV);
+  } elsif ($oper =~ m{\Adump\d*}        ) { &dump_hm    ($oper);
+  } elsif ($oper =~ m{\Agen}            ) { &gen        (shift(@ARGV));
+  } elsif ($oper =~ m{\Ahelp}           ) { &help       ();
+  } elsif ($oper =~ m{\Alegendre}       ) { &legendre   (shift(@ARGV));
+  } elsif ($oper =~ m{\Amul(t(iply)?)?} ) { &product    ();
+  } elsif ($oper =~ m{\Aorder}          ) { $order =     shift(@ARGV);;
+  } elsif ($oper =~ m{\Apr(od(uct)?)?}  ) { &product    ();
+  } elsif ($oper =~ m{\Aort(est)?}      ) { &ortest     ();
+  } elsif ($oper =~ m{\Apush}           ) { &push_hm    ();
+  } elsif ($oper =~ m{\Aread}           ) { &read_hm    (shift(@ARGV));
+  } elsif ($oper =~ m{\Arowt(est)?}     ) { &rowtest    (1);
   } else {
       die "# invalid operation \"$oper\"\n";
   }
@@ -116,7 +106,7 @@ sub help {
     }
 } # help
 #----
-sub legendre { # parameter: p
+sub legendre { # parameter: p; compute @chi for prime p
   # from https://en.wikipedia.org/wiki/Paley_construction
   my ($q) = @_;
   @chi = ($NEG1); # [0] is always 0
@@ -129,7 +119,7 @@ sub legendre { # parameter: p
       if ($debug >= 2) {
         print "a=$a, busy=$busy, result=$result, b=$b, b2=$b2, q=$q, b2 % q= " . ($b2 % $q) . "\n";
       }
-      if ($b2 % $q == $a) { # quadratic residue
+      if ($b2 % $q == $a) { # quadratic residue found
         $busy = 0;
         $result = $POS1;
       }
@@ -138,7 +128,12 @@ sub legendre { # parameter: p
     push(@chi, $result);
   } # for $a
   if ($debug >= 1) {
-    print join(",", @chi) . "\n";
+    my $orig = join("", map { my $a = $_; $a =~ tr{10}{1\-}; $a } @chi);
+    my $nega = join("", map { my $a = $_; $a =~ tr{10}{\-1}; $a } @chi);
+    print "original: " . $orig . "\n";
+    print "negated : " . $nega . "\n";
+    print "orig rev: " . reverse($orig) . "\n";
+    print "neg  rev: " . reverse($nega) . "\n";
   }
 } # legendre
 #----
@@ -158,14 +153,14 @@ sub eval_sums { # evaluate the sum of coincidences minus the sum of differences;
 sub rowtest { # (show); test all pairs of rows whether one half of the columns is coincident and one half is not
   my ($show) = @_;
   my $result = 1;
-  my $rowlen = $#hma + 1;
-  my $collen = $rowlen;
-  if ($debug >= 1) {
-    print "# rowtest $rowlen\n";
+  my $rowlen = scalar(@hma);
+  my $collen = $#{$hma[0]} + 1;
+  if ($debug >= 0) {
+    print "# rowtest: $rowlen x $collen\n";
   }
-  for my $irow0 (0..$#hma) {
+  for (my $irow0 = 0; $irow0 < $rowlen - 1; $irow0 ++) {
     if ($show > 0) {
-      print "" . (" " x $irow0);
+      print " " . (" " x $irow0);
     }
     for (my $irow1 = $irow0 + 1; $irow1 < $rowlen; $irow1 ++) {
       my $iscoin = 0; # number of coincidences
@@ -194,14 +189,14 @@ sub rowtest { # (show); test all pairs of rows whether one half of the columns i
 sub coltest { # (show); test all pairs of columns whether one half of the rows is coincident and one half is not
   my ($show) = @_;
   my $result = 1;
-  my $rowlen = $#hma + 1;
-  my $collen = $rowlen;
-  if ($debug >= 1) {
-    print "# coltest $collen\n";
+  my $rowlen = scalar(@hma);
+  my $collen = $#{$hma[0]} + 1;
+  if ($debug >= 0) {
+    print "# coltest: $rowlen x $collen\n";
   }
-  for my $icol0 (0..$#hma) {
+  for (my $icol0 = 0; $icol0 < $collen - 1; $icol0 ++) {
     if ($show > 0) {
-      print "" . (" " x $icol0);
+      print " " . (" " x $icol0);
     }
     for (my $icol1 = $icol0 + 1; $icol1 < $collen; $icol1 ++) {
       my $iscoin = 0; # number of coincidences
@@ -234,19 +229,21 @@ sub ortest {
   print "# ortest=$sum, order=$order, order/4=" . ($order/4) . "\n";
 } # ortest
 #----
-sub dump0 { # write matrices as binary digits 0,1
+sub dump_hm { # write matrices as binary digits 0,1
   my ($name) = @_;
+  my $rowlen = scalar(@hma);
+  my $collen = $#{$hma[0]} + 1;
   my $block_len = 19470629; # very high - avoid separting lines
   if ($name =~ m{dump(\d+)}) {
     my $div = $1;
-    $block_len = ($#hma + 1) / $div;
+    $block_len = $rowlen / $div;
   }
   # print STDERR "dump0: name=$name, block_len=$block_len\n";
-  for my $irow   (0..$#hma) {
+  for (my $irow = 0; $irow < $rowlen; $irow ++) {
     if ($irow > 0 && $irow % $block_len == 0) {
       print "\n";
     }
-    for my $icol (0..$#{$hma[$irow]}) {
+    for (my $icol = 0; $icol < $collen; $icol ++) {
       if ($icol > 0) {
         print $sep;
       }
@@ -262,13 +259,15 @@ sub dump0 { # write matrices as binary digits 0,1
     print "\n";
   } # for $irow
   print "\n"; # at end of 1 matrix
-} # dump0
+} # dump_hm
 #----
 sub push_hm { # copy hma to hmb
   @hmb = ();
-  for my $irow   (0..$#hma) {
+  my $rowlen = scalar(@hma);
+  my $collen = $#{$hma[0]} + 1;
+  for (my $irow = 0; $irow < $rowlen; $irow ++) {
     my @row = ();
-    for my $icol (0..$#{$hma[$irow]}) {
+    for (my $icol = 0; $icol < $collen; $icol ++) {
       push(@row, $hma[$irow][$icol]);
     }
     push(@hmb, [ @row ]);
@@ -305,11 +304,11 @@ sub read_hm { # read an array of binary matrices from a file and generate a 0/1-
       if (0) {
       } elsif ($line =~ m{\A\[? *\-?1}) { # raw Sage output
         $informat = "sage";
-      } elsif ($line =~ m{\A *[\+\- ]+\Z}) { # +-
+      } elsif ($line =~ m{\A[\+\- ]+\Z}) { # +-
         $informat = "+-";
-      } elsif ($line =~ m{\A *[1\- ]+\Z}) { # 1-
+      } elsif ($line =~ m{\A[1\- ]+\Z}) { # 1-
         $informat = "1-";
-      } elsif ($line =~ m{\A *[10 ]+\Z}) { # 10
+      } elsif ($line =~ m{\A[10 ]+\Z}) { # 10
         $informat = "10";
       } else {
         die "cannot recognize input format of \"$line\"\n";
@@ -348,13 +347,33 @@ sub read_hm { # read an array of binary matrices from a file and generate a 0/1-
   } # while <STDIN>
   # &show_counts(1, $ihm);
   if ($#hma != $#{$hma[0]}) {
-    print STDERR "non-square matrix: $#hma x $#{$hma[0]}\n";
+    print STDERR "non-square matrix: " . ($#hma + 1) . " x " . ($#{$hma[0]} + 1) . "\n";
   }
   $order = scalar(@hma);
   if ($file ne "-") {
     close(STDIN);
   }
 } # read_hm
+#----
+sub product { # multiply, Kronecker product C = A (x) B
+  my $rowlena = scalar(@hma);
+  my $collena = $#{$hma[0]} + 1;
+  my $rowlenb = scalar(@hmb);
+  my $collenb = $#{$hmb[0]} + 1;
+  $order = $rowlena * $rowlenb;
+  my @hmc = ();
+  for (my $irow = 0; $irow < $order; $irow ++) {
+    my @row = ();
+    for (my $icol = 0; $icol < $order; $icol ++) {
+      my $elema = $hma[$irow / $rowlenb][$icol / $collenb];
+      my $elemb = $hmb[$irow % $rowlenb][$icol % $collenb];
+      my $elemc = ($elema == $elemb) ? $POS1 : $NEG1; # differs
+      push(@row, $elemc);
+    } # for icol
+    push(@hmc, [ @row ]);
+  } # for irow
+  @hma = @hmc;
+} # product
 #----
 sub gen { # (method); fill @hma
   my ($method) = @_;
@@ -371,7 +390,7 @@ sub gen { # (method); fill @hma
     push(@hma, [ @row ]);
     for (my $irow = 0; $irow < $order - 1; $irow ++) { # rows 1..order = Legendre symbols (skew)
       @row = ($NEG1); # column 0 = 0 (originally -1)
-      for (my $icol = 0; $icol < $order - 1; $icol ++) {
+      for (my $icol = 0; $icol < $order - 1; $icol ++) { # here we determine the Jacobsthal matrix Q
         my $elem = $chi[$irow - $icol];
         if ($irow == $icol) {
           $elem = 1;
@@ -380,25 +399,6 @@ sub gen { # (method); fill @hma
       } # for $icol
       push(@hma, [ @row ]);
     } # for $irow
-  #--------
-  } elsif ($method =~ m{\Amul|\Aprod}i) { # multiply, product C = A (x) B
-    my @hmc = ();
-    my $rowlena = scalar(@hma);
-    my $collena = $rowlena;
-    my $rowlenb = scalar(@hmb);
-    my $collenb = $rowlenb;
-    $order = $rowlena * $rowlenb;
-    for (my $irow = 0; $irow < $order; $irow ++) {
-      my @row = ();
-      for (my $icol = 0; $icol < $order; $icol ++) {
-        my $elema = $hma[$irow / $rowlenb][$icol / $collenb];
-        my $elemb = $hmb[$irow % $rowlenb][$icol % $collenb];
-        my $elemc = ($elema == $elemb) ? $POS1 : $NEG1; # differs
-        push(@row, $elemc);
-      } # for icol
-      push(@hmc, [ @row ]);
-    } # for irow
-    @hma = @hmc;
   #--------
   } elsif ($method =~ m{\Asyl}i) { # Sylvester
     my $rowlen = scalar(@hmb);
