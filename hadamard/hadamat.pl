@@ -11,6 +11,7 @@
 #:#     coltest             test columns for 1/2 condition and show triangle
 #:#     debug     mode      0=none, 1=some, 2=more debugging output
 #:#     dump<i>             write terms in "1-" format, optionally separate in <i> subblocks
+#:#     flip                hma = hmb reflected at the antidiagonal; assume push, hmb square
 #:#     gen       method    generate a Hadamard matrix in hma with method
 #:#     help                print usage info
 #:#     legendre  p         compute the legendre symbols (a/p) for a=0..p-1 (p prime), with debug >= 1
@@ -22,7 +23,7 @@
 #:#     read      file      read a matrix in "sage", "10", "1-" or "+-" format
 #:#     rowtest             test rows for 1/2 condition and show triangle
 #:#     slice     rxc,hxw   extract a submatrix height x width at upper left corner row x col (implies push)
-#:#     transpose           hma = hmb mirrored at the antidiagonal; assume push
+#:#     transpose           hma = hmb reflected at the diagonal; assume push
 #:#     write     file      write hma in "1-0" format
 #:#     svg                 generate an SVG file
 #:#
@@ -73,6 +74,7 @@ if (scalar(@ARGV) == 0) {
   &help();
   exit;
 }
+my $digits  = "01234567890123456789012345678901234567890123456789012345678901234567890123456789"; # for rowtest, coltest
 my $letters = "=abcdefghijklmnopqrstuvwxyz"; # for rowtest, coltest
 my @hma      = (); # accumulator   matrix
 my @hmb      = (); # 1st auxiliary matrix
@@ -87,23 +89,24 @@ for my $n (0..100) {
 while (scalar(@ARGV) > 0) {
   $oper = shift(@ARGV);
   if (0) {
-  } elsif ($oper =~ m{\Acolt(est)?}     ) { &coltest    (1);
-  } elsif ($oper =~ m{\Adebug}          ) { $debug     = shift(@ARGV);
-  } elsif ($oper =~ m{\Adump\d*}        ) { &dump_hm    ($oper);
-  } elsif ($oper =~ m{\Agen}            ) { &gen        (shift(@ARGV));
-  } elsif ($oper =~ m{\Ahelp}           ) { &help       ();
-  } elsif ($oper =~ m{\Alegendre}       ) { &legendre   (shift(@ARGV));
-  } elsif ($oper =~ m{\Amul(t(iply)?)?} ) { &product    ();
-  } elsif ($oper =~ m{\Aneg(ate)?}      ) { &negate     ();
-  } elsif ($oper =~ m{\Aorder}          ) { $order =     shift(@ARGV);;
-  } elsif ($oper =~ m{\Aort(est)?}      ) { &ortest     ();
-  } elsif ($oper =~ m{\Apr(od(uct)?)?}  ) { &product    ();
-  } elsif ($oper =~ m{\Apush}           ) { &push_hm    ();
-  } elsif ($oper =~ m{\Aread}           ) { &read_hm    (shift(@ARGV));
-  } elsif ($oper =~ m{\Arowt(est)?}     ) { &rowtest    (1);
-  } elsif ($oper =~ m{\Aslice}          ) { &slice      (shift(@ARGV));
-  } elsif ($oper =~ m{\At(ran(spose)?)?}) { &transpose  ();
-  } elsif ($oper =~ m{\Awrite}          ) { &write_hm   (shift(@ARGV));
+  } elsif ($oper =~ m{\Acolt}           ) { &coltest    (1);
+  } elsif ($oper =~ m{\Ade}             ) { $debug     = shift(@ARGV);
+  } elsif ($oper =~ m{\Adu}             ) { &dump_hm    ($oper);
+  } elsif ($oper =~ m{\Afl}             ) { &flip       ();
+  } elsif ($oper =~ m{\Age}             ) { &gen        (shift(@ARGV));
+  } elsif ($oper =~ m{\Ah}              ) { &help       ();
+  } elsif ($oper =~ m{\Ale}             ) { &legendre   (shift(@ARGV));
+  } elsif ($oper =~ m{\Amu}             ) { &product    ();
+  } elsif ($oper =~ m{\An}              ) { &negate     ();
+  } elsif ($oper =~ m{\Aord}            ) { $order =     shift(@ARGV);;
+  } elsif ($oper =~ m{\Aort}            ) { &ortest     ();
+  } elsif ($oper =~ m{\Apr}             ) { &product    ();
+  } elsif ($oper =~ m{\Apu}             ) { &push_hm    ();
+  } elsif ($oper =~ m{\Are}             ) { &read_hm    (shift(@ARGV));
+  } elsif ($oper =~ m{\Arowt}           ) { &rowtest    (1);
+  } elsif ($oper =~ m{\Asl}             ) { &slice      (shift(@ARGV));
+  } elsif ($oper =~ m{\Atr}             ) { &transpose  ();
+  } elsif ($oper =~ m{\Aw}              ) { &write_hm   (shift(@ARGV));
   } else {
       die "# invalid operation \"$oper\"\n";
   }
@@ -139,7 +142,7 @@ sub legendre { # parameter: p; compute @chi for prime p
     }
     push(@chi, $result);
   } # for $a
-  if ($debug >= 1) { 
+  if ($debug >= 1) {
     # print join(" ", @chi) . "\n";
     my $orig = join("", map { my $a = $_;           $a =~ s{\-1}{\-}; $a } @chi);
     my $nega = join("", map { my $a = $_; $a *= -1; $a =~ s{\-1}{\-}; $a } @chi);
@@ -170,10 +173,11 @@ sub rowtest { # (show); test all pairs of rows whether one half of the columns i
   my $collen = $#{$hma[0]} + 1;
   if ($show > 0) {
     print "# rowtest: $rowlen x $collen\n";
+    print substr($digits, 0, $rowlen) . "\n";
   }
   for (my $irow0 = 0; $irow0 < $rowlen - 1; $irow0 ++) {
     if ($show > 0) {
-      print " " . (" " x $irow0);
+      print "" . (" " x $irow0) . "*";
     }
     for (my $irow1 = $irow0 + 1; $irow1 < $rowlen; $irow1 ++) {
       my $iscoin = 0; # number of coincidences
@@ -206,10 +210,11 @@ sub coltest { # (show); test all pairs of columns whether one half of the rows i
   my $collen = $#{$hma[0]} + 1;
   if ($show > 0) {
     print "# coltest: $rowlen x $collen\n";
+    print substr($digits, 0, $collen) . "\n";
   }
   for (my $icol0 = 0; $icol0 < $collen - 1; $icol0 ++) {
     if ($show > 0) {
-      print " " . (" " x $icol0);
+      print "". (" " x $icol0) . "*";
     }
     for (my $icol1 = $icol0 + 1; $icol1 < $collen; $icol1 ++) {
       my $iscoin = 0; # number of coincidences
@@ -392,12 +397,12 @@ sub write_hm { # write hma in "1-0" format to the specified file
     for (my $icol = 0; $icol < $collen; $icol ++) {
       my $ch = $hma[$irow][$icol];
       if ($ch == $NEG1) {
-        $ch = "-"; 
+        $ch = "-";
       } # else $POS1 and 0 remain unchanged
       print TAR $ch;
     } # for $icol
     print TAR "\n";
-  } # for $irow 
+  } # for $irow
   close(TAR);
 } # write_hm
 #----
@@ -411,7 +416,7 @@ sub negate { # hma *= -1
   } # for $irow
 } # negate
 #----
-sub transpose { # hma = transpose(hmb): mirror at the antidiagonal; assume push
+sub transpose { # hma = transpose(hmb): reflect at the diagonal; assume push
   my $rowlen = scalar(@hmb);
   my $collen = $#{$hmb[0]} + 1;
   @hma = ();
@@ -423,6 +428,19 @@ sub transpose { # hma = transpose(hmb): mirror at the antidiagonal; assume push
     push(@hma, [ @row ]);
   } # for icol
 } # transpose
+#----
+sub flip { # hma = flip(hmb): reflect a square matrix at the antidiagonal; assume push
+  my $rowlen = scalar(@hmb);
+  my $collen = $#{$hmb[0]} + 1;
+  @hma = ();
+  for (my $icol = $collen - 1; $icol >= 0; $icol --) {
+    my @row = ();
+    for (my $irow = $rowlen - 1; $irow >= 0; $irow --) {
+      push(@row, $hmb[$irow][$icol]);
+    } # for irow
+    push(@hma, [ @row ]);
+  } # for icol
+} # flip
 #----
 sub product { # multiply, Kronecker product C = A (x) B; for 0 take from hm0 instead of hmb
   my $rowlena = scalar(@hma);
@@ -447,21 +465,22 @@ sub product { # multiply, Kronecker product C = A (x) B; for 0 take from hm0 ins
   @hma = @hmc;
 } # product
 #----
-sub jacobsthal { # compute J = ((0, j transposed), (-j, Q)), used by paley{1|2}
+sub jacobsthal { # parameter: (order of Q) + 1; compute J = ((0, j transposed), (j, Q)), used by paley{1|2}
+    my ($width) = @_;;
     @hma = ();
-    &legendre($order - 1);
+    &legendre($width - 1);
     if ($debug >= 1) {
-      print "# jacobsthal $order x $order\n";
+      print "# jacobsthal $width x $width\n";
     }
     my @row = ($NULL); # [0,0] = 0
-    for (my $icol = 1; $icol < $order; $icol ++) { # row 0 = ones
+    for (my $icol = 1; $icol < $width; $icol ++) { # row 0 = ones
       push(@row, $POS1);
     } # for $icol
     push(@hma, [ @row ]); # top row
 
-    for (my $irow = 1; $irow < $order; $irow ++) { # rows 1..order = Legendre symbols (skew)
+    for (my $irow = 1; $irow < $width; $irow ++) { # rows 1..width = Legendre symbols (skew)
       @row = ($POS1); # column 0
-      for (my $icol = 1; $icol < $order; $icol ++) { # compute the Jacobsthal matrix Q
+      for (my $icol = 1; $icol < $width; $icol ++) { # compute the Jacobsthal matrix Q
         my $elem = $chi[$irow - $icol];
         if ($irow == $icol) { # on the diagonal
           $elem = $NULL;
@@ -481,7 +500,7 @@ sub gen { # (method); fill @hma
   if (0) {
   #--------
   } elsif ($method =~ m{paley(I|1)\Z}i) {
-    &jacobsthal();
+    &jacobsthal($order);
     for (my $irow = 0; $irow < $order; $irow ++) { # rows 1..order = Legendre symbols (skew)
       $hma[$irow][0] = $NEG1; # column 0 = -1;
       $hma[$irow][$irow] = $POS1; # identity matrix -> diagonal
@@ -494,8 +513,24 @@ sub gen { # (method); fill @hma
     @hm0 = ();
     push(@hm0, [ ( 1,-1) ]);
     push(@hm0, [ (-1,-1) ]);
-    $order /= scalar(@hmb);
-    &jacobsthal();
+    &jacobsthal($order / scalar(@hmb));
+    if ($debug >= 1) {
+      &dump_hm("dump");
+    }
+    &product();
+  #--------
+  } elsif ($method =~ m{paley3}i) {
+    &push_hm();
+    &flip   ();
+    &negate ();
+    # &transpose(); &push_hm();
+    if ($debug >= 1) {
+      print "matrix to be inserted:\n";
+      &dump_hm("dump");
+    }
+    @hm0 = @hma;
+    # @hmb still valid
+    &jacobsthal($order / scalar(@hmb));
     if ($debug >= 1) {
       &dump_hm("dump");
     }
