@@ -74,7 +74,8 @@ if (scalar(@ARGV) == 0) {
   &help();
   exit;
 }
-my $digits  = "01234567890123456789012345678901234567890123456789012345678901234567890123456789"; # for rowtest, coltest
+my $tens    = "          1         2         3         4         5         6         7         8         9";
+my $digits  = "0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789"; # for rowtest, coltest
 my $letters = "=abcdefghijklmnopqrstuvwxyz"; # for rowtest, coltest
 my @hma      = (); # accumulator   matrix
 my @hmb      = (); # 1st auxiliary matrix
@@ -89,10 +90,10 @@ for my $n (0..100) {
 while (scalar(@ARGV) > 0) {
   $oper = shift(@ARGV);
   if (0) {
-  } elsif ($oper =~ m{\Acolt}           ) { &coltest    (1);
+  } elsif ($oper =~ m{\Aco}             ) { &coltest    (1);
   } elsif ($oper =~ m{\Ade}             ) { $debug     = shift(@ARGV);
   } elsif ($oper =~ m{\Adu}             ) { &dump_hm    ($oper);
-  } elsif ($oper =~ m{\Afl}             ) { &flip       ();
+  } elsif ($oper =~ m{\Afl}             ) { &flip2      ();
   } elsif ($oper =~ m{\Age}             ) { &gen        (shift(@ARGV));
   } elsif ($oper =~ m{\Ah}              ) { &help       ();
   } elsif ($oper =~ m{\Ale}             ) { &legendre   (shift(@ARGV));
@@ -103,7 +104,7 @@ while (scalar(@ARGV) > 0) {
   } elsif ($oper =~ m{\Apr}             ) { &product    ();
   } elsif ($oper =~ m{\Apu}             ) { &push_hm    ();
   } elsif ($oper =~ m{\Are}             ) { &read_hm    (shift(@ARGV));
-  } elsif ($oper =~ m{\Arowt}           ) { &rowtest    (1);
+  } elsif ($oper =~ m{\Aro}             ) { &rowtest    (1);
   } elsif ($oper =~ m{\Asl}             ) { &slice      (shift(@ARGV));
   } elsif ($oper =~ m{\Atr}             ) { &transpose  ();
   } elsif ($oper =~ m{\Aw}              ) { &write_hm   (shift(@ARGV));
@@ -156,13 +157,13 @@ sub legendre { # parameter: p; compute @chi for prime p
 sub eval_sums { # evaluate the sum of coincidences minus the sum of differences; "=" if both sums are equal.
   my ($diff) = @_;
   if (abs($diff) >= length($letters)) {
-    $diff = "*";
+    $diff = "?"; # out of range
   } elsif ($diff < 0) {
-    $diff = uc(substr($letters, -$diff, 1));
+    $diff = lc(substr($letters, -$diff, 1)); # lc means more iscoin.s than nocoin.s
   } elsif ($diff > 0) {
-    $diff = lc(substr($letters, -$diff, 1));
-  } else { # $diff == 0
-    $diff = "=";
+    $diff = uc(substr($letters,  $diff, 1)); # uc means more nocoin.s than iscoin.s
+  } else { 
+    $diff = "="; # number of iscoin.s same as number of nocoin.s (desired for all rows/columns)
   }
 } # eval_sums
 
@@ -172,12 +173,13 @@ sub rowtest { # (show); test all pairs of rows whether one half of the columns i
   my $rowlen = scalar(@hma);
   my $collen = $#{$hma[0]} + 1;
   if ($show > 0) {
-    print "# rowtest: $rowlen x $collen\n";
-    print substr($digits, 0, $rowlen) . "\n";
+  # print "# rowtest: $rowlen x $collen\n";
+    print "#  " . substr($tens  , 0, $rowlen) . "\n";
+    print "# R" . substr($digits, 0, $rowlen) . "\n";
   }
-  for (my $irow0 = 0; $irow0 < $rowlen - 1; $irow0 ++) {
+  for (my $irow0 = 0; $irow0 < $rowlen; $irow0 ++) {
     if ($show > 0) {
-      print "" . (" " x $irow0) . "*";
+      print " " . sprintf("%2d", $irow0 % 100) . (" " x $irow0) . "*";
     }
     for (my $irow1 = $irow0 + 1; $irow1 < $rowlen; $irow1 ++) {
       my $iscoin = 0; # number of coincidences
@@ -209,12 +211,13 @@ sub coltest { # (show); test all pairs of columns whether one half of the rows i
   my $rowlen = scalar(@hma);
   my $collen = $#{$hma[0]} + 1;
   if ($show > 0) {
-    print "# coltest: $rowlen x $collen\n";
-    print substr($digits, 0, $collen) . "\n";
+  # print "# coltest: $rowlen x $collen\n";
+    print "#  " . substr($tens  , 0, $collen) . "\n";
+    print "# C" . substr($digits, 0, $collen) . "\n";
   }
-  for (my $icol0 = 0; $icol0 < $collen - 1; $icol0 ++) {
+  for (my $icol0 = 0; $icol0 < $collen; $icol0 ++) {
     if ($show > 0) {
-      print "". (" " x $icol0) . "*";
+      print " " . sprintf("%2d", $icol0 % 100) . (" " x $icol0) . "*";
     }
     for (my $icol1 = $icol0 + 1; $icol1 < $collen; $icol1 ++) {
       my $iscoin = 0; # number of coincidences
@@ -382,7 +385,7 @@ sub read_hm { # read an array of binary matrices from a file and generate a 0/1-
     }
   } # while <STDIN>
   close(SRC);
-  if (scalar(@hma) != $#{$hma[0]}) {
+  if (scalar(@hma) != $#{$hma[0]} + 1) {
     print STDERR "# read: non-square matrix: " . scalar(@hma) . " x " . ($#{$hma[0]} + 1) . "\n";
   }
   $order = scalar(@hma);
@@ -441,6 +444,29 @@ sub flip { # hma = flip(hmb): reflect a square matrix at the antidiagonal; assum
     push(@hma, [ @row ]);
   } # for icol
 } # flip
+#----
+sub flip2 { # hma = flip2(hmb): reflect every 2x2 subblock at the antidiagonal; assume push
+  my $rowlen = scalar(@hmb);
+  my $collen = $#{$hmb[0]} + 1;
+  @hma = (); 
+  #  a b  -> d b
+  #  c d     c a
+  for (my $irow = 0; $irow < $rowlen; $irow += 2) {
+    my 
+    @row = ();
+    for (my $icol = 0; $icol < $collen; $icol += 2) {
+      push(@row, $hmb[$irow + 1][$icol + 1]);
+      push(@row, $hmb[$irow    ][$icol + 1]);
+    } # for $icol
+    push(@hma, [ @row ]);
+    @row = ();
+    for (my $icol = 0; $icol < $collen; $icol += 2) {
+      push(@row, $hmb[$irow + 1][$icol    ]);
+      push(@row, $hmb[$irow    ][$icol    ]);
+    } # for $icol
+    push(@hma, [ @row ]);
+  } # for $irow
+} # flip2
 #----
 sub product { # multiply, Kronecker product C = A (x) B; for 0 take from hm0 instead of hmb
   my $rowlena = scalar(@hma);
@@ -520,10 +546,9 @@ sub gen { # (method); fill @hma
     &product();
   #--------
   } elsif ($method =~ m{paley3}i) {
-    &push_hm();
-    &flip   ();
     &negate ();
-    # &transpose(); &push_hm();
+    &push_hm();
+    &flip2  ();
     if ($debug >= 1) {
       print "matrix to be inserted:\n";
       &dump_hm("dump");
