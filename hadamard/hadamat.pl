@@ -32,6 +32,7 @@
 #:#
 #:# Generation methods:
 #:#   paley1, paleyI
+#:#   paley2, paleyII
 #:#   sylvester            doubling (implies push)
 #--------
 # Internally the matrices are represented by $POS1 (1) and $NEG1 (0).
@@ -71,8 +72,10 @@ if (scalar(@ARGV) == 0) {
   exit;
 }
 my $letters = "=abcdefghijklmnopqrstuvwxyz"; # for rowtest, coltest
-my @hma      = (); # accumulator matrix
-my @hmb      = (); # auxiliary   matrix
+my @hma      = (); # accumulator   matrix
+my @hmb      = (); # 1st auxiliary matrix
+my @hmc      = (); # 2nd auxiliary matrix
+my @hm0      = (); # matrix for 0 elements in product
 my @chi; # stores the Legendre symbols of (n/p) for n=0..p-1
 my %squares; # maps n -> sqrt(n)
 for my $n (0..100) {
@@ -132,11 +135,12 @@ sub legendre { # parameter: p; compute @chi for prime p
     }
     push(@chi, $result);
   } # for $a
-  if ($debug >= 1) {
-    my $orig = join("", map { my $a = $_; $a =~ tr{10}{1\-}; $a } @chi);
-    my $nega = join("", map { my $a = $_; $a =~ tr{10}{\-1}; $a } @chi);
-    print "original: " . $orig . "\n";
-    print "negated : " . $nega . "\n";
+  if ($debug >= 1) { 
+    # print join(" ", @chi) . "\n";
+    my $orig = join("", map { my $a = $_;           $a =~ s{\-1}{\-}; $a } @chi);
+    my $nega = join("", map { my $a = $_; $a *= -1; $a =~ s{\-1}{\-}; $a } @chi);
+    print "original: " . $orig          . "\n";
+    print "negated : " . $nega          . "\n";
     print "orig rev: " . reverse($orig) . "\n";
     print "neg  rev: " . reverse($nega) . "\n";
   }
@@ -231,7 +235,7 @@ sub ortest {
   my $sum = 0;
   $sum += &rowtest(0);
   $sum += &coltest(0);
-  print "# ortest: " . (($sum == 2) ? "ack" : "NAK") . ", order=$order, order/4=" . ($order/4) . "\n";
+  print "# orthogonality test: " . (($sum == 2) ? "ack" : "NAK") . ", order $order = 4*" . ($order/4) . "\n";
 } # ortest
 #----
 sub dump_hm { # write matrices as binary digits 0,1
@@ -369,8 +373,7 @@ sub read_hm { # read an array of binary matrices from a file and generate a 0/1-
     }
   } # while <STDIN>
   close(SRC);
-  # &show_counts(1, $ihm);
-  if ($#hma != $#{$hma[0]}) {
+  if (scalar(@hma) != $#{$hma[0]}) {
     print STDERR "# read: non-square matrix: " . scalar(@hma) . " x " . ($#{$hma[0]} + 1) . "\n";
   }
   $order = scalar(@hma);
@@ -394,19 +397,22 @@ sub write_hm { # write hma in "1-0" format to the specified file
   close(TAR);
 } # write_hm
 #----
-sub product { # multiply, Kronecker product C = A (x) B
+sub product { # multiply, Kronecker product C = A (x) B; for 0 take from hm0 instead of hmb
   my $rowlena = scalar(@hma);
   my $collena = $#{$hma[0]} + 1;
   my $rowlenb = scalar(@hmb);
   my $collenb = $#{$hmb[0]} + 1;
   $order = $rowlena * $rowlenb;
-  my @hmc = ();
+  @hmc = ();
   for (my $irow = 0; $irow < $order; $irow ++) {
     my @row = ();
     for (my $icol = 0; $icol < $order; $icol ++) {
       my $elema = $hma[$irow / $rowlenb][$icol / $collenb];
       my $elemb = $hmb[$irow % $rowlenb][$icol % $collenb];
-      my $elemc = ($elema == $elemb) ? $POS1 : $NEG1; # differs
+      my $elemc = $elema != 0
+          ? $elema * $elemb
+          : $hm0[$irow % $rowlenb][$icol % $collenb]
+          ;
       push(@row, $elemc);
     } # for icol
     push(@hmc, [ @row ]);
@@ -414,42 +420,62 @@ sub product { # multiply, Kronecker product C = A (x) B
   @hma = @hmc;
 } # product
 #----
-sub gen { # (method); fill @hma
-  my ($method) = @_;
-  my @row;
-  if (0) {
-  #--------
-  } elsif ($method =~ m{paley(I|1)\Z}i) {
+sub jacobsthal { # compute J = ((0, j transposed), (-j, Q)), used by paley{1|2}
     @hma = ();
     &legendre($order - 1);
-    @row = ();
     if ($debug >= 1) {
-      print "# gen sylvester $order x $order\n";
+      print "# jacobsthal $order x $order\n";
     }
-    for (my $icol = 0; $icol < $order; $icol ++) { # row 0 = ones
+    my @row = ($NULL); # [0,0] = 0
+    for (my $icol = 1; $icol < $order; $icol ++) { # row 0 = ones
       push(@row, $POS1);
     } # for $icol
-    push(@hma, [ @row ]);
-    for (my $irow = 0; $irow < $order - 1; $irow ++) { # rows 1..order = Legendre symbols (skew)
-      @row = ($NEG1); # column 0 = 0 (originally -1)
-      for (my $icol = 0; $icol < $order - 1; $icol ++) { # compute the Jacobsthal matrix Q
+    push(@hma, [ @row ]); # top row
+
+    for (my $irow = 1; $irow < $order; $irow ++) { # rows 1..order = Legendre symbols (skew)
+      @row = ($POS1); # column 0
+      for (my $icol = 1; $icol < $order; $icol ++) { # compute the Jacobsthal matrix Q
         my $elem = $chi[$irow - $icol];
-        if ($irow == $icol) {
-          $elem = $POS1;
+        if ($irow == $icol) { # on the diagonal
+          $elem = $NULL;
         }
         push(@row, $elem);
       } # for $icol
       push(@hma, [ @row ]);
     } # for $irow
+} # jacobsthal
+#----
+sub gen { # (method); fill @hma
+  my ($method) = @_;
+  if ($debug >= 1) {
+    print "# gen $method $order x $order\n";
+  }
+  my @row;
+  if (0) {
+  #--------
+  } elsif ($method =~ m{paley(I|1)\Z}i) {
+    &jacobsthal();
+    for (my $irow = 0; $irow < $order; $irow ++) { # rows 1..order = Legendre symbols (skew)
+      $hma[$irow][0] = $NEG1; # column 0 = -1;
+      $hma[$irow][$irow] = $POS1; # identity matrix -> diagonal
+    } # for $irow
+  #--------
+  } elsif ($method =~ m{paley(II|2)\Z}i) {
+  	$order /= 2;
+    &jacobsthal();
+    @hmb = ();
+    push(@hmb, [ ( 1, 1) ]);
+    push(@hmb, [ ( 1,-1) ]);
+    @hm0 = ();
+    push(@hm0, [ ( 1,-1) ]);
+    push(@hm0, [ (-1,-1) ]);
+    &product();
   #--------
   } elsif ($method =~ m{\Asyl}i) { # Sylvester
     &push_hm();
     my $rowlen = scalar(@hmb);
     my $collen = $rowlen; # matrix must be quadratic
     $order = 2*$rowlen;
-    if ($debug >= 1) {
-      print "# gen sylvester $order x $order from $rowlen x $collen\n";
-    }
     @hma = ();
     for (my $irow = 0; $irow < $order; $irow ++) {
       my @row = ();
