@@ -8,27 +8,29 @@
 #:#
 #:# Usage:
 #:#   perl hadamat.pl [-d debug] arg1 arg2 ...
-#:#     coltest            test columns for 1/2 condition and show triangle
-#:#     debug    mode      0=none, 1=some, 2=more debugging output
-#:#     dump<i>            write terms in "1-" format, optionally separate in <i> subblocks
-#:#     gen      method    generate a Hadamard matrix with method
-#:#     help               print usage info
-#:#     legendre p         compute the legendre symbols (a/p) for a=0..p-1 (p prime), with debug >= 1
-#:#     order    n         specify the desired order for gen (must be a multiply of 4)
-#:#     ortest             test rows and columns for 1/2 condition and show summary only
-#:#     product            Kronecker product hma = hma (x) hmb (after push)
-#:#     push               copy the accumlator hma to the auxiliary matrix hmb
-#:#     read     file      read a matrix in "sage", "10", "1-" or "+-" format
-#:#     rowtest            test rows for 1/2 condition and show triangle
-#:#     slice    rxc,hxw   extract a submatrix height x width at upper left corner row x col (implies push)
-#:#     write    file      write hma in "1-0" format
-#:#     svg                generate an SVG file
+#:#     coltest             test columns for 1/2 condition and show triangle
+#:#     debug     mode      0=none, 1=some, 2=more debugging output
+#:#     dump<i>             write terms in "1-" format, optionally separate in <i> subblocks
+#:#     gen       method    generate a Hadamard matrix in hma with method
+#:#     help                print usage info
+#:#     legendre  p         compute the legendre symbols (a/p) for a=0..p-1 (p prime), with debug >= 1
+#:#     negate              hma = hma * (-1)
+#:#     order     n         specify the desired order for gen (must be a multiply of 4)
+#:#     ortest              test rows and columns for 1/2 condition and show summary only
+#:#     product             Kronecker product hma = hma (x) hmb (after push)
+#:#     push                copy the accumlator hma to the auxiliary matrix hmb
+#:#     read      file      read a matrix in "sage", "10", "1-" or "+-" format
+#:#     rowtest             test rows for 1/2 condition and show triangle
+#:#     slice     rxc,hxw   extract a submatrix height x width at upper left corner row x col (implies push)
+#:#     transpose           hma = hmb mirrored at the antidiagonal; assume push
+#:#     write     file      write hma in "1-0" format
+#:#     svg                 generate an SVG file
 #:#
 #:# Input formats may be either:
-#:#   sage                 [1,-1 ...
-#:#   +-                   only "+" for +1, "-" for -1
-#:#   1-                   1 and -1 for -1
-#:#   10                   1 and 0 for -1
+#:#   sage                  [1,-1 ...
+#:#   +-                    only "+" for +1, "-" for -1
+#:#   1-                    1 and -1 for -1
+#:#   10                    1 and 0 for -1
 #:#
 #:# Generation methods:
 #:#   paley1, paleyI
@@ -92,13 +94,15 @@ while (scalar(@ARGV) > 0) {
   } elsif ($oper =~ m{\Ahelp}           ) { &help       ();
   } elsif ($oper =~ m{\Alegendre}       ) { &legendre   (shift(@ARGV));
   } elsif ($oper =~ m{\Amul(t(iply)?)?} ) { &product    ();
+  } elsif ($oper =~ m{\Aneg(ate)?}      ) { &negate     ();
   } elsif ($oper =~ m{\Aorder}          ) { $order =     shift(@ARGV);;
-  } elsif ($oper =~ m{\Apr(od(uct)?)?}  ) { &product    ();
   } elsif ($oper =~ m{\Aort(est)?}      ) { &ortest     ();
+  } elsif ($oper =~ m{\Apr(od(uct)?)?}  ) { &product    ();
   } elsif ($oper =~ m{\Apush}           ) { &push_hm    ();
   } elsif ($oper =~ m{\Aread}           ) { &read_hm    (shift(@ARGV));
   } elsif ($oper =~ m{\Arowt(est)?}     ) { &rowtest    (1);
   } elsif ($oper =~ m{\Aslice}          ) { &slice      (shift(@ARGV));
+  } elsif ($oper =~ m{\At(ran(spose)?)?}) { &transpose  ();
   } elsif ($oper =~ m{\Awrite}          ) { &write_hm   (shift(@ARGV));
   } else {
       die "# invalid operation \"$oper\"\n";
@@ -397,6 +401,29 @@ sub write_hm { # write hma in "1-0" format to the specified file
   close(TAR);
 } # write_hm
 #----
+sub negate { # hma *= -1
+  my $rowlen = scalar(@hma);
+  my $collen = $#{$hma[0]} + 1;
+  for (my $irow = 0; $irow < $rowlen; $irow ++) {
+    for (my $icol = 0; $icol < $collen; $icol ++) {
+      $hma[$irow][$icol] = $hma[$irow][$icol] * $NEG1;
+    } # for $icol
+  } # for $irow
+} # negate
+#----
+sub transpose { # hma = transpose(hmb): mirror at the antidiagonal; assume push
+  my $rowlen = scalar(@hmb);
+  my $collen = $#{$hmb[0]} + 1;
+  @hma = ();
+  for (my $icol = 0; $icol < $collen; $icol ++) {
+    my @row = ();
+    for (my $irow = 0; $irow < $rowlen; $irow ++) {
+      push(@row, $hmb[$irow][$icol]);
+    } # for irow
+    push(@hma, [ @row ]);
+  } # for icol
+} # transpose
+#----
 sub product { # multiply, Kronecker product C = A (x) B; for 0 take from hm0 instead of hmb
   my $rowlena = scalar(@hma);
   my $collena = $#{$hma[0]} + 1;
@@ -461,14 +488,17 @@ sub gen { # (method); fill @hma
     } # for $irow
   #--------
   } elsif ($method =~ m{paley(II|2)\Z}i) {
-  	$order /= 2;
-    &jacobsthal();
     @hmb = ();
     push(@hmb, [ ( 1, 1) ]);
     push(@hmb, [ ( 1,-1) ]);
     @hm0 = ();
     push(@hm0, [ ( 1,-1) ]);
     push(@hm0, [ (-1,-1) ]);
+    $order /= scalar(@hmb);
+    &jacobsthal();
+    if ($debug >= 1) {
+      &dump_hm("dump");
+    }
     &product();
   #--------
   } elsif ($method =~ m{\Asyl}i) { # Sylvester
