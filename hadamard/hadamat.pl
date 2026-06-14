@@ -14,11 +14,11 @@
 #:#     flip                hma = hmb reflected at the antidiagonal; assume push, hmb square
 #:#     gen       method    generate a Hadamard matrix in hma with method
 #:#     help                print usage info
-#:#     legendre  p         compute the legendre symbols (a/p) for a=0..p-1 (p prime), with debug >= 1
+#:#     legendre  p         compute the legendre symbols (a/p) for a=0..p-1 (p odd prime), with debug >= 1
 #:#     negate              hma = hma * (-1)
 #:#     order     n         specify the desired order for gen (must be a multiply of 4)
 #:#     ortest              test rows and columns for 1/2 condition and show summary only
-#:#     product             Kronecker product hma = hma (x) hmb (after push)
+#:#     product             Kronecker product hma = hma (x) hmb (assumes pushed hmb)
 #:#     push                copy the accumlator hma to the auxiliary matrix hmb
 #:#     read      file      read a matrix in "sage", "10", "1-" or "+-" format
 #:#     rowtest             test rows for 1/2 condition and show triangle
@@ -53,6 +53,11 @@
 # https://en.wikipedia.org/wiki/Paley_construction -> Jacobsthal matrix
 # https://en.wikipedia.org/wiki/Legendre_symbol
 # https://www.cs.ox.ac.uk/teaching/courses/projects/sample/3rdYear/Implementing%20Hadamard%20Matrices%20in%20SageMath.pdf
+# https://arxiv.org/pdf/1912.10755
+# Extension of Paley Construction for Hadamard Matrix
+# Shipra Kumari∗ and Hrishikesh Mahato†
+# Department of Mathematics, Central University of Jharkhand, Ranchi-835205, India
+# https://wannamaker.org/math/hadamard.pdf Paley Constructions of Hadamard Matrixes
 #
 # The method paley1 yields skew matrices for order/4 =
 # 1,2,3,5,6,8,11,12,15,17,18,20,21,26,27,32,33,35,38,41,42,45,48,50,53,56,57,60,63 ...
@@ -74,8 +79,8 @@ if (scalar(@ARGV) == 0) {
   &help();
   exit;
 }
-my $tens    = "          1         2         3         4         5         6         7         8         9";
-my $digits  = "0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789"; # for rowtest, coltest
+my $tens    = "          1         2         3         4         5         6         7         8         9         "; $tens   = $tens   . $tens   . $tens   . $tens  ;
+my $digits  = "0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789"; $digits = $digits . $digits . $digits . $digits; # for rowtest, coltest
 my $letters = "=abcdefghijklmnopqrstuvwxyz"; # for rowtest, coltest
 my @hma      = (); # accumulator   matrix
 my @hmb      = (); # 1st auxiliary matrix
@@ -162,7 +167,7 @@ sub eval_sums { # evaluate the sum of coincidences minus the sum of differences;
     $diff = lc(substr($letters, -$diff, 1)); # lc means more iscoin.s than nocoin.s
   } elsif ($diff > 0) {
     $diff = uc(substr($letters,  $diff, 1)); # uc means more nocoin.s than iscoin.s
-  } else { 
+  } else {
     $diff = "="; # number of iscoin.s same as number of nocoin.s (desired for all rows/columns)
   }
 } # eval_sums
@@ -448,11 +453,11 @@ sub flip { # hma = flip(hmb): reflect a square matrix at the antidiagonal; assum
 sub flip2 { # hma = flip2(hmb): reflect every 2x2 subblock at the antidiagonal; assume push
   my $rowlen = scalar(@hmb);
   my $collen = $#{$hmb[0]} + 1;
-  @hma = (); 
+  @hma = ();
   #  a b  -> d b
   #  c d     c a
   for (my $irow = 0; $irow < $rowlen; $irow += 2) {
-    my 
+    my
     @row = ();
     for (my $icol = 0; $icol < $collen; $icol += 2) {
       push(@row, $hmb[$irow + 1][$icol + 1]);
@@ -481,8 +486,8 @@ sub product { # multiply, Kronecker product C = A (x) B; for 0 take from hm0 ins
       my $elema = $hma[$irow / $rowlenb][$icol / $collenb];
       my $elemb = $hmb[$irow % $rowlenb][$icol % $collenb];
       my $elemc = $elema != 0
-          ? $elema * $elemb
-          : $hm0[$irow % $rowlenb][$icol % $collenb]
+          ? $elema * $elemb # normal multiplication
+          : $hm0[$irow % $rowlenb][$icol % $collenb] # replace 0 by an element from the special matrix hm0
           ;
       push(@row, $elemc);
     } # for icol
@@ -594,3 +599,55 @@ planes[ 9 ] (Sage format)
 [-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----]
 [ 1 -1| 1  1| 1 -1| 1  1| 1  1|-1 -1| 1  1|-1 -1|-1 -1|-1 -1| 1  1| 1  1|-1 -1|-1 -1|-1 -1| 1  1|-1 -1| 1  1]
 
+from Wannamaker:
+order PalI    PalII
+  4     3
+  8     7
+ 12    11       5
+ 16   = 4*4
+ 20    19       3^2
+ 24    23
+ 28     3^3    13
+ 32    31
+ 36            17
+ 40   =2*20
+ 44    43
+ 48    47
+ 52             5^2
+ 56   =2*28
+ 60    59      29
+ 64   =4*16
+ 68    67
+ 72    71
+ 76            37
+ 80    79
+ 84    83      41
+ 88   =2*44
+ 92   first missing!
+ 96   =2*48
+100             7^2
+104   103
+108   107      53
+112   =4*28
+116   ?
+120   =2*60
+124            61
+128   127
+132   131
+136   ?
+140   139
+144   =2*72
+148            73
+152   151
+156   ?
+160   =4*40
+164   163       3^4
+168   167
+172   ?
+176   =4*44
+180   179      89
+184   ?
+188   ?
+192   191
+196            97
+200   199
