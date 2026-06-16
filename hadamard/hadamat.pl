@@ -8,6 +8,7 @@
 #:#
 #:# Usage:
 #:#   perl hadamat.pl [-d debug] arg1 arg2 ...
+#:#     block     m         split into submatrices of order m, result is the classified reduced matrix
 #:#     coltest             test columns for 1/2 condition and show triangle
 #:#     debug     mode      0=none, 1=some, 2=more debugging output
 #:#     dump<i>             write terms in "1-" format, optionally separate in <i> subblocks
@@ -25,7 +26,7 @@
 #:#     slice     rxc,hxw   extract a submatrix height x width at upper left corner row x col (implies push)
 #:#     transpose           hma = hmb reflected at the diagonal; assume push
 #:#     write     file      write hma in "1-0" format
-#:#     svg                 generate an SVG file
+#:#     svg                 generate an SVG file (not yet implemented)
 #:#
 #:# Input formats may be either:
 #:#   sage                  [1,-1 ...
@@ -86,6 +87,8 @@ my @hma      = (); # accumulator   matrix
 my @hmb      = (); # 1st auxiliary matrix
 my @hmc      = (); # 2nd auxiliary matrix
 my @hm0      = (); # matrix for 0 elements in product
+my %blocks   = (); # submatrices in linear form "10-23...", linearized submatrix -> replacement ($blentry)
+my $blentry  = 0;  # block replacement: 0, 1, -1, 2, 3, 4 ...
 my @chi; # stores the Legendre symbols of (n/p) for n=0..p-1
 my %squares; # maps n -> sqrt(n)
 for my $n (0..100) {
@@ -95,6 +98,7 @@ for my $n (0..100) {
 while (scalar(@ARGV) > 0) {
   $oper = shift(@ARGV);
   if (0) {
+  } elsif ($oper =~ m{\Ablo}            ) { &block      (shift(@ARGV));
   } elsif ($oper =~ m{\Aco}             ) { &coltest    (1);
   } elsif ($oper =~ m{\Ade}             ) { $debug     = shift(@ARGV);
   } elsif ($oper =~ m{\Adu}             ) { &dump_hm    ($oper);
@@ -497,6 +501,81 @@ sub product { # multiply, Kronecker product C = A (x) B; for 0 take from hm0 ins
   } # for irow
   @hma = @hmc;
 } # product
+#----
+sub add_block { # get a submatrix of hmb and add it to the hash of recognized %blocks
+  my ($srow, $scol, $blord) = @_; # indexes of upper left corner of submatrix, and order of submatrix
+  my $result = 0;
+  my @blin = (); # linearized submatrix
+  for (my $irow= $srow; $irow < $srow + $blord; $irow ++) {
+    for (my $icol = $scol; $icol < $scol + $blord; $icol ++) {
+      push(@blin, $hmb[$irow][$icol]);
+    } # for $icol
+  } # for $irow
+  my $linear = join("", map { if ($_ == -1) { $_ = "-"; } $_ } @blin); # "10-" format
+  my $blsize = scalar(keys(%blocks));
+  if (0) {
+  } elsif ($blsize <= 1) { # 0 and 1 are fixed
+    $blentry = $blsize;
+    $result = $blentry;
+    $blocks{$linear} = $result;
+  } else { # test for previous occurrence, maybe negated?
+    my $busy = 1; # while not found
+    if ($busy == 1) {
+      foreach my $blkey (keys(%blocks)) { # test positive
+        if ($linear eq $blocks{$blkey}) {
+          $result = $blocks{$blkey};
+          $busy = 0;
+        }
+      } # for positive
+    }
+    if ($busy == 1) {
+      foreach my $blkey (keys(%blocks)) { # test negative
+        my $linega = $linear;
+        $linear =~ tr{10-}{-01};
+        if ($linega eq $blocks{$blkey}) {
+          $result = $blocks{$blkey};
+          if ($result == 1) {
+            $result = -1;
+            $busy = 0;
+          } else {
+            # some other negated, fall through
+          }
+        } # matches negated
+      } # for negative
+    }
+    if ($busy == 1) { # still not found, quite different? assign 2, 3, 4 ...
+      $blentry = $blsize + 1;
+      $blocks{$linear} = $blentry;
+    } # still not found
+  } # tests for previous occurrence
+  if ($debug >= 1) {
+    print "# add_block: $blsize blocks, linear=$linear -> result=$result\n";
+  }
+  return $result;
+} # add_block
+#----
+sub block { # split hmb into submatrices of order blord, result hma = hmb/blord is the classified reduced matrix; assumes push
+  my ($blord) = @_; # block order
+  my $rowlenb = scalar(@hmb);
+  my $collenb = $#{$hmb[0]} + 1;
+  my $rowlena = 0;
+  my $collena = 0;
+  %blocks = ();
+  @hma = ();
+  for (my $irowb = 0; $irowb < $rowlenb; $irowb += $blord) {
+    my @row = ();
+    for (my $icolb = 0; $icolb < $collenb; $icolb += $blord) {
+      my $entry = &add_block($irowb, $icolb, $blord);
+      push(@row, $entry);
+    } # for icol
+    push(@hma, [ @row ]);
+  } # for irow
+  if ($debug >= 2) {
+    foreach my $blkey (keys(%blocks)) {
+      print "# block: $blkey -> $blocks{$blkey}\n";
+    }
+  }
+} # block
 #----
 sub conference { # parameter: (order of Q) + 1; compute J = ((0, j transposed), (j, Q)), used by paley{1|2}
     my ($width) = @_;;

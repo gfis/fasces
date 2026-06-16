@@ -47,19 +47,24 @@ do10: # H= ; convert from ./ranew/$(H).raw to ./10/$(H).10
 paleyI:
 	grep -iH "paleyI " ranew/*
 #----
-paley1_test:
+paley1_test: # generate all with paley1
 	rm -f    $@.tmp
 	seq 4 4 256 \
 	| xargs -innn perl hadamat.pl order nnn gen paley1 ortest | tee -a $@.tmp
 	wc -l    $@.tmp
 #----
-paley2_test:
+paley2_test: # generate all with paley2
 	rm -f    $@.tmp
 	seq 4 4 256 \
 	| xargs -innn perl hadamat.pl order nnn gen paley2 ortest | tee -a $@.tmp
 	wc -l    $@.tmp
+paley2_list: # list Sage results with paleyII 
+	grep paleyII ranew/*.raw | cut -b8- | sort -n \
+	| tee $@.tmp
+#----
 paley3_flip2: # works 2026-06-12
 	perl hadamat.pl read ranew/h1.raw debug 1 order 12 gen paley2 dump6  ortest # uses h0.raw
 	perl hadamat.pl read ranew/h1.raw debug 1 order 24 gen paley3 dump6  ortest
 	perl hadamat.pl read ranew/h2.raw debug 1 order 48 gen paley3 dump24 ortest
 	perl hadamat.pl read ranew/h4.raw debug 1 order 96 gen paley3 dump48 ortest
+#----
