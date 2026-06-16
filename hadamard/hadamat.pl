@@ -152,10 +152,12 @@ sub legendre { # parameter: p; compute @chi for prime p
     # print join(" ", @chi) . "\n";
     my $orig = join("", map { my $a = $_;           $a =~ s{\-1}{\-}; $a } @chi);
     my $nega = join("", map { my $a = $_; $a *= -1; $a =~ s{\-1}{\-}; $a } @chi);
-    print "original: " . $orig          . "\n";
-    print "negated : " . $nega          . "\n";
-    print "orig rev: " . reverse($orig) . "\n";
-    print "neg  rev: " . reverse($nega) . "\n";
+    print "legendre: " . $orig          . "\n";
+    if ($debug >= 2) {
+      print "negated : " . $nega          . "\n";
+      print "orig rev: " . reverse($orig) . "\n";
+      print "neg  rev: " . reverse($nega) . "\n";
+    }
   }
 } # legendre
 #----
@@ -496,12 +498,12 @@ sub product { # multiply, Kronecker product C = A (x) B; for 0 take from hm0 ins
   @hma = @hmc;
 } # product
 #----
-sub jacobsthal { # parameter: (order of Q) + 1; compute J = ((0, j transposed), (j, Q)), used by paley{1|2}
+sub conference { # parameter: (order of Q) + 1; compute J = ((0, j transposed), (j, Q)), used by paley{1|2}
     my ($width) = @_;;
     @hma = ();
     &legendre($width - 1);
     if ($debug >= 1) {
-      print "# jacobsthal $width x $width\n";
+      print "# conference matrix $width x $width\n";
     }
     my @row = ($NULL); # [0,0] = 0
     for (my $icol = 1; $icol < $width; $icol ++) { # row 0 = ones
@@ -520,7 +522,7 @@ sub jacobsthal { # parameter: (order of Q) + 1; compute J = ((0, j transposed), 
       } # for $icol
       push(@hma, [ @row ]);
     } # for $irow
-} # jacobsthal
+} # conference
 #----
 sub gen { # (method); fill @hma
   my ($method) = @_;
@@ -531,7 +533,7 @@ sub gen { # (method); fill @hma
   if (0) {
   #--------
   } elsif ($method =~ m{paley(I|1)\Z}i) {
-    &jacobsthal($order);
+    &conference($order);
     for (my $irow = 0; $irow < $order; $irow ++) { # rows 1..order = Legendre symbols (skew)
       $hma[$irow][0] = $NEG1; # column 0 = -1;
       $hma[$irow][$irow] = $POS1; # identity matrix -> diagonal
@@ -544,7 +546,7 @@ sub gen { # (method); fill @hma
     @hm0 = ();
     push(@hm0, [ ( 1,-1) ]);
     push(@hm0, [ (-1,-1) ]);
-    &jacobsthal($order / scalar(@hmb));
+    &conference($order / scalar(@hmb));
     if ($debug >= 1) {
       &dump_hm("dump");
     }
@@ -560,13 +562,13 @@ sub gen { # (method); fill @hma
     }
     @hm0 = @hma;
     # @hmb still valid
-    &jacobsthal($order / scalar(@hmb));
+    &conference($order / scalar(@hmb));
     if ($debug >= 1) {
       &dump_hm("dump");
     }
     &product();
   #--------
-  } elsif ($method =~ m{\Asyl}i) { # Sylvester
+  } elsif ($method =~ m{\Asy}i) { # Sylvester: double hma
     &push_hm();
     my $rowlen = scalar(@hmb);
     my $collen = $rowlen; # matrix must be quadratic
@@ -604,7 +606,7 @@ order PalI    PalII
   4     3
   8     7
  12    11       5
- 16   = 4*4
+ 16   =4*4
  20    19       3^2
  24    23
  28     3^3    13
@@ -623,7 +625,7 @@ order PalI    PalII
  80    79
  84    83      41
  88   =2*44
- 92   first missing!
+ 92   ? (first missing)
  96   =2*48
 100             7^2
 104   103
